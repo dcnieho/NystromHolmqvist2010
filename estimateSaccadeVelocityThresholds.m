@@ -1,4 +1,4 @@
-function data = estimateSaccadeVelocityThresholds(data,ETparams)
+function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsample)
 % iteratively establishes the best velocity threshold for saccade detection
 % for this trial.
 % Given a threshold T, we take all data of the trial where the eye velocity
@@ -21,32 +21,37 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
     % fixation time (though this is still crude)
     qBelowThresh = data.vel < data.peakDetectionThreshold;
     
-    % TODO: see if this part is really needed or just done to speed up
-    % iteration
-    
-    % get bounds of these detected peaks
-    [threshon,threshoff] = findContiguousRegions(qBelowThresh);
-    
-    % throw out intervals that are too short and therefore unlikely to be
-    % fixations
-    qLongEnough = (threshoff-threshon)./ETparams.samplingFreq >= ETparams.minFixDur;
-    threshon = threshon (qLongEnough);
-    threshoff= threshoff(qLongEnough);
-    
-    % shrink them as done in Nystrom's version, guess to make sure we only
-    % get data that is surely during fixation
-    centralFixSamples = ETparams.minFixDur*ETparams.samplingFreq/6;
-    threshon = threshon +floor(centralFixSamples);
-    threshoff= threshoff-ceil (centralFixSamples);
-    
-    % end TODO
-    
-    % convert to data selection indices
-    idx=bounds2ind(threshon,threshoff);
-    
-    % get mean and std of this data
-    meanVel = nanmean(data.vel(idx));
-    stdVel  = nanstd (data.vel(idx));
+    if nargin==2 || qusecentralsample
+        % TODO: see if this part is really needed or just done to speed up
+        % iteration
+        
+        % get bounds of these detected peaks
+        [threshon,threshoff] = findContiguousRegions(qBelowThresh);
+        
+        % throw out intervals that are too short and therefore unlikely to be
+        % fixations
+        qLongEnough = (threshoff-threshon)./ETparams.samplingFreq >= ETparams.minFixDur;
+        threshon = threshon (qLongEnough);
+        threshoff= threshoff(qLongEnough);
+        
+        % shrink them as done in Nystrom's version, guess to make sure we only
+        % get data that is surely during fixation
+        centralFixSamples = ETparams.minFixDur*ETparams.samplingFreq/6;
+        threshon = threshon +floor(centralFixSamples);
+        threshoff= threshoff-ceil (centralFixSamples);
+        
+        % end TODO
+        
+        % convert to data selection indices
+        idx=bounds2ind(threshon,threshoff);
+        
+        % get mean and std of this data
+        meanVel = nanmean(data.vel(idx));
+        stdVel  = nanstd (data.vel(idx));
+    else
+        meanVel = nanmean(data.vel(qBelowThresh));
+        stdVel  = nanstd (data.vel(qBelowThresh));
+    end
     
     % calculate new thresholds
     data.peakDetectionThreshold  = meanVel + 6*stdVel;

@@ -13,23 +13,28 @@ qnoise = (data.X <= 0 & data.Y <= 0) |...
         data.vel > ETparams.blinkVelocityThreshold |...
         abs(data.acc) > ETparams.blinkAccThreshold;
 
-% Label blinks or noise
+% find bounds of blinks or noise as detected above
 [noiseon,noiseoff] = findContiguousRegions(qnoise);
 
-% Process one blink or noise period at the time, refine the bounds
-% TODO: does this sometimes delete way too much data? (if go below
-% threshold only near next noise or so.. dunno.. seems unlikely)
-for p = 1:length(noiseon)
+% find bounds of data above threshold
+[threshon,threshoff] = findContiguousRegions(data.vel > V_threshold);
 
-    % Go back in time to see where the blink (noise) started
-    sEventIdx   = find(data.vel(noiseon(p):-1:1) <= V_threshold, 1);
-    if isempty(sEventIdx), continue, end
-    noiseon(p)  = noiseon(p) - sEventIdx + 1;
+% Process one blink or noise period at the time, refine the bounds
+% We refine using the velocity threshold crosses computed on top. As this
+% threshold is lower than the blink velocity threshold, on- and offset of
+% this (very low!) median velocity threshold should enclose blink velocity
+% thresholds, but not necessarily for any of the other sources of noise.
+% Only if the noise bounds are enclosed by the median velocity bounds,
+% replace. This also removes the possibility that we latch on to a wrong
+% bound much further away in the data, as was possible in the old version
+% (although not likely to generate much error).
+for p = 1:length(noiseon)
+    qenclosed = threshon<=noiseon(p) & threshoff>=noiseoff(p);
     
-    % Go forward in time to see where the blink (noise) started    
-    eEventIdx   = find(data.vel(noiseoff(p):end) <= V_threshold, 1);
-    if isempty(eEventIdx), continue, end    
-    noiseoff(p) = noiseoff(p) + eEventIdx - 1;
+    if any(qenclosed)
+        noiseon(p)  = threshon (qenclosed);
+        noiseoff(p) = threshoff(qenclosed);
+    end
 end
 
 % create boolean matrix given refined noise bounds
