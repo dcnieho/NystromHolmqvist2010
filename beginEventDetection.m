@@ -10,18 +10,25 @@ global ETparams
 load('1250Hz_3_Participants.mat');
 
 ETparams.data = ETdata;
+
+% user settings
 ETparams.screenSz = [1024 768];
 ETparams.screenDim = [0.38 0.30];
 ETparams.viewingDist = 0.67;
 ETparams.samplingFreq = 1250;
 ETparams.blinkVelocityThreshold = 1000;             % if vel > 1000 degrees/s, it is noise or blinks
-ETparams.blinkAccThreshold = 100000;               % if acc > 100000 degrees/s^2, it is noise or blinks
+ETparams.blinkAccThreshold = 100000;                % if acc > 100000 degrees/s^2, it is noise or blinks
 ETparams.peakDetectionThreshold = 100;              % Initial value of the peak detection threshold. 
 
 ETparams.qUseDN     = false;             % if true, use DN's versions of these functions
 
 ETparams.minFixDur = 0.040; % in seconds
 ETparams.minSaccadeDur = 0.010; % in seconds
+ETparams.minSaccadeDurms = 10; % in milliseconds
+
+% process them
+% Calculate how many degrees one pixel spans.
+[ETparams.angleInPixelsH, ETparams.angleInPixelsV] = degrees2pixels(1, ETparams.viewingDist, ETparams.screenSz, ETparams.screenDim);
 
 %--------------------------------------------------------------------------
 % Begin detection

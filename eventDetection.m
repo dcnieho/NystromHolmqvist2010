@@ -6,14 +6,14 @@ global ETparams
 % trials
 %--------------------------------------------------------------------------
 fprintf('%s','Detecting events')
-for i = 1%:size(ETparams.data,1)
+for i = 2%:size(ETparams.data,1)
 
     for j = 1:size(ETparams.data,2)
 %         i,j
         % Calculate velocity and acceleration
         %-------------------------------------
         if ETparams.qUseDN
-            calVelAcc_sgolay_DN(i,j)
+            ETparams.data(i,j) = calVelAcc_sgolay_DN(ETparams.data(i,j),ETparams);
         else
             calVelAcc_sgolay(i,j)
         end
