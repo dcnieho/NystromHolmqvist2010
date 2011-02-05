@@ -1,54 +1,50 @@
-function detectAndRemoveNoise(i,j)
+function [data,qnoise] = detectAndRemoveNoise(data,ETparams)
 % Detects and removes un-physiological movement (which derives from noise
 % and blinks)
-global ETparams
 
-ETparams.nanIdx(i,j).Idx = zeros(1,length(ETparams.data(i,j).X));
+V_threshold = median(data.vel)*2;
 
-V = ETparams.data(i,j).vel;
-V_threshold = median(ETparams.data(i,j).vel)*2;
-
-% Detect possible blinks and noise (where XY-coords are 0  or if the eyes move too fast)
-blinkIdx = (ETparams.data(i,j).X <= 0 & ETparams.data(i,j).Y <= 0) |...
-        ETparams.data(i,j).vel > ETparams.blinkVelocityThreshold |...
-        abs(ETparams.data(i,j).acc) > ETparams.blinkAccThreshold;
-
-% Set possible blink and noise index to '1'
-ETparams.nanIdx(i,j).Idx(blinkIdx) = 1;   
+% Detect possible blinks and noise (where XY-coords are 0 or if the eyes move too fast)
+% TODO make check more general, checking if outside screen, current doesn't
+% work for our EyeLink, which doesn't give 0 (though already nan in that
+% case)
+% do not have to process things that are already NaN
+qnoise = (data.X <= 0 & data.Y <= 0) |...
+        data.vel > ETparams.blinkVelocityThreshold |...
+        abs(data.acc) > ETparams.blinkAccThreshold;
 
 % Label blinks or noise
-blinkLabeled = bwlabel(blinkIdx);
+[noiseon,noiseoff] = findContiguousRegions(qnoise);
 
-% Process one blink or noise period at the time
-for k = 1:max(blinkLabeled)
+% Process one blink or noise period at the time, refine the bounds
+% TODO: does this sometimes delete way too much data? (if go below
+% threshold only near next noise or so.. dunno.. seems unlikely)
+for p = 1:length(noiseon)
 
-    % The samples related to the current event
-    b = find(blinkLabeled == k);
-      
     % Go back in time to see where the blink (noise) started
-    sEventIdx = find(V(b(1):-1:1) <= V_threshold);
+    sEventIdx   = find(data.vel(noiseon(p):-1:1) <= V_threshold, 1);
     if isempty(sEventIdx), continue, end
-    sEventIdx = b(1) - sEventIdx(1) + 1;
-    ETparams.nanIdx(i,j).Idx(sEventIdx:b(1)) = 1;      
+    noiseon(p)  = noiseon(p) - sEventIdx + 1;
     
     % Go forward in time to see where the blink (noise) started    
-    eEventIdx = find(V(b(end):end) <= V_threshold);
+    eEventIdx   = find(data.vel(noiseoff(p):end) <= V_threshold, 1);
     if isempty(eEventIdx), continue, end    
-    eEventIdx = (b(end) + eEventIdx(1) - 1);
-    ETparams.nanIdx(i,j).Idx(b(end):eEventIdx) = 1;
-    
+    noiseoff(p) = noiseoff(p) + eEventIdx - 1;
 end
 
-temp_idx = find(ETparams.nanIdx(i,j).Idx);
-if length(temp_idx)/length(V) > 0.20
+% create boolean matrix given refined noise bounds
+qnoise = bounds2bool(noiseon,noiseoff,length(data.vel));
+if sum(qnoise)/length(data.vel) > 0.20
     disp('Warning: This trial contains > 20 % noise+blinks samples')
-    ETparams.data(i,j).NoiseTrial = 0;
+    data.qNoiseTrial = true;
 else
-    ETparams.data(i,j).NoiseTrial = 1;
+    data.qNoiseTrial = false;
 end
-ETparams.data(i,j).vel(temp_idx) = nan;
-ETparams.data(i,j).acc(temp_idx) = nan;
-ETparams.data(i,j).X(temp_idx) = nan;
-ETparams.data(i,j).Y(temp_idx) = nan;
+% remove data that is due to noise
+data.X(qnoise) = nan;
+data.Y(qnoise) = nan;
+data.vel(qnoise) = nan;
+data.acc(qnoise) = nan;
 
-
+% store noise bounds
+data.noise = [noiseon noiseoff];

@@ -1,10 +1,12 @@
 %--------------------------------------------------------------------------
 % For usage, see the README-file.
 %--------------------------------------------------------------------------
-clear all, close all, clc
+clear all, clear global, clear functions, close all; clc
 global ETparams
 
 % TODO notes
+% - center data so that middle of screen is (0,0)
+% - filter noise based on 
 % - get rid of the global
 % - split up in multiple parts: eyemovement detection is separate from analysis, saved to file in between(as old code)
 % -   therefore do not have to worry about the current setup with 
@@ -24,11 +26,10 @@ ETparams.viewingDist = 0.67;
 ETparams.samplingFreq = 1250;
 ETparams.blinkVelocityThreshold = 1000;             % if vel > 1000 degrees/s, it is noise or blinks
 ETparams.blinkAccThreshold = 100000;                % if acc > 100000 degrees/s^2, it is noise or blinks
-ETparams.peakDetectionThreshold = 100;              % Initial value of the peak detection threshold. 
-
-ETparams.qUseDN     = false;             % if true, use DN's versions of these functions
+ETparams.peakDetectionThreshold = 100;              % Initial value of the peak detection threshold.
 
 ETparams.minFixDur = 0.040; % in seconds
+ETparams.minFixDurms = 40; % in milliseconds
 ETparams.minSaccadeDur = 0.010; % in seconds
 ETparams.minSaccadeDurms = 10; % in milliseconds
 
@@ -50,8 +51,6 @@ save([cd,'\DetectionResults\DetectionResults.mat'],'ETparams');
 %--------------------------------------------------------------------------
 
 % Calculate basic parameters
-mean(cat(1,ETparams.data.avgNoise))
-mean(cat(1,ETparams.data.stdNoise))
 mean(cat(1,ETparams.glissadeInfo.duration))
 mean(cat(1,ETparams.saccadeInfo.duration))
 mean(cat(1,ETparams.fixationInfo.duration))

@@ -1,74 +1,68 @@
-function calVelAcc_sgolay(i,j)
-global ETparams
+function data = calVelAcc_sgolay(data,ETparams)
 
-% Lowpass filter window length
-smoothInt = ETparams.minSaccadeDur; % in seconds
-
-% Span of filter
-span = ceil(smoothInt*ETparams.samplingFreq);
-
-% Calculate how many degrees one pixel spans.
-[angleInPixelsH, angleInPixelsV] = degrees2pixels(1,ETparams.viewingDist...
-    ,ETparams.screenSz,ETparams.screenDim);
-
-% Calculate unfiltered data
+% prepare parameters
 %--------------------------------------------------------------------------
-ETparams.data(i,j).Xorg = ETparams.data(i,j).X;
-ETparams.data(i,j).Yorg = ETparams.data(i,j).Y;
-
-ETparams.data(i,j).velXorg = [0 diff(ETparams.data(i,j).X)]/angleInPixelsH*ETparams.samplingFreq;
-ETparams.data(i,j).velYorg = [0 diff(ETparams.data(i,j).Y)]/angleInPixelsV*ETparams.samplingFreq;
-ETparams.data(i,j).velOrg = sqrt(ETparams.data(i,j).velXorg.^2 + ETparams.data(i,j).velYorg.^2);
+% span of filter, use minimum length of saccade
+span = ceil(ETparams.minSaccadeDurms/1000*ETparams.samplingFreq);
+% number of tabs of filter
+F = 2*ceil(span)-1;
 
 
-% Pixel values, velocities, and accelerations
+% store unfiltered data unfiltered data
 %--------------------------------------------------------------------------
-N = 2;                 % Order of polynomial fit
-F = 2*ceil(span)-1;    % Window length
-[b,g] = sgolay(N,F);   % Calculate S-G coefficients
-
-% Extract relevant gaze coordinates for the current trial.
-X = ETparams.data(i,j).X;
-Y = ETparams.data(i,j).Y;
+data.Xpix = data.X;
+data.Ypix = data.Y;
 
 
+% compute eye positions, velocities, and accelerations in pixels, convert
+% to degree
+%--------------------------------------------------------------------------
 
-
-% Calculate the velocity and acceleration
-ETparams.data(i,j).X = filter(g(:,1),1,X);
-ETparams.data(i,j).Y = filter(g(:,1),1,Y);
-
-ETparams.data(i,j).velX = filter(g(:,2),1,X);
-ETparams.data(i,j).velY = filter(g(:,2),1,Y);
-ETparams.data(i,j).vel = sqrt(ETparams.data(i,j).velX.^2 + ETparams.data(i,j).velY.^2)/angleInPixelsH*ETparams.samplingFreq;
-
-ETparams.data(i,j).accX = filter(g(:,3),1,X);
-ETparams.data(i,j).accY = filter(g(:,3),1,Y);
-ETparams.data(i,j).acc = sqrt(ETparams.data(i,j).accX.^2 + ETparams.data(i,j).accY.^2)/angleInPixelsH*ETparams.samplingFreq^2;
-
-if 0 % some debug stuff
-    [tempP,tempV,tempA] = sgFilt([ETparams.data(i,j).X; ETparams.data(i,j).Y],[0 1 2],F);
-
-    ETparams.data(i,j).X2 = tempP(1,:);
-    ETparams.data(i,j).Y2 = tempP(2,:);
-    [ETparams.data(i,j).X(13:72); ETparams.data(i,j).X2(1:60)].'
+if 0 % some debugging, can delete it
+    % this have better onset transient response and correct phase
+    X2 = sgFilt(X,0,F);
+    V2 = sgFilt(X,1,F) * ETparams.samplingFreq;
+    A2 = sgFilt(X,2,F) * ETparams.samplingFreq^2;
     
-    ETparams.data(i,j).velX2 = tempV(1,:);
-    ETparams.data(i,j).velY2 = tempV(2,:);
-    ETparams.data(i,j).vel2  = hypot(ETparams.data(i,j).velX2, ETparams.data(i,j).velY2)/angleInPixelsH*ETparams.samplingFreq;
-    [ETparams.data(i,j).velX(13:72); ETparams.data(i,j).velX2(1:60)].'
-    [ETparams.data(i,j).vel(13:72); ETparams.data(i,j).vel2(1:60)].'
+    % getvelacc from ignace
+    [V3,A3,X3] = getvelacc(X,span,ETparams.samplingFreq);
     
-    ETparams.data(i,j).accX2 = tempA(1,:);
-    ETparams.data(i,j).accY2 = tempA(2,:);
-    ETparams.data(i,j).acc2  = hypot(ETparams.data(i,j).accX2, ETparams.data(i,j).accY2)/angleInPixelsH*ETparams.samplingFreq^2;
-    [ETparams.data(i,j).acc(13:72); ETparams.data(i,j).acc(13:72)*2; ETparams.data(i,j).acc2(1:60)].'
+    ETparams.data(i,j).X = filter(g(:,1),1,X);
+    ETparams.data(i,j).Y = filter(g(:,1),1,Y);
+    ETparams.data(i,j).velX = filter(g(:,2),1,X) * ETparams.samplingFreq;
+    ETparams.data(i,j).accX = filter(g(:,3),1,X) * ETparams.samplingFreq^2;
+    plot(X,'k');                          hold on; plot(X2,'r');plot(X3,'g');plot(ETparams.data(i,j).X,'b');
+    
+    figure
+    hold on; plot(X,'k--'); plot(V2,'r'); plot(-V3,'g');plot(ETparams.data(i,j).velX,'b');
+    Xs=[X(20:40); X2(20:40); X3(20:40); ETparams.data(i,j).X(20:40)].'
+    Vs=[X(20:40); V2(20:40); V3(20:40); ETparams.data(i,j).velX(20:40)].'
+    As=[X(20:40); A2(20:40); A3(20:40); ETparams.data(i,j).accX(20:40)].'
+    pause
 end
+
+
+% Calculate the filtered position, velocity and acceleration
+[tempP,tempV,tempA] = sgFilt([data.X; data.Y],[0 1 2],F);
+
+% convert to degree and calculate derivative magnitudes
+data.X      = tempP(1,:) / ETparams.angleInPixelsH;
+data.Y      = tempP(2,:) / ETparams.angleInPixelsV;
+
+velX        = tempV(1,:) / ETparams.angleInPixelsH;
+velY        = tempV(2,:) / ETparams.angleInPixelsV;
+data.vel    = hypot(velX, velY) * ETparams.samplingFreq;
+
+accX        = tempA(1,:) / ETparams.angleInPixelsH;
+accY        = tempA(2,:) / ETparams.angleInPixelsV;
+data.acc    = hypot(accX, accY) * ETparams.samplingFreq^2;
+
+
 
 
 %%% helpers
 function varargout = sgFilt(x,difforder,ntaps)
 % wrapper for convenient syntax, fitting always using 2nd order polynomial
 for p=1:length(difforder)
-    varargout{p} = savitzkyGolayFilt(x,2,difforder(p),ntaps, [],2);
+    varargout{p} = savitzkyGolayFilt(x,2,difforder(p),ntaps, [],2);     % along second dimension (column) as that is how data is currently organized
 end

@@ -22,7 +22,7 @@ for k = 1:max(fixLabeled)
     fNoise = ETparams.data(i,j).vel(floor(fixIdx(1)+centralFixSamples):ceil(fixIdx(end)-centralFixSamples));
     fixNoise = [fixNoise fNoise];
 end
-
+% size(fixNoise)
 ETparams.data(i,j).avgNoise = nanmean(fixNoise);
 ETparams.data(i,j).stdNoise = nanstd(fixNoise);
 

@@ -1,0 +1,57 @@
+function data = estimateSaccadeVelocityThresholds(data,ETparams)
+% iteratively establishes the best velocity threshold for saccade detection
+% for this trial.
+% Given a threshold T, we take all data of the trial where the eye velocity
+% as less than T and calculate its mean and std. We then establish a new
+% threshold at V = mean + 6*std. We repeat this until the new threshold is
+% less than 1°/s lower than the old threshold.
+% The thus established velocity threshold is clos to optimal in that it
+% allows us to detect as many saccades as possible given the noise in the
+% data but does not detect too many due to possibly high noise in the data.
+
+% assign initial thresholds
+data.peakDetectionThreshold = ETparams.peakDetectionThreshold;
+previousPeakDetectionThreshold = inf;
+
+while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
+    
+    previousPeakDetectionThreshold = data.peakDetectionThreshold;
+    
+    % Find parts where the velocity is below the threshold, possible
+    % fixation time (though this is still crude)
+    qBelowThresh = data.vel < data.peakDetectionThreshold;
+    
+    % TODO: see if this part is really needed or just done to speed up
+    % iteration
+    
+    % get bounds of these detected peaks
+    [threshon,threshoff] = findContiguousRegions(qBelowThresh);
+    
+    % throw out intervals that are too short and therefore unlikely to be
+    % fixations
+    qLongEnough = (threshoff-threshon)./ETparams.samplingFreq >= ETparams.minFixDur;
+    threshon = threshon (qLongEnough);
+    threshoff= threshoff(qLongEnough);
+    
+    % shrink them as done in Nystrom's version, guess to make sure we only
+    % get data that is surely during fixation
+    centralFixSamples = ETparams.minFixDur*ETparams.samplingFreq/6;
+    threshon = threshon +floor(centralFixSamples);
+    threshoff= threshoff-ceil (centralFixSamples);
+    
+    % end TODO
+    
+    % convert to data selection indices
+    idx=bounds2ind(threshon,threshoff);
+    
+    % get mean and std of this data
+    meanVel = nanmean(data.vel(idx));
+    stdVel  = nanstd (data.vel(idx));
+    
+    % calculate new thresholds
+    data.peakDetectionThreshold  = meanVel + 6*stdVel;
+    data.saccadeVelocityTreshold = meanVel + 3*stdVel;
+end
+
+% TODO remove, this is for compatibility
+data.velPeakIdx  = data.vel > data.peakDetectionThreshold;
