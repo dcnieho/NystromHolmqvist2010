@@ -14,10 +14,10 @@ for i = i_idx
         
         hold on
         
-%         h1 = plotTrialDetectionResults(ETparams,i,j,h1,'r',-5);
-            h1 = plotTrialVelDetection(ETparams,i,j,h1,'r',-2);
+        % h1 = plotTrialDetectionResults(ETparams,i,j,h1,'r',-5);
+        h1 = plotTrialVelDetection(ETparams,i,j,h1,'r',-2);
         hold off
-        pause
+%         pause
         clf
         
     end

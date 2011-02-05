@@ -6,13 +6,17 @@ global ETparams
 % trials
 %--------------------------------------------------------------------------
 fprintf('%s','Detecting events')
-for i = 1:size(ETparams.data,1)
+for i = 1%:size(ETparams.data,1)
 
     for j = 1:size(ETparams.data,2)
 %         i,j
         % Calculate velocity and acceleration
         %-------------------------------------
-        calVelAcc_sgolay(i,j)
+        if ETparams.qUseDN
+            calVelAcc_sgolay_DN(i,j)
+        else
+            calVelAcc_sgolay(i,j)
+        end
 
         % Detect blinks and noise
         %-------------------------------------

@@ -40,7 +40,7 @@ for k = 1:max(blinkLabeled)
 end
 
 temp_idx = find(ETparams.nanIdx(i,j).Idx);
-if temp_idx/length(V) > 0.20
+if length(temp_idx)/length(V) > 0.20
     disp('Warning: This trial contains > 20 % noise+blinks samples')
     ETparams.data(i,j).NoiseTrial = 0;
 else
