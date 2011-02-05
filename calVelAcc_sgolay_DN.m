@@ -10,8 +10,8 @@ F = 2*ceil(span)-1;
 
 % store unfiltered data unfiltered data
 %--------------------------------------------------------------------------
-data.Xorg = data.X;
-data.Yorg = data.Y;
+data.Xpix = data.X;
+data.Ypix = data.Y;
 
 
 % compute eye positions, velocities, and accelerations in pixels, convert
@@ -32,9 +32,9 @@ if 0 % some debugging, can delete it
     ETparams.data(i,j).velX = filter(g(:,2),1,X) * ETparams.samplingFreq;
     ETparams.data(i,j).accX = filter(g(:,3),1,X) * ETparams.samplingFreq^2;
     plot(X,'k');                          hold on; plot(X2,'r');plot(X3,'g');plot(ETparams.data(i,j).X,'b');
+    
     figure
-
-    plot(ETparams.data(i,j).velXorg,'k'); hold on; plot(X,'k--'); plot(V2,'r'); plot(-V3,'g');plot(ETparams.data(i,j).velX,'b');
+    hold on; plot(X,'k--'); plot(V2,'r'); plot(-V3,'g');plot(ETparams.data(i,j).velX,'b');
     Xs=[X(20:40); X2(20:40); X3(20:40); ETparams.data(i,j).X(20:40)].'
     Vs=[X(20:40); V2(20:40); V3(20:40); ETparams.data(i,j).velX(20:40)].'
     As=[X(20:40); A2(20:40); A3(20:40); ETparams.data(i,j).accX(20:40)].'
@@ -45,6 +45,7 @@ end
 % Calculate the filtered position, velocity and acceleration
 [tempP,tempV,tempA] = sgFilt([data.X; data.Y],[0 1 2],F);
 
+% convert to degree and calculate derivative magnitudes
 data.X      = tempP(1,:) / ETparams.angleInPixelsH;
 data.Y      = tempP(2,:) / ETparams.angleInPixelsV;
 

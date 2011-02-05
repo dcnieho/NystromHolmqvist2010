@@ -4,6 +4,12 @@
 clear all, close all, clc
 global ETparams
 
+% TODO notes
+% - get rid of the global
+% - split up in multiple parts: eyemovement detection is separate from analysis, saved to file in between(as old code)
+% -   therefore do not have to worry about the current setup with 
+% - add switch for calculating precise eye position, based on cosine rule
+
 %--------------------------------------------------------------------------
 % Init parameters
 %--------------------------------------------------------------------------
