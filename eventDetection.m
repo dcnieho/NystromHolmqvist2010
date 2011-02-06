@@ -43,8 +43,47 @@ for i = 2%:size(ETparams.data,1)
         
         % Detect saccades (with peak detection threshold (v < v_avg_noise + 3*v_std_noise))
         % and glissades
-        %-------------------------------------            
-        detectSaccades(i,j)
+        %-------------------------------------
+        % temp: original code
+        ETparams.data(i,j).velPeakIdx  = ETparams.data(i,j).vel > ETparams.data(i,j).peakDetectionThreshold;
+        detectSaccadesOld(i,j);
+        figure; hold on;
+        plot(data.vel,'k')
+        for kk = 1:size(ETparams.saccadeInfo,3)
+            idxSaccadeEnd = ETparams.saccadeInfo(i,j,kk).end*ETparams.samplingFreq;
+            idxSaccadeStart = ETparams.saccadeInfo(i,j,kk).start*ETparams.samplingFreq;
+            
+            if ~isempty(idxSaccadeEnd )
+                plot(idxSaccadeStart,data.vel(round(idxSaccadeStart)),'bo');
+                plot(idxSaccadeEnd,data.vel(round(idxSaccadeEnd)),'ro');
+                % Plot local threshold
+%                 plot((idxSaccadeStart:idxSaccadeEnd)*convf,ones(1,length(idxSaccadeStart:idxSaccadeEnd))*ETparams.data(i,j,kk).localSaccadeVelocityTreshold,'-k','LineWidth',1);
+            end
+        end
+        
+        % Plot glissades
+        for kk = 1:size(ETparams.glissadeInfo,3)
+            idxGlissadeEnd = ETparams.saccadeInfo(i,j,kk).end*ETparams.samplingFreq +  ETparams.glissadeInfo(i,j,kk).duration*ETparams.samplingFreq;
+            if ETparams.glissadeInfo(i,j,kk).type==1
+                plot(idxGlissadeEnd,data.vel(round(idxGlissadeEnd)),'g*');
+            elseif ETparams.glissadeInfo(i,j,kk).type==2
+                plot(idxGlissadeEnd,data.vel(round(idxGlissadeEnd)),'c*');
+            end
+        end
+        ax = gca;
+        % end temp
+        data = detectSaccades(ETparams.data(i,j),ETparams);
+        % temp: make figure
+        figure,plot(data.vel,'k')
+        hold on
+%         plot([diff(data.vel) 0],'g')
+        plot(data.sacon,data.vel(data.sacon),'bo')
+        plot(data.sacoff,data.vel(data.sacoff),'ro')
+        qhighvelglissade = data.glissadetype==2;
+        plot(data.glissadeoff(~qhighvelglissade),data.vel(data.glissadeoff(~qhighvelglissade)),'g*')
+        plot(data.glissadeoff( qhighvelglissade),data.vel(data.glissadeoff( qhighvelglissade)),'c*')
+        linkaxes([ax gca]);
+        % end temp
 
         % Implicitly detect fixations
         %-------------------------------------            

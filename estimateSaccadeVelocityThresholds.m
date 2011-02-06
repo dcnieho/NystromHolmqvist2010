@@ -62,6 +62,3 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
     data.peakDetectionThreshold  = meanVel + 6*stdVel;
     data.saccadeVelocityTreshold = meanVel + 3*stdVel;
 end
-
-% TODO remove, this is for compatibility
-data.velPeakIdx  = data.vel > data.peakDetectionThreshold;

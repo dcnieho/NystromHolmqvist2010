@@ -30,6 +30,7 @@ ETparams.peakDetectionThreshold = 100;              % Initial value of the peak 
 
 ETparams.minFixDur = 0.040; % in seconds
 ETparams.minFixDurms = 40; % in milliseconds
+ETparams.glissadeSearchWindowms = 40;   % window after saccade in which we search for glissades
 ETparams.minSaccadeDur = 0.010; % in seconds
 ETparams.minSaccadeDurms = 10; % in milliseconds
 
