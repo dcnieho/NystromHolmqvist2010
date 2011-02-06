@@ -33,7 +33,6 @@ for i = 2%:size(ETparams.data,1)
 
         % iteratively find the optimal noise threshold
         %-------------------------------------
-        
         data = estimateSaccadeVelocityThresholds(ETparams.data(i,j),ETparams);
         % temporary for compatibility
         fields = fieldnames(data);

@@ -9,6 +9,9 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 % allows us to detect as many saccades as possible given the noise in the
 % data but does not detect too many due to possibly high noise in the data.
 
+% !! Call this function with two parameters, unless you know what you are
+% doing.
+
 % assign initial thresholds
 data.peakDetectionThreshold = ETparams.peakDetectionThreshold;
 previousPeakDetectionThreshold = inf;
@@ -22,25 +25,27 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
     qBelowThresh = data.vel < data.peakDetectionThreshold;
     
     if nargin==2 || qusecentralsample
-        % TODO: see if this part is really needed or just done to speed up
-        % iteration
+        % this is not just done to speed up iteration, we need to cut off
+        % the edges of the testing intervals and only use parts of the data
+        % that are likely to belong to fixations or the iteration will not
+        % converge to a lower threshold. So always use this code path (just
+        % call this function with 2 arguments), unless you want to see it
+        % for yourself.
         
         % get bounds of these detected peaks
         [threshon,threshoff] = findContiguousRegions(qBelowThresh);
         
-        % throw out intervals that are too short and therefore unlikely to be
-        % fixations
+        % throw out intervals that are too short and therefore unlikely to
+        % be fixations
         qLongEnough = (threshoff-threshon)./ETparams.samplingFreq >= ETparams.minFixDur;
         threshon = threshon (qLongEnough);
         threshoff= threshoff(qLongEnough);
         
-        % shrink them as done in Nystrom's version, guess to make sure we only
-        % get data that is surely during fixation
+        % shrink them as done in Nystrom's version, guess to make sure we
+        % only get data that is surely during fixation
         centralFixSamples = ETparams.minFixDur*ETparams.samplingFreq/6;
         threshon = threshon +floor(centralFixSamples);
         threshoff= threshoff-ceil (centralFixSamples);
-        
-        % end TODO
         
         % convert to data selection indices
         idx=bounds2ind(threshon,threshoff);
