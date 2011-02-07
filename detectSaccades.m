@@ -2,7 +2,7 @@ function data = detectSaccades(data,ETparams)
 % Detects start and end by velocity criteria
 
 %%% find where velocity data is above threshold
-qAboveThresh    = data.vel > data.peakDetectionThreshold;
+qAboveThresh    = data.deg.vel > data.peakDetectionThreshold;
 [sacon,sacoff]  = findContiguousRegions(qAboveThresh);
 
 
@@ -14,11 +14,11 @@ end
 %%% prepare algorithm parameters
 % If the peak consists of =< minPeakSamples consequtive samples, it it
 % probably noise (1/6 of the min saccade duration)
-minPeakSamples          = ceil(ETparams.minSaccadeDurms/6000        * ETparams.samplingFreq);
-minSacSamples           = ceil(ETparams.minSaccadeDurms/1000        * ETparams.samplingFreq);
-minFixSamples           = ceil(ETparams.minFixDurms/1000            * ETparams.samplingFreq);
-maxGlissadeSamples      = ceil(ETparams.maxGlissadeDurms/1000       * ETparams.samplingFreq);
-glissadeWindowSamples   = ceil(ETparams.glissadeSearchWindowms/1000 * ETparams.samplingFreq);
+minPeakSamples          = ceil(ETparams.minSaccadeDur/6000        * ETparams.samplingFreq);
+minSacSamples           = ceil(ETparams.minSaccadeDur/1000        * ETparams.samplingFreq);
+minFixSamples           = ceil(ETparams.minFixDur/1000            * ETparams.samplingFreq);
+maxGlissadeSamples      = ceil(ETparams.maxGlissadeDur/1000       * ETparams.samplingFreq);
+glissadeWindowSamples   = ceil(ETparams.glissadeSearchWindow/1000 * ETparams.samplingFreq);
 
 %%% Process one velocity peak at the time.
 % Keep a counter here of how many peaks from sacon we have processed
@@ -59,20 +59,20 @@ while kk <= length(sacon)
     % and where the acceleration is negative (which indicates a local
     % minimum in the velocity function).
     i = sacon(kk);
-    while i > 1 && ...                                          % make sure we don't run out of the data
-          (isnan(data.vel(i)) || ...                            % and that we ignore nan data
-           data.vel(i) > data.saccadeVelocityTreshold || ...    % keep searching until below saccadeVelocityTreshold
-           data.vel(i+1)-data.vel(i) > 0)                       % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
+    while i > 1 && ...                                              % make sure we don't run out of the data
+          (isnan(data.deg.vel(i)) || ...                            % and that we ignore nan data
+           data.deg.vel(i) > data.saccadeVelocityTreshold || ...    % keep searching until below saccadeVelocityTreshold
+           diff(data.deg.vel(i+[0:1])) > 0)                         % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
         i = i-1;
     end
-    sacon(kk) = i+1;                                            % velocity minimum is last sample before "acceleration" sign change
+    sacon(kk) = i+1;                                                % velocity minimum is last sample before "acceleration" sign change
     
     % Calculate local noise during 'fixation' before the saccade start (the
     % adaptive part)
     % this assumes the saccade is preceded by fixation (or at least by the
     % same eye velocity and noise level as after the saccade - its the best
     % we can do).
-    localVelNoise = data.vel(max(1,sacon(kk) - minFixSamples) : sacon(kk));
+    localVelNoise = data.deg.vel(max(1,sacon(kk) - minFixSamples) : sacon(kk));
     localVelNoise = mean(localVelNoise) + 3*std(localVelNoise);
         
     % Check whether the local vel. noise exceeds the peak vel. threshold.
@@ -87,10 +87,10 @@ while kk <= length(sacon)
     % where the acceleration is positive (which indicates a local minimum
     % in the velocity function)
     i = sacoff(kk);
-    while i < length(data.vel) && ...                           % make sure we don't run out of the data
-          (isnan(data.vel(i)) || ...                            % and that we ignore nan data
-           data.vel(i) > localSaccadeVelocityTreshold(kk) || ...% keep searching until below localSaccadeVelocityTreshold
-           data.vel(i+1)-data.vel(i) < 0)                       % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
+    while i < length(data.deg.vel) && ...                           % make sure we don't run out of the data
+          (isnan(data.deg.vel(i)) || ...                            % and that we ignore nan data
+           data.deg.vel(i) > localSaccadeVelocityTreshold(kk) || ...% keep searching until below localSaccadeVelocityTreshold
+           diff(data.deg.vel(i+[0:1])) < 0)                         % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
         i = i+1;
     end
     sacoff(kk) = i;
@@ -100,7 +100,7 @@ while kk <= length(sacon)
     % the end of this saccade as they would converge to the same saccade
     % interval. We do this now befor the final checks below as if the
     % current saccade is deleted by this check, any later saccade that will
-    % converge tot he same interval would be deleted as well.
+    % converge to the same interval would be deleted as well.
     while kk+1<=length(sacoff) &&...                                % make sure we don't run out of the data
           sacoff(kk+1) <= sacoff(kk)
         sacon (kk+1) = [];
@@ -109,7 +109,7 @@ while kk <= length(sacon)
     end
               
     % If the saccade contains NaN samples, delete it
-    if any(isnan(data.vel(sacon(kk):sacoff(kk))))
+    if any(isnan(data.deg.vel(sacon(kk):sacoff(kk))))
         sacon (kk) = [];
         sacoff(kk) = [];
         continue;
@@ -159,11 +159,11 @@ while kk <= length(sacon)
     % Search only for glissade peaks in a window after the saccade end
     % (both low and high velocity)
     % this window is also used below to assign the glissade type
-    glissadeWindow = sacoff(kk) : min(sacoff(kk) + glissadeWindowSamples, length(data.vel)-1);
+    glissadeWindow = sacoff(kk) : min(sacoff(kk) + glissadeWindowSamples, length(data.deg.vel)-1);
     
     % Detect glissade (low velocity criteria -- the adapted saccade offset
     % criterion)
-    qGlissadePeak = data.vel(glissadeWindow) >= localSaccadeVelocityTreshold(kk);
+    qGlissadePeak = data.deg.vel(glissadeWindow) >= localSaccadeVelocityTreshold(kk);
     
     % Detect only 'complete' peaks (those with a beginning and an end)
     [~,potend]  = findContiguousRegions(qGlissadePeak);
@@ -191,7 +191,7 @@ while kk <= length(sacon)
             % fine due to the mean sequence)
             % TODO change this to really using amplitude.. see detsacammpl
             % from Ignace
-            if max(data.vel(sacoff(kk):sacoff(kk+idx))) < max(data.vel(sacon(kk):sacoff(kk))) && ...
+            if max(data.deg.vel(sacoff(kk):sacoff(kk+idx))) < max(data.deg.vel(sacon(kk):sacoff(kk))) && ...
                ((~isempty(foundGlissadeOff) && sacoff(kk+idx)>foundGlissadeOff) || isempty(foundGlissadeOff)) % if we've already detected a low velocity glissade, only replace with this high velocity glissade if detected end is later
                 % found potential glissade, store it
                 foundGlissadeOff  = sacoff(kk+idx);
@@ -204,10 +204,10 @@ while kk <= length(sacon)
         % Detect end. Walk forward from detected saccade start to find
         % where the acceleration is positive (which indicates a local
         % minimum in the velocity function)
-        while foundGlissadeOff < length(data.vel) && ...                            % make sure we don't run out of the data
-              (isnan(data.vel(i)) || ...                                            % and that we ignore nan data
-               data.vel(foundGlissadeOff) > localSaccadeVelocityTreshold(kk) || ... % keep searching until below localSaccadeVelocityTreshold
-               data.vel(foundGlissadeOff+1)-data.vel(foundGlissadeOff) < 0)         % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
+        while foundGlissadeOff < length(data.deg.vel) && ...                            % make sure we don't run out of the data
+              (isnan(data.deg.vel(i)) || ...                                            % and that we ignore nan data
+               data.deg.vel(foundGlissadeOff) > localSaccadeVelocityTreshold(kk) || ... % keep searching until below localSaccadeVelocityTreshold
+               diff(data.deg.vel(foundGlissadeOff+[0:1])) < 0)                          % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
             foundGlissadeOff = foundGlissadeOff+1;
         end
         
@@ -215,14 +215,14 @@ while kk <= length(sacon)
         % do not allow glissade duration > 80 ms AND
         % the glissade should not contain any NaN samples
         if foundGlissadeOff-sacoff(kk) <= maxGlissadeSamples &&...
-           ~any(isnan(data.vel(sacoff(kk):foundGlissadeOff)))
+           ~any(isnan(data.deg.vel(sacoff(kk):foundGlissadeOff)))
             % store the glissade
             glissadeon  = [glissadeon   sacoff(kk)];
             glissadeoff = [glissadeoff  foundGlissadeOff];
             % determine type (use window of glissadeWindowSamples or less
             % if glissade is shorter) and store
             glissadeVelWindow = sacoff(kk) : min(sacoff(kk) + glissadeWindowSamples, foundGlissadeOff); % this cant go outside of data as foundGlissadeOff is always valid at this point
-            if max(data.vel(glissadeVelWindow)) > data.peakDetectionThreshold
+            if max(data.deg.vel(glissadeVelWindow)) > data.peakDetectionThreshold
                 glissadetype = [glissadetype 2];    % high velocity glissade detected ('Strong glissade detection criteria')
             else
                 glissadetype = [glissadetype 1];    % low  velocity glissade detected ('Weak   glissade detection criteria')
@@ -244,9 +244,9 @@ while kk <= length(sacon)
 end
 
 %%% output
-data.saccade.on      = sacon;
-data.saccade.off     = sacoff;
-data.saccade.localVelocityTreshold = localSaccadeVelocityTreshold;
-data.glissade.on     = glissadeon;
-data.glissade.off    = glissadeoff;
-data.glissade.type   = glissadetype;
+data.saccade .on                    = sacon;
+data.saccade .off                   = sacoff;
+data.saccade .localVelocityTreshold = localSaccadeVelocityTreshold;
+data.glissade.on                    = glissadeon;
+data.glissade.off                   = glissadeoff;
+data.glissade.type                  = glissadetype;

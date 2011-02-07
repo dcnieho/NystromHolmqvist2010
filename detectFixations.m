@@ -7,12 +7,12 @@ function data = detectFixations(data,ETparams)
 
 %%% find data that is not saccade or glissade
 [fixon,fixoff]  = findContiguousRegions(~(...
-                    bounds2bool(data.saccade.on ,data.saccade.off ,length(data.vel)) | ...
-                    bounds2bool(data.glissade.on,data.glissade.off,length(data.vel))   ...
+                    bounds2bool(data.saccade.on ,data.saccade.off ,length(data.deg.vel)) | ...
+                    bounds2bool(data.glissade.on,data.glissade.off,length(data.deg.vel))   ...
                   ));
 
 %%% prepare algorithm parameters
-minFixSamples   = ceil(ETparams.minFixDurms/1000 * ETparams.samplingFreq);
+minFixSamples   = ceil(ETparams.minFixDur/1000 * ETparams.samplingFreq);
 
 %%% Process the tentative fixations
 % Keep a counter here of how many sections from fixon we have processed
@@ -32,14 +32,14 @@ while kk <= length(fixon)
     % Exclude section if any of the samples has a velocity > peak saccade
     % threshold, it cannot be a fixation (section somehow got deleted by
     % the saccade algorithm)
-    if any(data.vel(fixon(kk):fixoff(kk)) > data.peakDetectionThreshold)
+    if any(data.deg.vel(fixon(kk):fixoff(kk)) > data.peakDetectionThreshold)
         fixon (kk) = [];
         fixoff(kk) = [];
         continue;
     end
     
     % If the fixation contains NaN samples, delete it
-    if any(isnan(data.vel(fixon(kk):fixoff(kk))))
+    if any(isnan(data.deg.vel(fixon(kk):fixoff(kk))))
         fixon (kk) = [];
         fixoff(kk) = [];
         continue;

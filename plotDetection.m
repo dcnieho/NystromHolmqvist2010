@@ -9,9 +9,9 @@ if nargin<=2 && isstruct(varargin{1})
     %%% unpack the needed variables
     data = varargin{1};
     % time series
-    xdata   = data.X;
-    ydata   = data.Y;
-    vel     = data.vel;
+    xdata   = data.deg.X;
+    ydata   = data.deg.Y;
+    vel     = data.deg.vel;
     time    = ([1:length(xdata)]-1)/data.sampleRate * 1000;
     % markers
     sacon   = data.saccade.on;
@@ -24,7 +24,7 @@ if nargin<=2 && isstruct(varargin{1})
     peakDetectionThreshold  = data.peakDetectionThreshold;
     saccadeVelocityTreshold = data.saccadeVelocityTreshold;
     localVelocityTreshold   = data.saccade.localVelocityTreshold;
-    glissadeSearchSamples   = ceil(data.glissadeSearchWindowms/data.sampleRate * 1000);
+    glissadeSearchSamples   = ceil(data.glissadeSearchWindow/data.sampleRate * 1000);
     
     if nargin==1
         titel = '';

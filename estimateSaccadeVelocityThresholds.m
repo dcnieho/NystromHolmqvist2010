@@ -13,8 +13,8 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 % doing.
 
 % prepare algorithm parameters
-minFixSamples       = ceil(ETparams.minFixDurms    /1000 * ETparams.samplingFreq);
-centralFixSamples   = ceil(ETparams.minSaccadeDurms/6000 * ETparams.samplingFreq);
+minFixSamples       = ceil(ETparams.minFixDur    /1000 * ETparams.samplingFreq);
+centralFixSamples   = ceil(ETparams.minSaccadeDur/6000 * ETparams.samplingFreq);
 
 % assign initial thresholds
 data.peakDetectionThreshold = ETparams.peakDetectionThreshold;
@@ -26,7 +26,7 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
     
     % Find parts where the velocity is below the threshold, possible
     % fixation time (though this is still crude)
-    qBelowThresh = data.vel < data.peakDetectionThreshold;
+    qBelowThresh = data.deg.vel < data.peakDetectionThreshold;
     
     if nargin==2 || qusecentralsample
         % this is not just done to speed up iteration, we need to cut off
@@ -54,11 +54,11 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
         idx=bounds2ind(threshon,threshoff);
         
         % get mean and std of this data
-        meanVel = nanmean(data.vel(idx));
-        stdVel  = nanstd (data.vel(idx));
+        meanVel = nanmean(data.deg.vel(idx));
+        stdVel  = nanstd (data.deg.vel(idx));
     else
-        meanVel = nanmean(data.vel(qBelowThresh));
-        stdVel  = nanstd (data.vel(qBelowThresh));
+        meanVel = nanmean(data.deg.vel(qBelowThresh));
+        stdVel  = nanstd (data.deg.vel(qBelowThresh));
     end
     
     % calculate new thresholds

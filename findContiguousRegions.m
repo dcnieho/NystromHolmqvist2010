@@ -1,7 +1,9 @@
 function [on,off] = findContiguousRegions(in)
-% finds all contiguous sections of true in a boolean array
+% finds all contiguous sections of true in a boolean vector (input must be
+% a vector)
 % if a non-boolean is passed in, it is first converted to boolean, so
-% anything nonzero will become true (excpet nan, which will error)
+% anything nonzero will become true (except nan, which will generate an
+% error)
 %
 % Example:
 % [on,off]=findContiguousRegions([1 0 0 0 1 1 1 0 1 1 0])
@@ -16,6 +18,11 @@ function [on,off] = findContiguousRegions(in)
 %      1     0     0     0     1     1     1     0     1     1
 %
 % See also bounds2bool
+
+assert(isvector(in),'input must be a vector');
+if size(in,1)>1
+    in = in.';
+end
 
 if ~islogical(in)
     in = logical(in);
