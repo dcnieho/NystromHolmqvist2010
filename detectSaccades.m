@@ -129,7 +129,7 @@ while kk <= length(sacon)
     
     if 0
         % TODO: I want to put all this in some other step. Now we're just
-        % astablishing beginnings and ends in the data. This information
+        % establishing beginnings and ends in the data. This information
         % collection is logically a separate analysis step, and not always
         % needed
         
@@ -174,15 +174,7 @@ while kk <= length(sacon)
     if ~isempty(potend)
         % found potential glissade, store it
         foundGlissadeOff  = sacoff(kk)+potend(end);     % glissade start is saccade end
-    end
-    
-%     if sacon(kk)>10000
-%         figure, hold on
-%         plot(10000:10250,data.vel(10000:10250),'k')
-%         plot(sacon(kk:kk+3),data.vel(sacon(kk:kk+3)),'bo')
-%         plot(sacoff(kk:kk+3),data.vel(sacoff(kk:kk+3)),'ro')
-%     end
-    
+    end    
     
     % Detect glissade (high velocity criteria). These have already been
     % picked up by saccade detection, see if any have been
@@ -251,10 +243,10 @@ while kk <= length(sacon)
     kk = kk+1;
 end
 
-% output
-data.sacon          = sacon;
-data.sacoff         = sacoff;
-data.localSaccadeVelocityTreshold = localSaccadeVelocityTreshold;
-data.glissadeon     = glissadeon;
-data.glissadeoff    = glissadeoff;
-data.glissadetype   = glissadetype;
+%%% output
+data.saccade.on      = sacon;
+data.saccade.off     = sacoff;
+data.saccade.localVelocityTreshold = localSaccadeVelocityTreshold;
+data.glissade.on     = glissadeon;
+data.glissade.off    = glissadeoff;
+data.glissade.type   = glissadetype;

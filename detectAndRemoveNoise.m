@@ -50,6 +50,3 @@ data.X(qnoise) = nan;
 data.Y(qnoise) = nan;
 data.vel(qnoise) = nan;
 data.acc(qnoise) = nan;
-
-% store noise bounds
-data.noise = [noiseon noiseoff];

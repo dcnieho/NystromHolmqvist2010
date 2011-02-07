@@ -1,53 +1,77 @@
-function detectFixations(i,j)
+function data = detectFixations(data,ETparams)
 %--------------------------------------------------------------------------
 % Fixation detection
-% Fixation are detected implicitly 
+% Fixation are detected implicitly, as sections that are not saccade or
+% glissade and also fit some other criteria
 %--------------------------------------------------------------------------
 
-global ETparams
+%%% find data that is not saccade or glissade
+[fixon,fixoff]  = findContiguousRegions(~(...
+                    bounds2bool(data.saccade.on ,data.saccade.off ,length(data.vel)) | ...
+                    bounds2bool(data.glissade.on,data.glissade.off,length(data.vel))   ...
+                  ));
 
-possibleFixationIdx = ~(ETparams.saccadeIdx(i,j).Idx | ETparams.glissadeIdx(i,j).Idx);
-fixLabeled = bwlabel(possibleFixationIdx);
+%%% prepare algorithm parameters
+minFixSamples   = ceil(ETparams.minFixDurms/1000 * ETparams.samplingFreq);
 
-% Process one fixation (or more precisely a period of gaze samples that might
-% a fixation) at the time.
+%%% Process the tentative fixations
+% Keep a counter here of how many sections from fixon we have processed
+% already. We need to use a while loop instead of a for-loop as the length
+% of the fixation vector will change as we delete from it
 kk = 1;
-ETparams.fixationIdx(i,j).Idx = zeros(1,length(ETparams.data(i,j).X));
-for k = 1:max(fixLabeled)
 
-    % The samples related to the current fixation
-    fixIdx = find(fixLabeled == k);
-    
-    % Check that the fixation duration exceeds the minimum duration criteria. 
-    if length(fixIdx)/ETparams.samplingFreq < ETparams.minFixDur
-        continue    
-    end
-       
-    % If any of the sample has a velocity > peak saccade threshold, it
-    % cannot be a fixation (missed by the saccade algorithm)
-    if any(ETparams.data(i,j).vel(fixIdx) > ETparams.data(i,j).peakDetectionThreshold)
-        continue
+while kk <= length(fixon)
+    % Check that the fixation duration exceeds the minimum duration
+    % criteria. Delete if not
+    if fixoff(kk)-fixon(kk) < minFixSamples
+        fixon (kk) = [];
+        fixoff(kk) = [];
+        continue;
     end
     
-    % If the saccade contains NaN samples, continue
-    if any(ETparams.nanIdx(i,j).Idx(fixIdx)), continue, end
+    % Exclude section if any of the samples has a velocity > peak saccade
+    % threshold, it cannot be a fixation (section somehow got deleted by
+    % the saccade algorithm)
+    if any(data.vel(fixon(kk):fixoff(kk)) > data.peakDetectionThreshold)
+        fixon (kk) = [];
+        fixoff(kk) = [];
+        continue;
+    end
     
-    % If all the above criteria are fulfilled, label it as a fixation.
-    ETparams.fixationIdx(i,j).Idx(fixIdx) = 1;
+    % If the fixation contains NaN samples, delete it
+    if any(isnan(data.vel(fixon(kk):fixoff(kk))))
+        fixon (kk) = [];
+        fixoff(kk) = [];
+        continue;
+    end
     
-    % Calculate the position of the fixation
-    ETparams.fixationInfo(i,j,kk).X = nanmean(ETparams.data(i,j).X(fixIdx));
-    ETparams.fixationInfo(i,j,kk).Y = nanmean(ETparams.data(i,j).Y(fixIdx));
-
-    % Collect information about the fixation
-    fixationStartIdx = fixIdx(1);
-    fixationEndIdx = fixIdx(end);
-
-    ETparams.fixationInfo(i,j,kk).start = fixationStartIdx/ETparams.samplingFreq; % in ms
-    ETparams.fixationInfo(i,j,kk).end = fixationEndIdx/ETparams.samplingFreq; % in ms
-    ETparams.fixationInfo(i,j,kk).duration = ETparams.fixationInfo(i,j,kk).end - ETparams.fixationInfo(i,j,kk).start;
+    %%%%
+    % Done. All the above criteria are fulfilled, we've got a fixation.
+    %%%%
     
+    if 0
+        % TODO: I want to put all this in some other step. Now we're just
+        % establishing beginnings and ends in the data. This information
+        % collection is logically a separate analysis step, and not always
+        % needed
+        
+        % Calculate the position of the fixation
+        ETparams.fixationInfo(i,j,kk).X = nanmean(ETparams.data(i,j).X(fixIdx));
+        ETparams.fixationInfo(i,j,kk).Y = nanmean(ETparams.data(i,j).Y(fixIdx));
+        
+        % Collect information about the fixation
+        fixationStartIdx = fixIdx(1);
+        fixationEndIdx = fixIdx(end);
+        
+        ETparams.fixationInfo(i,j,kk).start = fixationStartIdx/ETparams.samplingFreq; % in ms
+        ETparams.fixationInfo(i,j,kk).end = fixationEndIdx/ETparams.samplingFreq; % in ms
+        ETparams.fixationInfo(i,j,kk).duration = ETparams.fixationInfo(i,j,kk).end - ETparams.fixationInfo(i,j,kk).start;
+    end
+    
+    % increase counter, process next section
     kk = kk+1;
-    
 end
 
+%%% output
+data.fixation.on    = fixon;
+data.fixation.off   = fixoff;
