@@ -12,9 +12,9 @@ global ETparams
 % -   therefore do not have to worry about the current setup with 
 % - add switch for calculating precise eye position, based on cosine rule
 
-%--------------------------------------------------------------------------
-% Init parameters
-%--------------------------------------------------------------------------
+%%-------------------------------------------------------------------------
+%%% Init parameters
+%%-------------------------------------------------------------------------
 load('1250Hz_3_Participants.mat');
 
 ETparams.data = ETdata;
@@ -40,18 +40,41 @@ ETparams.minFixDurms = 40; % in milliseconds
 % Calculate how many degrees one pixel spans.
 [ETparams.angleInPixelsH, ETparams.angleInPixelsV] = degrees2pixels(1, ETparams.viewingDist, ETparams.screenSz, ETparams.screenDim);
 
-%--------------------------------------------------------------------------
-% Begin detection
-%--------------------------------------------------------------------------
+%%-------------------------------------------------------------------------
+%%% Begin detection
+%%-------------------------------------------------------------------------
 
-% Process data
-eventDetection
+%--------------------------------------------------------------------------
+% Process eye-movement data for file (participant) and trial separately, i - files, j -
+% trials
+%--------------------------------------------------------------------------
+for i = 1:size(ETparams.data,1)
+    for j = 1:size(ETparams.data,2)
+        % Process data
+        fprintf('Subj %d, Trial %d\n',i,j);
+        data = eventDetection(ETparams.data(i,j),ETparams);
+        
+        if 1
+            % plot the trial (eye X, eye Y, velocity traces and scanpath,
+            % as well as detected events (TODO: scanpath)
+            data.sampleRate = ETparams.samplingFreq;
+            data.glissadeSearchWindowms = ETparams.glissadeSearchWindowms;
+            fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+            plotDetection(data);
+            set(fhndl,'Visible','on');  % assert visibility to bring window to front again after keypress
+            pause
+            if ~ishghandle(fhndl)
+                break;
+            end
+        end
+    end
+end
 
 save([cd,'\DetectionResults\DetectionResults.mat'],'ETparams');
 
-%--------------------------------------------------------------------------
-% Plot results
-%--------------------------------------------------------------------------
+%%-------------------------------------------------------------------------
+%%% Plot results
+%%-------------------------------------------------------------------------
 
 % Calculate basic parameters
 mean(cat(1,ETparams.glissadeInfo.duration))
@@ -67,6 +90,3 @@ xlabel('Saccade duration (s)'),ylabel('Number of saccades')
 figure
 hist(cat(1,ETparams.fixationInfo.duration),100)
 xlabel('Fixation duration (s)'),ylabel('Number of fixations')
-
-
-plotResultsVel(ETparams,2,4)

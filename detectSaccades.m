@@ -87,7 +87,7 @@ while kk <= length(sacon)
     % where the acceleration is positive (which indicates a local minimum
     % in the velocity function)
     i = sacoff(kk);
-    while i < length(data.vel)-1 && ...                         % make sure we don't run out of the data
+    while i < length(data.vel) && ...                           % make sure we don't run out of the data
           (isnan(data.vel(i)) || ...                            % and that we ignore nan data
            data.vel(i) > localSaccadeVelocityTreshold(kk) || ...% keep searching until below localSaccadeVelocityTreshold
            data.vel(i+1)-data.vel(i) < 0)                       % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
@@ -101,7 +101,7 @@ while kk <= length(sacon)
     % interval. We do this now befor the final checks below as if the
     % current saccade is deleted by this check, any later saccade that will
     % converge tot he same interval would be deleted as well.
-    while kk+1<length(sacoff) &&...                             % make sure we don't run out of the data
+    while kk+1<=length(sacoff) &&...                                % make sure we don't run out of the data
           sacoff(kk+1) <= sacoff(kk)
         sacon (kk+1) = [];
         sacoff(kk+1) = [];
@@ -150,7 +150,7 @@ while kk <= length(sacon)
 
     
     %----------------------------------------------------------------------  
-    % DETECT GLISSADE (ETparams.glissadeInfo(i,j,kk).type
+    % DETECT GLISSADE
     %----------------------------------------------------------------------
     
     % store glissades found in this interval, marked for post processing
@@ -204,7 +204,7 @@ while kk <= length(sacon)
         % Detect end. Walk forward from detected saccade start to find
         % where the acceleration is positive (which indicates a local
         % minimum in the velocity function)
-        while foundGlissadeOff < length(data.vel)-1 && ...                          % make sure we don't run out of the data
+        while foundGlissadeOff < length(data.vel) && ...                            % make sure we don't run out of the data
               (isnan(data.vel(i)) || ...                                            % and that we ignore nan data
                data.vel(foundGlissadeOff) > localSaccadeVelocityTreshold(kk) || ... % keep searching until below localSaccadeVelocityTreshold
                data.vel(foundGlissadeOff+1)-data.vel(foundGlissadeOff) < 0)         % and acceleration is positive (we need to take this derivative locally as our acceleration signal is absolute)
@@ -230,7 +230,7 @@ while kk <= length(sacon)
             % now, remove all next items in saccade vector that end before
             % end of this glissade. This also deletes the next saccade if
             % above we detected it to be a high velocity glissade
-            while kk+1<length(sacoff) &&...                             % make sure we don't run out of the data
+            while kk+1<=length(sacoff) &&...                            % make sure we don't run out of the data
                   sacoff(kk+1) <= glissadeoff(end)
                 sacon (kk+1) = [];
                 sacoff(kk+1) = [];
