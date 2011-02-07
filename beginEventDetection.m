@@ -28,9 +28,6 @@ ETparams.blinkVelocityThreshold = 1000;             % if vel > 1000 degrees/s, i
 ETparams.blinkAccThreshold = 100000;                % if acc > 100000 degrees/s^2, it is noise or blinks
 ETparams.peakDetectionThreshold = 100;              % Initial value of the peak detection threshold.
 
-ETparams.minFixDur = 0.040; % in seconds
-ETparams.minSaccadeDur = 0.010; % in seconds
-
 ETparams.minSaccadeDurms = 10; % in milliseconds
 ETparams.glissadeSearchWindowms = 40;   % window after saccade in which we search for glissades, in milliseconds
 ETparams.maxGlissadeDurms = 80;   % in milliseconds
