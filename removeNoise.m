@@ -3,7 +3,7 @@ function [data,qnoise] = removeNoise(data,ETparams)
 % and blinks)
 
 %%% prepare algorithm parameters
-minFixSamples   = ceil(ETparams.minFixDur/1000 * ETparams.samplingFreq);
+minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 V_threshold     = median(data.deg.vel)*2;
 
 % Detect possible blinks and noise (where XY-coords are 0 or if the eyes move too fast)
@@ -12,8 +12,8 @@ V_threshold     = median(data.deg.vel)*2;
 % case)
 % do not have to process things that are already NaN
 qnoise = (data.deg.X <= 0 & data.deg.Y <= 0) |...
-             data.deg.vel  > ETparams.blinkVelocityThreshold |...
-         abs(data.deg.acc) > ETparams.blinkAccThreshold;
+             data.deg.vel  > ETparams.blink.velocityThreshold |...
+         abs(data.deg.acc) > ETparams.blink.accThreshold;
 
 % find bounds of blinks or noise as detected above
 [noiseon,noiseoff]      = findContiguousRegions(qnoise);

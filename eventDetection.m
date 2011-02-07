@@ -22,7 +22,7 @@ data = prepareData(x,y,ETparams);
 
 % Calculate velocity and acceleration
 %-------------------------------------
-data = calVelAcc_sgolay(data,ETparams);
+data = filterDataAndCalcDerivative(data,ETparams);
 
 % Detect blinks and noise
 %-------------------------------------

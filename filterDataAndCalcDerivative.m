@@ -1,9 +1,9 @@
-function data = calVelAcc_sgolay(data,ETparams)
+function data = filterDataAndCalcDerivative(data,ETparams)
 
 % prepare parameters
 %--------------------------------------------------------------------------
 % span of filter, use minimum length of saccade
-span = ceil(ETparams.minSaccadeDur/1000*ETparams.samplingFreq);
+span = ceil(ETparams.saccade.minDur/1000*ETparams.samplingFreq);
 % number of tabs of filter
 F = 2*ceil(span)-1;
 

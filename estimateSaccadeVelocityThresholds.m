@@ -13,20 +13,20 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 % doing.
 
 % prepare algorithm parameters
-minFixSamples       = ceil(ETparams.minFixDur    /1000 * ETparams.samplingFreq);
-centralFixSamples   = ceil(ETparams.minSaccadeDur/6000 * ETparams.samplingFreq);
+minFixSamples       = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
+centralFixSamples   = ceil(ETparams.saccade.minDur /6000 * ETparams.samplingFreq);
 
 % assign initial thresholds
-data.peakDetectionThreshold = ETparams.peakDetectionThreshold;
+data.saccade.peakVelocityThreshold = ETparams.saccade.peakVelocityThreshold;
 previousPeakDetectionThreshold = inf;
 
-while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
+while previousPeakDetectionThreshold - data.saccade.peakVelocityThreshold > 1
     
-    previousPeakDetectionThreshold = data.peakDetectionThreshold;
+    previousPeakDetectionThreshold = data.saccade.peakVelocityThreshold;
     
     % Find parts where the velocity is below the threshold, possible
     % fixation time (though this is still crude)
-    qBelowThresh = data.deg.vel < data.peakDetectionThreshold;
+    qBelowThresh = data.deg.vel < data.saccade.peakVelocityThreshold;
     
     if nargin==2 || qusecentralsample
         % this is not just done to speed up iteration, we need to cut off
@@ -62,6 +62,6 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
     end
     
     % calculate new thresholds
-    data.peakDetectionThreshold  = meanVel + 6*stdVel;
-    data.saccadeVelocityTreshold = meanVel + 3*stdVel;
+    data.saccade.peakVelocityThreshold  = meanVel + 6*stdVel;
+    data.saccade.onsetVelocityTreshold  = meanVel + 3*stdVel;
 end

@@ -12,7 +12,7 @@ function data = detectFixations(data,ETparams)
                   ));
 
 %%% prepare algorithm parameters
-minFixSamples   = ceil(ETparams.minFixDur/1000 * ETparams.samplingFreq);
+minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 
 %%% Process the tentative fixations
 % Keep a counter here of how many sections from fixon we have processed
@@ -32,7 +32,7 @@ while kk <= length(fixon)
     % Exclude section if any of the samples has a velocity > peak saccade
     % threshold, it cannot be a fixation (section somehow got deleted by
     % the saccade algorithm)
-    if any(data.deg.vel(fixon(kk):fixoff(kk)) > data.peakDetectionThreshold)
+    if any(data.deg.vel(fixon(kk):fixoff(kk)) > data.saccade.peakVelocityThreshold)
         fixon (kk) = [];
         fixoff(kk) = [];
         continue;

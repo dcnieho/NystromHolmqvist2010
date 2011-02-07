@@ -21,10 +21,10 @@ if nargin<=2 && isstruct(varargin{1})
     fixon   = data.fixation.on;
     fixoff  = data.fixation.off;
     % thresholds
-    peakDetectionThreshold  = data.peakDetectionThreshold;
-    saccadeVelocityTreshold = data.saccadeVelocityTreshold;
-    localVelocityTreshold   = data.saccade.localVelocityTreshold;
-    glissadeSearchSamples   = ceil(data.glissadeSearchWindow/data.sampleRate * 1000);
+    saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
+    saccadeOnsetVelocityTreshold    = data.saccade.onsetVelocityTreshold;
+    saccadeOffsetVelocityTreshold   = data.saccade.offsetVelocityTreshold;
+    glissadeSearchSamples           = ceil(data.glissadeSearchWindow/data.sampleRate * 1000);
     
     if nargin==1
         titel = '';
@@ -67,10 +67,10 @@ plotWithMark(time,vel,...                                               % data (
             );
 % add detection thresholds
 hold on;
-plot(mmt,[1 1]*peakDetectionThreshold,'r--')
-plot(mmt,[1 1]*saccadeVelocityTreshold,'r:')
+plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
+plot(mmt,[1 1]*saccadeOnsetVelocityTreshold,'r:')
 for p=1:length(sacoff)
-    plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*localVelocityTreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere insde and index expression!
+    plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityTreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere insde and index expression!
 end
 hold off;
 axis([mmt(1) mmt(2) 0 max(vel)]);
