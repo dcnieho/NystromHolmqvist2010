@@ -11,6 +11,11 @@ function idx = bounds2ind(lo, hi)
 
    % check number of input arguments
    error(nargchk(2, 2, nargin));
+   
+   if isempty(lo)
+       idx = [];
+       return;
+   end
 
    % keep only runs of positive length.
    i = lo <= hi;

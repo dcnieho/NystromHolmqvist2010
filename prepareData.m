@@ -14,7 +14,7 @@ data.pix.Y = y(:);
 % TODO convert to degrees
 % if assumeTangentLinearity
 % Calculate how many degrees one pixel spans.
-[angleInPixelsH, angleInPixelsV] = degrees2pixels(1, ETparams.screen.viewingDist, ETparams.screen.resolution, ETparams.screen.size);
+[angleInPixelsH, angleInPixelsV] = degrees2pixels(1, ETparams.screen.viewingDist, ETparams.screen.res.pix, ETparams.screen.size);
 data.deg.Xori   = data.pix.X / angleInPixelsH;
 data.deg.Yori   = data.pix.Y / angleInPixelsV;
 % else complicated model to compute eccentricity from straight ahead

@@ -49,25 +49,6 @@ while kk <= length(fixon)
     % Done. All the above criteria are fulfilled, we've got a fixation.
     %%%%
     
-    if 0
-        % TODO: I want to put all this in some other step. Now we're just
-        % establishing beginnings and ends in the data. This information
-        % collection is logically a separate analysis step, and not always
-        % needed
-        
-        % Calculate the position of the fixation
-        ETparams.fixationInfo(i,j,kk).X = nanmean(ETparams.data(i,j).X(fixIdx));
-        ETparams.fixationInfo(i,j,kk).Y = nanmean(ETparams.data(i,j).Y(fixIdx));
-        
-        % Collect information about the fixation
-        fixationStartIdx = fixIdx(1);
-        fixationEndIdx = fixIdx(end);
-        
-        ETparams.fixationInfo(i,j,kk).start = fixationStartIdx/ETparams.samplingFreq; % in ms
-        ETparams.fixationInfo(i,j,kk).end = fixationEndIdx/ETparams.samplingFreq; % in ms
-        ETparams.fixationInfo(i,j,kk).duration = ETparams.fixationInfo(i,j,kk).end - ETparams.fixationInfo(i,j,kk).start;
-    end
-    
     % increase counter, process next section
     kk = kk+1;
 end

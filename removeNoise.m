@@ -61,12 +61,14 @@ for p=length(dataon):-1:1
         continue;
     end
 end
-noiseidxs = bounds2ind(dataon,dataoff);
-% remove useless data
-data.deg.X(noiseidxs)   = nan;
-data.deg.Y(noiseidxs)   = nan;
-data.deg.vel(noiseidxs) = nan;
-data.deg.acc(noiseidxs) = nan;
+if ~isempty(dataon)
+    noiseidxs = bounds2ind(dataon,dataoff);
+    % remove useless data
+    data.deg.X(noiseidxs)   = nan;
+    data.deg.Y(noiseidxs)   = nan;
+    data.deg.vel(noiseidxs) = nan;
+    data.deg.acc(noiseidxs) = nan;
+end
 
 % lastly, notify if more than 20% nan
 if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20

@@ -2,17 +2,35 @@ function plotDetection(varargin)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and subplot
-% Two call syntaxes, one with all data in a struct, the other with all
-% argument separately
+% Two call syntaxes, one with most data in a struct, the other with all
+% argument separately:
+% plotDetection(data, sampleRate, glissadeSearchWindow, res, title)
+% - data: see below for the fields it needs to contain, they're all
+%         unpacked in the same place so its easy to see
+% - sampleRate
+% - glissadeSearchWindow: in milliseconds
+% - res: resolution of window (currently in degree), [x y]
+% - title: can be empty
 
-if nargin<=2 && isstruct(varargin{1})
+if nargin<=5 && isstruct(varargin{1})
     %%% unpack the needed variables
-    data = varargin{1};
+    if nargin==5
+        titel = varargin{5};
+    elseif nargin==4
+        titel = '';
+    else
+        error('not enough input arguments');
+    end
+    
+    data                 = varargin{1};
+    sampleRate           = varargin{2};
+    glissadeSearchWindow = varargin{3};
+    res                  = varargin{4};
     % time series
     xdata   = data.deg.X;
     ydata   = data.deg.Y;
     vel     = data.deg.vel;
-    time    = ([1:length(xdata)]-1)/data.sampleRate * 1000;
+    time    = ([1:length(xdata)]-1)/sampleRate * 1000;
     % markers
     sacon   = data.saccade.on;
     sacoff  = data.saccade.off;
@@ -20,24 +38,23 @@ if nargin<=2 && isstruct(varargin{1})
     glistyp = data.glissade.type;
     fixon   = data.fixation.on;
     fixoff  = data.fixation.off;
+    xfixpos = data.fixation.meanX;
+    yfixpos = data.fixation.meanY;
     % thresholds
     saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
     saccadeOnsetVelocityTreshold    = data.saccade.onsetVelocityTreshold;
     saccadeOffsetVelocityTreshold   = data.saccade.offsetVelocityTreshold;
-    glissadeSearchSamples           = ceil(data.glissadeSearchWindow/data.sampleRate * 1000);
-    
-    if nargin==1
-        titel = '';
-    else
-        titel = varargin{2};
-    end
+    glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
+else
+    assert(nargin>34) %TODO
 end
 
-% determine axis limits
+
+%%% determine axis limits
 mmxy = minMax2(xdata,ydata);
 mmt  = [min(time) max(time)];
 
-% plot X trace with fixation markers
+%%% plot X trace with fixation markers
 ax = subplot('position',[0.10 0.84 0.80 0.12]);
 plotWithMark(time,xdata,...                                             % data (y,x)
              'time (ms) - fixations','Horizontal (°)',titel,...         % y-axis label, x-axis label, axis title
@@ -77,3 +94,26 @@ axis([mmt(1) mmt(2) 0 max(vel)]);
 
 % link x-axis (time) of the three timeseries for easy viewing
 linkaxes([ax ay av],'x');
+
+
+%%% plot scanpath of raw data and of fixations
+asr = subplot('position',[0.55 0.04 0.40 0.40]);
+plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
+             'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
+             [1:length(xfixpos)],{'go','MarkerFaceColor','g' ,'MarkerSize',4}...    % mark each fixation (that is marker on each datapoint we feed it
+            );
+axis([0 res(1) 0 res(2)]);
+axis ij
+
+asf = subplot('position',[0.10 0.04 0.40 0.40]);
+plotWithMark(xdata,ydata,...                                            % data (y,x)
+             'Hor (°)','Ver (°)','' ...                                 % y-axis label, x-axis label, axis title
+            );
+axis([0 res(1) 0 res(2)]);
+axis ij
+
+% link view of the two scanpath plots for easy viewing
+linkaxes([asr asf],'xy');
+
+
+zoom on;

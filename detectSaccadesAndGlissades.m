@@ -1,4 +1,4 @@
-function data = detectSaccades(data,ETparams)
+function data = detectSaccadesAndGlissades(data,ETparams)
 % Detects start and end by velocity criteria
 
 %%% find where velocity data is above threshold
@@ -127,27 +127,7 @@ while kk <= length(sacon)
     % Done. All the above criteria are fulfilled, we've got a saccade.
     %%%%
     
-    if 0
-        % TODO: I want to put all this in some other step. Now we're just
-        % establishing beginnings and ends in the data. This information
-        % collection is logically a separate analysis step, and not always
-        % needed
-        
-        % If all the above criteria are fulfilled, label it as a saccade.
-        ETparams.saccadeIdx(i,j).Idx(saccadeStartIdx:saccadeEndIdx) = 1;
-        
-        % Collect information about the saccade
-        ETparams.saccadeInfo(i,j,kk).start = saccadeStartIdx/ETparams.samplingFreq; % in ms
-        ETparams.saccadeInfo(i,j,kk).end = saccadeEndIdx/ETparams.samplingFreq; % in ms
-        ETparams.saccadeInfo(i,j,kk).duration = ETparams.saccadeInfo(i,j,kk).end - ETparams.saccadeInfo(i,j,kk).start;
-        ETparams.saccadeInfo(i,j,kk).amplitude = sqrt(((ETparams.data(i,j).X(saccadeEndIdx)-...
-            (ETparams.data(i,j).X(saccadeStartIdx))))^2 + ...
-            ((ETparams.data(i,j).Y(saccadeEndIdx)-...
-            (ETparams.data(i,j).Y(saccadeStartIdx))))^2   );
-        ETparams.saccadeInfo(i,j,kk).peakVelocity = max(V(saccadeStartIdx:saccadeEndIdx));
-        ETparams.saccadeInfo(i,j,kk).peakAcceleration = max(A(saccadeStartIdx:saccadeEndIdx));
-    end
-
+    
     
     %----------------------------------------------------------------------  
     % DETECT GLISSADE
