@@ -11,15 +11,15 @@ V_threshold     = median(data.deg.vel)*2;
 % work for our EyeLink, which doesn't give 0 (though already nan in that
 % case)
 % do not have to process things that are already NaN
-qnoise = (data.deg.X <= 0 & data.deg.Y <= 0) |...
+qnoise = (data.pix.X == 0 & data.pix.Y == 0) |...
              data.deg.vel  > ETparams.blink.velocityThreshold |...
          abs(data.deg.acc) > ETparams.blink.accThreshold;
 
 % find bounds of blinks or noise as detected above
-[noiseon,noiseoff]      = findContiguousRegions(qnoise);
+[noiseon,noiseoff]      = bool2bounds(qnoise);
 
 % find bounds of data above threshold
-[threshon,threshoff]    = findContiguousRegions(data.deg.vel > V_threshold);
+[threshon,threshoff]    = bool2bounds(data.deg.vel > V_threshold);
 
 % Process one blink or noise period at the time, refine the bounds
 % We refine using the velocity threshold crosses computed on top. As this
@@ -51,7 +51,7 @@ data.deg.acc(qnoise)    = nan;
 % second pass: find those sections of data enclosed in nans that are too
 % short to be meaningful (less than minimum fixation duration) and delete
 % those too
-[dataon,dataoff] = findContiguousRegions(~isnan(data.deg.vel));
+[dataon,dataoff] = bool2bounds(~isnan(data.deg.vel));
 for p=length(dataon):-1:1
     % Check that the section of data is longer than the minimum fixation
     % duration. Keep the indices if not so we can delete it later

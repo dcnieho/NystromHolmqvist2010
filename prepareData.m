@@ -6,16 +6,27 @@ function data = prepareData(x,y,ETparams)
 data.pix.X = x(:);
 data.pix.Y = y(:);
 
-% TODO: move origin to center of screen, unless option says something more
-% complicated
+% flip X if specified
+if ETparams.data.qFlipX
+    data.pix.X = -data.pix.X + ETparams.screen.resolution(1);
+end
+% flip Y if specified
+if ETparams.data.qFlipY
+    data.pix.Y = -data.pix.Y + ETparams.screen.resolution(2);
+end
 
-% TODO flip Y if specified
+% move origin to point on screen straight ahead of subject
+data.pix.X = data.pix.X - ETparams.screen.subjectStraightAhead(1);
+data.pix.Y = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
-% TODO convert to degrees
-% if assumeTangentLinearity
-% Calculate how many degrees one pixel spans.
-[angleInPixelsH, angleInPixelsV] = degrees2pixels(1, ETparams.screen.viewingDist, ETparams.screen.res.pix, ETparams.screen.size);
-data.deg.Xori   = data.pix.X / angleInPixelsH;
-data.deg.Yori   = data.pix.Y / angleInPixelsV;
-% else complicated model to compute eccentricity from straight ahead
-% correctly using cosine rule
+% convert eye position to eccentricity from straight ahead in degrees
+% convert pixels to cm away from origin
+pixPerMeter = ETparams.screen.resolution ./ ETparams.screen.size;
+px          = data.pix.X ./ pixPerMeter(1);
+py          = data.pix.Y ./ pixPerMeter(2);
+% convert to spherical system in radian
+[dx,dy] = cart2sph(ETparams.screen.viewingDist,px,py);
+
+% convert to degrees
+data.deg.Xori   = dx./pi*180;
+data.deg.Yori   = dy./pi*180;

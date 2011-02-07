@@ -9,8 +9,10 @@ function plotDetection(varargin)
 %         unpacked in the same place so its easy to see
 % - sampleRate
 % - glissadeSearchWindow: in milliseconds
-% - res: resolution of window (currently in degree), [x y]
+% - rect: extends of screen window, [upper left (x,y) lower right (x,y)].
 % - title: can be empty
+% TODO: make way to select pixels or degrees for plotting (except velocity,
+% which is always plotted in °/s
 
 if nargin<=5 && isstruct(varargin{1})
     %%% unpack the needed variables
@@ -25,7 +27,7 @@ if nargin<=5 && isstruct(varargin{1})
     data                 = varargin{1};
     sampleRate           = varargin{2};
     glissadeSearchWindow = varargin{3};
-    res                  = varargin{4};
+    rect                 = varargin{4};
     % time series
     xdata   = data.deg.X;
     ydata   = data.deg.Y;
@@ -50,8 +52,7 @@ else
 end
 
 
-%%% determine axis limits
-mmxy = minMax2(xdata,ydata);
+%%% determine time axis limits
 mmt  = [min(time) max(time)];
 
 %%% plot X trace with fixation markers
@@ -61,7 +62,7 @@ plotWithMark(time,xdata,...                                             % data (
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
              fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
             );
-axis([mmt(1) mmt(2) mmxy(1) mmxy(2)]);
+axis([mmt(1) mmt(2) rect(1) rect(3)]);
 
 % plot Y trace with fixation markers
 ay = subplot('position',[0.10 0.68 0.80 0.12]);
@@ -70,7 +71,7 @@ plotWithMark(time,ydata,...                                             % data (
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
              fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
             );
-axis([mmt(1) mmt(2) mmxy(1) mmxy(2)]);
+axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
 % plot velocity trace with saccade and glissade markers
 qhighvelglissade = glistyp==2;      % determine glissade type: 1 is low velocity, 2 is high velocity
@@ -102,14 +103,14 @@ plotWithMark(xfixpos,yfixpos,...                                                
              'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
              [1:length(xfixpos)],{'go','MarkerFaceColor','g' ,'MarkerSize',4}...    % mark each fixation (that is marker on each datapoint we feed it
             );
-axis([0 res(1) 0 res(2)]);
+axis(rect([1 3 2 4]));
 axis ij
 
 asf = subplot('position',[0.10 0.04 0.40 0.40]);
 plotWithMark(xdata,ydata,...                                            % data (y,x)
              'Hor (°)','Ver (°)','' ...                                 % y-axis label, x-axis label, axis title
             );
-axis([0 res(1) 0 res(2)]);
+axis(rect([1 3 2 4]));
 axis ij
 
 % link view of the two scanpath plots for easy viewing

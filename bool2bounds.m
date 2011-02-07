@@ -1,4 +1,4 @@
-function [on,off] = findContiguousRegions(in)
+function [on,off] = bool2bounds(in)
 % finds all contiguous sections of true in a boolean vector (input must be
 % a vector)
 % if a non-boolean is passed in, it is first converted to boolean, so
@@ -6,7 +6,7 @@ function [on,off] = findContiguousRegions(in)
 % error)
 %
 % Example:
-% [on,off]=findContiguousRegions([1 0 0 0 1 1 1 0 1 1 0])
+% [on,off]=bool2bounds([1 0 0 0 1 1 1 0 1 1 0])
 % on  =
 %      1     5     9
 % off =

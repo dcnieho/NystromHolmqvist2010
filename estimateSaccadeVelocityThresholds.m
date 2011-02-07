@@ -37,7 +37,7 @@ while previousPeakDetectionThreshold - data.saccade.peakVelocityThreshold > 1
         % for yourself.
         
         % get bounds of these detected peaks
-        [threshon,threshoff] = findContiguousRegions(qBelowThresh);
+        [threshon,threshoff] = bool2bounds(qBelowThresh);
         
         % throw out intervals that are too short and therefore unlikely to
         % be fixations

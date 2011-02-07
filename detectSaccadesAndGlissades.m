@@ -3,7 +3,7 @@ function data = detectSaccadesAndGlissades(data,ETparams)
 
 %%% find where velocity data is above threshold
 qAboveThresh    = data.deg.vel > data.saccade.peakVelocityThreshold;
-[sacon,sacoff]  = findContiguousRegions(qAboveThresh);
+[sacon,sacoff]  = bool2bounds(qAboveThresh);
 
 
 % If no saccades are detected, return
@@ -146,7 +146,7 @@ while kk <= length(sacon)
     qGlissadePeak = data.deg.vel(glissadeWindow) >= saccadeOffsetVelocityTreshold(kk);
     
     % Detect only 'complete' peaks (those with a beginning and an end)
-    [~,potend]  = findContiguousRegions(qGlissadePeak);
+    [~,potend] = bool2bounds(qGlissadePeak);
     % delete end of data that if it is detected -> glissade doesn't end
     % before end of window
     potend(potend==length(glissadeWindow)) = [];
