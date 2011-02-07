@@ -41,8 +41,8 @@ while previousPeakDetectionThreshold - data.peakDetectionThreshold > 1
         threshon = threshon (qLongEnough);
         threshoff= threshoff(qLongEnough);
         
-        % shrink them as done in Nystrom's version, guess to make sure we
-        % only get data that is surely during fixation
+        % shrink them as done in Nystrom's version, to make sure we don't
+        % catch the data that is still during the saccade
         centralFixSamples = ETparams.minFixDur*ETparams.samplingFreq/6;
         threshon = threshon +floor(centralFixSamples);
         threshoff= threshoff-ceil (centralFixSamples);

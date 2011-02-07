@@ -57,7 +57,7 @@ for i = 2%:size(ETparams.data,1)
                 plot(idxSaccadeStart,data.vel(round(idxSaccadeStart)),'bo');
                 plot(idxSaccadeEnd,data.vel(round(idxSaccadeEnd)),'ro');
                 % Plot local threshold
-%                 plot((idxSaccadeStart:idxSaccadeEnd)*convf,ones(1,length(idxSaccadeStart:idxSaccadeEnd))*ETparams.data(i,j,kk).localSaccadeVelocityTreshold,'-k','LineWidth',1);
+                plot((idxSaccadeStart:idxSaccadeEnd)*convf,ones(1,length(idxSaccadeStart:idxSaccadeEnd))*ETparams.data(i,j,kk).localSaccadeVelocityTreshold,'-k');
             end
         end
         
@@ -70,18 +70,28 @@ for i = 2%:size(ETparams.data,1)
                 plot(idxGlissadeEnd,data.vel(round(idxGlissadeEnd)),'c*');
             end
         end
+        for kk=1:size(ETparams.data,3)
+            idxSaccadeEnd = ETparams.saccadeInfo(i,j,kk).end*ETparams.samplingFreq;
+            if ~isempty(idxSaccadeEnd )
+                plot([0 ceil(ETparams.glissadeSearchWindowms/1000 * ETparams.samplingFreq)]+idxSaccadeEnd,[1 1]*ETparams.data(i,j,p).localSaccadeVelocityTreshold,'--');
+            end
+        end
         ax = gca;
         % end temp
         data = detectSaccades(ETparams.data(i,j),ETparams);
         % temp: make figure
         figure,plot(data.vel,'k')
         hold on
-%         plot([diff(data.vel) 0],'g')
-        plot(data.sacon,data.vel(data.sacon),'bo')
-        plot(data.sacoff,data.vel(data.sacoff),'ro')
+        plot([0 length(data.vel)],[1 1]*data.peakDetectionThreshold,'r--')
+        plot([0 length(data.vel)],[1 1]*data.saccadeVelocityTreshold,'r:')
+        plot(data.sacon,data.vel(data.sacon),'bo','MarkerFaceColor','blue','MarkerSize',4)
+        plot(data.sacoff,data.vel(data.sacoff),'ro','MarkerFaceColor','red','MarkerSize',4)
         qhighvelglissade = data.glissadetype==2;
         plot(data.glissadeoff(~qhighvelglissade),data.vel(data.glissadeoff(~qhighvelglissade)),'g*')
         plot(data.glissadeoff( qhighvelglissade),data.vel(data.glissadeoff( qhighvelglissade)),'c*')
+        for p=1:length(data.sacoff)
+            plot([0 ceil(ETparams.glissadeSearchWindowms/1000 * ETparams.samplingFreq)]+data.sacoff(p),[1 1]*data.localSaccadeVelocityTreshold(p),'r-');
+        end
         linkaxes([ax gca]);
         % end temp
 
@@ -91,6 +101,3 @@ for i = 2%:size(ETparams.data,1)
 
     end
 end
-
-    
-
