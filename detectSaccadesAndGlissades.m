@@ -165,14 +165,21 @@ while kk <= length(sacon)
         if any(qHighGlisOff)
             idx = find(qHighGlisOff,1,'last');
             
-            % make sure that the amplitude of the current saccade is larger
-            % than the glissade amplitude, otherwise no glissade is
-            % detected. (This operates on max velocity instead, but thats
-            % fine due to the mean sequence)
-            % TODO change this to really using amplitude.. see detsacammpl
-            % from Ignace
-            if max(data.deg.vel(sacoff(kk):sacoff(kk+idx))) < max(data.deg.vel(sacon(kk):sacoff(kk))) && ...
-               ((~isempty(foundGlissadeOff) && sacoff(kk+idx)>foundGlissadeOff) || isempty(foundGlissadeOff)) % if we've already detected a low velocity glissade, only replace with this high velocity glissade if detected end is later
+            % additional checks to see if this could be a potential
+            % glissade:
+            % - The amplitude of this potential glissade has to be lower
+            %   than that of the saccade we're currently processing
+            % - Also, if we've already detected a low velocity glissade,
+            %   only replace with this high velocity glissade if detected
+            %   end is later
+            if max(...  % amplitude
+                    calcAmplitudeFick(data.deg.X(sacoff(kk)),data.deg.Y(sacoff(kk)) , data.deg.X(sacoff(kk+idx)),data.deg.Y(sacoff(kk+idx)))...
+               ) ...
+               < ...
+               max(...
+                    calcAmplitudeFick( data.deg.X(sacon(kk)),data.deg.Y(sacon(kk))  ,     data.deg.X(sacoff(kk)),data.deg.Y(sacoff(kk)))...
+               ) && ...
+               ((~isempty(foundGlissadeOff) && sacoff(kk+idx)>foundGlissadeOff) || isempty(foundGlissadeOff))   % end later then low velocity glissade
                 % found potential glissade, store it
                 foundGlissadeOff  = sacoff(kk+idx);
             end
