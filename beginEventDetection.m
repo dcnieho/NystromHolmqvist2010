@@ -24,6 +24,7 @@ ETparams.screen.subjectStraightAhead= [512 200];    % Specify the screen coordin
 % is on the right side of the screen (sic).
 ETparams.data.qFlipY                = false;
 ETparams.data.qFlipX                = false;
+ETparams.data.qPreciseCalcDeriv     = false;        % do a precise calculation of eye velocity and acceleration, otherwise simple linarity is assumed.
 
 ETparams.samplingFreq               = 1250;
 
@@ -95,4 +96,5 @@ figure
 hist(cell2mat(arrayfun(@(x) x.duration,[catdata.fixation],'UniformOutput',false)),100)
 xlabel('Fixation duration (s)'),ylabel('Number of fixations')
 
-plotDetection(data{2,4});
+figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+plotDetection(data{2,4},ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect.deg,sprintf('Subj %d, Trial %d',2,4));
