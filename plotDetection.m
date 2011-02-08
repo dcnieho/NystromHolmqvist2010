@@ -56,7 +56,7 @@ end
 mmt  = [min(time) max(time)];
 
 %%% plot X trace with fixation markers
-ax = subplot('position',[0.10 0.84 0.80 0.12]);
+ax = subplot('position',[0.05 0.84 0.90 0.12]);
 plotWithMark(time,xdata,...                                             % data (y,x)
              'time (ms) - fixations','Horizontal (°)',titel,...         % y-axis label, x-axis label, axis title
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
@@ -65,7 +65,7 @@ plotWithMark(time,xdata,...                                             % data (
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
 
 % plot Y trace with fixation markers
-ay = subplot('position',[0.10 0.68 0.80 0.12]);
+ay = subplot('position',[0.05 0.68 0.90 0.12]);
 plotWithMark(time,ydata,...                                             % data (y,x)
              'time (ms) - fixations','Vertical (°)','',...              % y-axis label, x-axis label, axis title
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
@@ -75,7 +75,7 @@ axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
 % plot velocity trace with saccade and glissade markers
 qhighvelglissade = glistyp==2;      % determine glissade type: 1 is low velocity, 2 is high velocity
-av = subplot('position',[0.10 0.52 0.80 0.12]);
+av = subplot('position',[0.05 0.52 0.90 0.12]);
 plotWithMark(time,vel,...                                               % data (y,x)
              'time (ms) - saccades/glissades','Velocity (°/s)','',...   % y-axis label, x-axis label, axis title
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
@@ -98,17 +98,21 @@ linkaxes([ax ay av],'x');
 
 
 %%% plot scanpath of raw data and of fixations
-asr = subplot('position',[0.55 0.04 0.40 0.40]);
+asf = subplot('position',[0.05 0.06 0.43 0.40]);
 plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
              'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
-             [1:length(xfixpos)],{'go','MarkerFaceColor','g' ,'MarkerSize',4}...    % mark each fixation (that is marker on each datapoint we feed it
+             [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
+             1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % make first fixation marker blue
+             length(xfixpos),    {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % make last  fixation marker red
             );
 axis(rect([1 3 2 4]));
 axis ij
 
-asf = subplot('position',[0.10 0.04 0.40 0.40]);
-plotWithMark(xdata,ydata,...                                            % data (y,x)
-             'Hor (°)','Ver (°)','' ...                                 % y-axis label, x-axis label, axis title
+asr = subplot('position',[0.52 0.06 0.43 0.40]);
+plotWithMark(xdata,ydata,...                                                        % data (y,x)
+             'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
+             1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
+             length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
             );
 axis(rect([1 3 2 4]));
 axis ij

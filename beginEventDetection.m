@@ -24,7 +24,11 @@ ETparams.screen.subjectStraightAhead= [512 200];    % Specify the screen coordin
 % is on the right side of the screen (sic).
 ETparams.data.qFlipY                = false;
 ETparams.data.qFlipX                = false;
-ETparams.data.qPreciseCalcDeriv     = false;        % do a precise calculation of eye velocity and acceleration, otherwise simple linarity is assumed.
+% Do a precise calculation of eye velocity and acceleration? If not, a
+% simple linear relationship between pixels and degrees is assumed. Precise
+% is not yet implemented, and only needed if you want accurate estimates of
+% peak and mean velocities and accelerations.
+ETparams.data.qPreciseCalcDeriv     = false;
 
 ETparams.samplingFreq               = 1250;
 
@@ -48,8 +52,7 @@ ETparams = prepareParameters(ETparams);
 %%-------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
-% Process eye-movement data for file (participant) and trial separately, i - files, j -
-% trials
+% Process eye-movement data, per participant (i), per trial (j)
 %--------------------------------------------------------------------------
 data = cell(size(ETdata));
 for i = 1:size(ETdata,1)
