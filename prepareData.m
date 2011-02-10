@@ -16,6 +16,9 @@ function data = prepareData(x,y,ETparams)
 % velocity and acceleration for eccentric eye positions are overestimated.
 % Fick A (1854). Die bewegungen des menschlichen augapfels. Zeitschrift für
 % rationelle Medizin 4: 109-128.
+% See also:
+% Haslwanter T (1995) Mathematics of 3-dimensional eye rotations. Vision
+% Res 35, 1727-1739, e.g. Figure 4
 
 % ensure column vectors
 data.pix.Xori = x(:);
@@ -37,8 +40,7 @@ data.pix.Yori = data.pix.Yori - ETparams.screen.subjectStraightAhead(2);
 % finally, convert gaze position in pixels to Fick angles in degree
 % first convert pixels to cm away from origin
 pixPerMeter     = ETparams.screen.resolution ./ ETparams.screen.size;
-% Then convert to Fick angles (MATLAB's cart2sph happens to use that order
-% of rotations)
+% Then convert to Fick angles (MATLAB's cart2sph models a Fick gimbal)
 [dx,dy]         = cart2sph(ETparams.screen.viewingDist, data.pix.Xori./pixPerMeter(1), data.pix.Yori./pixPerMeter(2));
 % convert to degrees (Fick angles)
 data.deg.Xori   = dx./pi*180;

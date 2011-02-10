@@ -45,6 +45,19 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % developed methods. I am not knowledgable on this subject matter though,
 % so I'll need to find a DSP guy to resolve this with once and for all
 % (hopefully).
+% In general, we'll need to asses how problematic this really is. When it
+% comes to the filter, we need to simulate its performance (how much
+% widening, how much undershoot is there really?). Generate a function much
+% like the eye movement, but without any noise (Gaussian velocity profile,
+% very low std for sharp peak? Or more directly cut a part from some
+% eyemovement data and smooth it by hand) and see what happens to it when
+% filtering by polynomial fit... Also, remember the Luo 2005 filter on
+% properties of Savitzky-Golay differentiation filters. By the way, i
+% indeed think my logic above was correct: the zeroth order moment of the
+% first derivative of a time series should correspond/be relatable to the
+% first order moment of the time series itself. It is thus a problem that
+% the width of the velocity peak (3rd moment) is not present by a second
+% order polynomial fit.
 
 % prepare parameters
 %--------------------------------------------------------------------------
@@ -69,13 +82,20 @@ if ETparams.data.qPreciseCalcDeriv
     data.deg.Y      = tempP(:,2);
     
     % Now calculate eye velocity and acceleration precisely
-    % Create quaternion rotation vector denoting eye position for each
-    % sample, then take derivative of the series of these. (Note: this does
-    % not use the analytical derivatives of the polynomial filtering to
-    % compute eye velocity/acceleration (TODO: derive and see if we can do
-    % it!), but uses numerical derivatives of our filtered eye position.
-    % See e.g.:
-    % 
+    % See Equation 30 in Haslwanter T (1995) Mathematics of 3-dimensional
+    % eye rotations, Vision Res 35, 1727-1739. (look up that original
+    % Goldstein reference as well). Might also want to look up Fetter M,
+    % Haslwanter T, Misslisch M, Tweed D (1997) Three-dimensional kinematic
+    % principles of eye-, head-, and limb movements, Harwood Academic
+    % Publishers: Amsterdam, sounds relevant.
+    % This allows us to use the analytical differentiation of the
+    % polynomial fitted to eye azimuth and elevation (so-called coordinate
+    % velocities). This however still doesn't give me a scalar velocity I
+    % think.. need to look at the details of this and familiarize myself
+    % with the mathematical tools. Once we got velocity, I think we can
+    % safely take the acceleration numerically without adding too much
+    % noise. Or we could derive the formula for acceleration ourself (or
+    % maybe the Goldstein ref has it), that would be a good exercise.
 else
     % Calculate the filtered position, velocity and acceleration
     [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
