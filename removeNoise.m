@@ -6,12 +6,11 @@ function [data,qnoise] = removeNoise(data,ETparams)
 minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 V_threshold     = median(data.deg.vel)*2;
 
-% Detect possible blinks and noise (where XY-coords are 0 or if the eyes move too fast)
-% TODO make check more general, checking if outside screen, current doesn't
-% work for our EyeLink, which doesn't give 0 (though already nan in that
-% case)
-% do not have to process things that are already NaN
-qnoise = (data.pix.X == 0 & data.pix.Y == 0) |...
+% Detect possible blinks (where Nyström's SMI tracker apparently records
+% (0,), our EyeLink return's '.', which at this point should have been
+% converted to nan already) and noise (if the eyes move too fast too be
+% physiologically possible)
+qnoise = (data.pix.Xori == 0 & data.pix.Yori == 0) |...
              data.deg.vel  > ETparams.blink.velocityThreshold |...
          abs(data.deg.acc) > ETparams.blink.accThreshold;
 

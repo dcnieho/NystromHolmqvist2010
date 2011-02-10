@@ -1,11 +1,11 @@
 clear all, clear functions, close all; clc
 
 % TODO notes
-% - add switch for calculating precise eye position, based on cosine rule
 % - port functionality of filternanfix to here, but allow to switch it on
 %   or off by a boolean
 % - add setting for how many samples sign of derivative of velocity needs
 %   to change to signal offset (i suggest 3, but test carefully)
+% - add plot legend in trial viewer (in code in the comments)
 
 %%-------------------------------------------------------------------------
 %%% Init parameters
@@ -24,10 +24,14 @@ ETparams.screen.subjectStraightAhead= [512 200];    % Specify the screen coordin
 % is on the right side of the screen (sic).
 ETparams.data.qFlipY                = false;
 ETparams.data.qFlipX                = false;
-% Do a precise calculation of eye velocity and acceleration? If not, a
-% simple linear relationship between pixels and degrees is assumed. Precise
-% is not yet implemented, and only needed if you want accurate estimates of
-% peak and mean velocities and accelerations.
+% Do a precise calculation of eye velocity and acceleration using
+% derivatives of quaternion eye rotation vectors? If not, we compute
+% derivatives of eye azimuth and elevation analytically from the parameters
+% of a fitted polynomial and then apply Pythagoras' theorem to compute eye
+% velocity/acceleration. This is crude and should not be used if you're
+% interested in the eye velocity, but its sufficient if you simply want to
+% detect saccades in periods of fixation and/or smooth pursuit and are not
+% interested in accurate measures of eye velocity/acceleration.
 ETparams.data.qPreciseCalcDeriv     = false;
 
 ETparams.samplingFreq               = 1250;
@@ -55,6 +59,7 @@ ETparams = prepareParameters(ETparams);
 % Process eye-movement data, per participant (i), per trial (j)
 %--------------------------------------------------------------------------
 data = cell(size(ETdata));
+fhndl = -1;
 for i = 1:size(ETdata,1)
     for j = 1:size(ETdata,2)
         % Process data
@@ -63,8 +68,10 @@ for i = 1:size(ETdata,1)
         
         if 1
             % plot the trial (eye X, eye Y, velocity traces and scanpath,
-            % as well as detected events (TODO: scanpath)
-            fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+            % as well as detected events
+            if ~ishghandle(fhndl)
+                fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+            end
             plotDetection(data{i,j},ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect.deg,sprintf('Subj %d, Trial %d',i,j));
             set(fhndl,'Visible','on');  % assert visibility to bring window to front again after keypress
             pause

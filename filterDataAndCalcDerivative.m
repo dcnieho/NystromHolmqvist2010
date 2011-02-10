@@ -45,21 +45,6 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % developed methods. I am not knowledgable on this subject matter though,
 % so I'll need to find a DSP guy to resolve this with once and for all
 % (hopefully).
-%
-% Eye position data is stored in Fick (1854) angles. Given a
-% head-referenced frame in which the Z axis points upwards (dorso-ventral),
-% the X axis forward (naso-occipital) and the Y axis leftward
-% (inter-aural), Fick angles are given by a rotation around Z axis first
-% (yaw/azimuth rotation), followed by rotation around the Y axis
-% (pitch/elevation rotation) and lastly a rotation around the X axis
-% (roll/torsion rotation).
-% Eye rotation velocity and acceleration are currently computed assuming a
-% linear relationship between position on the tangent plane and angle,
-% simply as I don't know how to compute them correctly in Fick angles. This
-% is accurate if gaze is pointed towards straight ahead, but it means
-% velocity and acceleration for eccentric eye positions are overestimated.
-% Fick A (1854). Die bewegungen des menschlichen augapfels. Zeitschrift für
-% rationelle Medizin 4: 109-128. 
 
 % prepare parameters
 %--------------------------------------------------------------------------
@@ -67,43 +52,54 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % make the filter window wider than the narrowest feature we are interested
 % in, or we'll smooth out those features.
 window  = ceil(ETparams.saccade.minDur/1000*ETparams.samplingFreq);
-% number of filter taps 
+% number of filter taps
 ntaps   = 2*ceil(window)-1;
 
 % compute eye positions, velocities, and accelerations in pixels, convert
 % to degree
 %--------------------------------------------------------------------------
 
-% Calculate the filtered position, velocity and acceleration
-[tempP,tempV,tempA] = sgFilt([data.pix.Xori data.pix.Yori],[0 1 2],ntaps);
-
-% store filtered
-data.pix.X      = tempP(:,1);
-data.pix.Y      = tempP(:,2);
-
-% and convert to Fick angles in degree
-% first convert pixels to cm away from origin
-pixPerMeter = ETparams.screen.resolution ./ ETparams.screen.size;
-% Then convert to Fick angles (MATLAB's cart2sph happens to use that order)
-[dx,dy]     = cart2sph(ETparams.screen.viewingDist,data.pix.X ./ pixPerMeter(1),data.pix.Y ./ pixPerMeter(2));
-% convert to degrees (Fick angles)
-data.deg.X  = dx./pi*180;
-data.deg.Y  = dy./pi*180;
-
-% calculate derivative magnitudes
 if ETparams.data.qPreciseCalcDeriv
-    % TODO: implement
-    % how to compute eye velocity and acceleration in Fick angles using the
-    % output from the derivative filter?
+    % TODO implement: unfinished below!
+    % Calculate the filtered position
+    tempP = sgFilt([data.deg.Xori data.deg.Yori],0,ntaps);
+    
+    % store filtered
+    data.deg.X      = tempP(:,1);
+    data.deg.Y      = tempP(:,2);
+    
+    % Now calculate eye velocity and acceleration precisely
+    % Create quaternion rotation vector denoting eye position for each
+    % sample, then take derivative of the series of these. (Note: this does
+    % not use the analytical derivatives of the polynomial filtering to
+    % compute eye velocity/acceleration (TODO: derive and see if we can do
+    % it!), but uses numerical derivatives of our filtered eye position.
+    % See e.g.:
+    % 
 else
-    % calculate pixels per degree
-    meterPerDegree  = ETparams.screen.viewingDist * tand(1);    % 1° movement away from straight ahead
-    pixPerDegree    = pixPerMeter * meterPerDegree;             % dimensional analysis of the variable names show this is correct :P
-    % get magnitude of velocity vector in pixels and convert to degree
-    % assuming linearity (good enough for most purposes / small screens)
-    % dont forget to scale by sampling rate.
-    data.deg.vel    = hypot(tempV(:,1)/pixPerDegree(1), tempV(:,2)/pixPerDegree(2)) * ETparams.samplingFreq;
-    data.deg.acc    = hypot(tempA(:,1)/pixPerDegree(1), tempA(:,2)/pixPerDegree(2)) * ETparams.samplingFreq^2;
+    % Calculate the filtered position, velocity and acceleration
+    [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
+    
+    % store filtered
+    data.deg.X      = tempP(:,1);
+    data.deg.Y      = tempP(:,2);
+    
+    % calculate derivative magnitudes
+    % note NOTE NOTE: This works fine for our purpose of detecting velocity
+    % and acceleration peaks, which in essense is all the algorithm really
+    % does. Both fixations and smooth pursuit are periods of low velocity
+    % interspersed with high velocity peaks of the saccades. So as long as
+    % we get good peaks we can run our algorithm and we don't have to care
+    % about their exact height. However, when you are interested in the
+    % exact eye velocity/acceleration (both during saccades and during
+    % pursuit), you'll have to use the derivatives of the eye rotation
+    % vectors (the exact method above). This trick using Pythagoras'
+    % theorem is pretty crude as actually it only applies in Cartesian
+    % space, not in the spherical system we use.
+    % get magnitude of velocity and acceleration vectors, dont forget to
+    % scale by sampling rate.
+    data.deg.vel    = hypot(tempV(:,1), tempV(:,2)) * ETparams.samplingFreq;
+    data.deg.acc    = hypot(tempA(:,1), tempA(:,2)) * ETparams.samplingFreq^2;
 end
 
 

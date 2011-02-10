@@ -16,7 +16,7 @@ function data = eventDetection(x,y,ETparams)
 % you'll have to implement nanstd yourself following this nanmean as an
 % example
 
-% Prepare data (move origin, things like that (TODO))
+% Prepare data (move origin, things like that)
 %-------------------------------------
 data = prepareData(x,y,ETparams);
 
