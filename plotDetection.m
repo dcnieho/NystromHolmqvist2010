@@ -13,6 +13,19 @@ function plotDetection(varargin)
 % - title: can be empty
 % TODO: make way to select pixels or degrees for plotting (except velocity,
 % which is always plotted in °/s
+%
+% LEGEND of the plots:
+% First two plots show the eye's azimuth and elevation in degree (Fick
+% angles)
+% Blue markers indicate the start of fixations, red the end
+% Third plot shows the angular velocity of the eye, with blue markers
+% indicating the start of saccades, red markers their end, cyan stars the
+% end of high velocity glissades and green stars the end of low velocity
+% glissades (start of glissades is end of preceding saccade)
+% Finally, the last two plots show the subject's scanpath, either
+% indicating the detected fixations or the raw eye position data. The eye
+% position at the start of the trial (or the first fixation) is marked by a
+% blue marker and the end of the trial (or last fixation) by a red marker.
 
 if nargin<=5 && isstruct(varargin{1})
     %%% unpack the needed variables
@@ -58,7 +71,7 @@ mmt  = [min(time) max(time)];
 %%% plot X trace with fixation markers
 ax = subplot('position',[0.05 0.84 0.90 0.12]);
 plotWithMark(time,xdata,...                                             % data (y,x)
-             'time (ms) - fixations','Horizontal (°)',titel,...         % y-axis label, x-axis label, axis title
+             'time (ms) - fixations','Azimuth (°)',titel,...            % y-axis label, x-axis label, axis title
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
              fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
             );
@@ -67,7 +80,7 @@ axis([mmt(1) mmt(2) rect(1) rect(3)]);
 % plot Y trace with fixation markers
 ay = subplot('position',[0.05 0.68 0.90 0.12]);
 plotWithMark(time,ydata,...                                             % data (y,x)
-             'time (ms) - fixations','Vertical (°)','',...              % y-axis label, x-axis label, axis title
+             'time (ms) - fixations','elevation (°)','',...             % y-axis label, x-axis label, axis title
              fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
              fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
             );

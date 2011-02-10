@@ -8,7 +8,7 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 % The thus established velocity threshold is clos to optimal in that it
 % allows us to detect as many saccades as possible given the noise in the
 % data but does not detect too many due to possibly high noise in the data.
-
+%
 % !! Call this function with two parameters, unless you know what you are
 % doing.
 
@@ -20,6 +20,8 @@ centralFixSamples   = ceil(ETparams.saccade.minDur /6000 * ETparams.samplingFreq
 data.saccade.peakVelocityThreshold = ETparams.saccade.peakVelocityThreshold;
 previousPeakDetectionThreshold = inf;
 
+% iterate while we're gaining more than a 1° decrease in saccade peak
+% velocity threshold
 while previousPeakDetectionThreshold - data.saccade.peakVelocityThreshold > 1
     
     previousPeakDetectionThreshold = data.saccade.peakVelocityThreshold;
@@ -29,12 +31,18 @@ while previousPeakDetectionThreshold - data.saccade.peakVelocityThreshold > 1
     qBelowThresh = data.deg.vel < data.saccade.peakVelocityThreshold;
     
     if nargin==2 || qusecentralsample
-        % this is not just done to speed up iteration, we need to cut off
-        % the edges of the testing intervals and only use parts of the data
-        % that are likely to belong to fixations or the iteration will not
-        % converge to a lower threshold. So always use this code path (just
-        % call this function with 2 arguments), unless you want to see it
-        % for yourself.
+        % We need to cut off the edges of the testing intervals and only
+        % use parts of the data that are likely to belong to fixations or
+        % the iteration will not converge to a lower threshold. So always
+        % use this code path (just call this function with 2 arguments),
+        % unless you want to see it for yourself. This is not just done to
+        % speed up convergence.
+        % NB: although this does not match how the algorithm is described
+        % in Nyström & Holmqvist, 2010, it does match the code they made
+        % available. As explained above, the more simple method they
+        % described in their paper does not converge to lower thresholds
+        % (in the minimal testing I did at least), while this code-path
+        % appears to be robust.
         
         % get bounds of these detected peaks
         [threshon,threshoff] = bool2bounds(qBelowThresh);

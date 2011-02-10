@@ -62,10 +62,10 @@ while kk <= length(sacon)
     while i > 1 && ...                                                  % make sure we don't run out of the data
           (isnan(data.deg.vel(i)) || ...                                % and that we ignore nan data
            data.deg.vel(i) > data.saccade.onsetVelocityTreshold || ...  % keep searching until below saccadeOnsetVelocityTreshold
-           diff(data.deg.vel(i+[0:1])) > 0)                             % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
+           diff(data.deg.vel(i-[0:1])) < 0)                             % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
         i = i-1;
     end
-    sacon(kk) = i+1;                                                    % velocity minimum is last sample before "acceleration" sign change
+    sacon(kk) = i;%+1;                                                    % velocity minimum is last sample before "acceleration" sign change
     
     % Calculate local noise during 'fixation' before the saccade start (the
     % adaptive part)
