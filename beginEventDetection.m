@@ -1,9 +1,5 @@
 clear all, clear functions, close all; clc
 
-% TODO notes
-% - port functionality of filternanfix to here, but allow to switch it on
-%   or off by a boolean
-
 %%-------------------------------------------------------------------------
 %%% Init parameters
 %%-------------------------------------------------------------------------
@@ -43,6 +39,15 @@ ETparams.glissade.searchWindow          = 40;           % window after saccade i
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 
 ETparams.fixation.minDur                = 40;           % in milliseconds
+% How to deal with NaNs during possible fixation periods:
+% 1: do not allow NaN during fixations
+% 2: ignore NaNs and calculate mean fixation position based on other data
+%    (not recommended in almost any situation, if you don't like 1,
+%    consider option 3)
+% 3: split fixation into multiple, providing each is at least minDur long
+%    (e.g. one 250 ms fixation with some data missing in the middle might
+%    be split up into a 100 ms and a 120 ms fixation)
+ETparams.fixations.treatNaN             = 3;
 
 % process params
 ETparams = prepareParameters(ETparams);
@@ -58,12 +63,12 @@ ETparams = prepareParameters(ETparams);
 data = cell(size(ETdata));
 fhndl = -1;
 for i = 2%1:size(ETdata,1)
-    for j = 1:size(ETdata,2)
+    for j = 6%1:size(ETdata,2)
         % Process data
         fprintf('Subj %d, Trial %d\n',i,j);
         data{i,j} = eventDetection(ETdata(i,j).X,ETdata(i,j).Y,ETparams);
         
-        if 0
+        if 1
             % plot the trial (eye X, eye Y, velocity traces and scanpath,
             % as well as detected events
             if ~ishghandle(fhndl)

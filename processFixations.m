@@ -6,7 +6,7 @@ function data = processFixations(data,ETparams)
 data.fixation.start    = data.fixation.on / ETparams.samplingFreq;
 
 % duration (in milliseconds)
-data.fixation.duration = (data.fixation.off-data.fixation.on) / ETparams.samplingFreq;
+data.fixation.duration = (data.fixation.off-data.fixation.on+1) / ETparams.samplingFreq;
 
 %%% drift during fixation (defined as position at end minus position at
 %%% begin)
@@ -29,12 +29,12 @@ for p=1:length(data.fixation.on)
     idxs = data.fixation.on(p) : data.fixation.off(p);
     
     % average eye position
-    data.fixation.meanX(p)              = mean(data.deg.X(idxs));
-    data.fixation.meanY(p)              = mean(data.deg.Y(idxs));
+    data.fixation.meanX(p)              = nanmean(data.deg.X(idxs));
+    data.fixation.meanY(p)              = nanmean(data.deg.Y(idxs));
     
     % mean and peak velocity and acceleration
-    data.fixation.meanVelocity(p)       = mean(data.deg.vel(idxs));
-    data.fixation.peakVelocity(p)       = max (data.deg.vel(idxs));
-    data.fixation.meanAcceleration(p)   = mean(data.deg.acc(idxs));
-    data.fixation.peakAcceleration(p)   = max (data.deg.acc(idxs));
+    data.fixation.meanVelocity(p)       = nanmean(data.deg.vel(idxs));
+    data.fixation.peakVelocity(p)       = max    (data.deg.vel(idxs));
+    data.fixation.meanAcceleration(p)   = nanmean(data.deg.acc(idxs));
+    data.fixation.peakAcceleration(p)   = max    (data.deg.acc(idxs));
 end

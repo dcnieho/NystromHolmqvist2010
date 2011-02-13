@@ -117,7 +117,7 @@ while kk <= length(sacon)
         
     % Make sure the saccade duration exceeds the minimum duration or delete
     % it
-    if (sacoff(kk)-sacon(kk)) < minSacSamples
+    if sacoff(kk)-sacon(kk)+1 < minSacSamples
         sacon (kk) = [];
         sacoff(kk) = [];
         continue;
@@ -201,7 +201,7 @@ while kk <= length(sacon)
         % See if glissade is valid according to our criteria
         % do not allow glissade duration > 80 ms AND
         % the glissade should not contain any NaN samples
-        if foundGlissadeOff-sacoff(kk) <= maxGlissadeSamples &&...
+        if foundGlissadeOff-sacoff(kk)+1 <= maxGlissadeSamples &&...
            ~any(isnan(data.deg.vel(sacoff(kk):foundGlissadeOff)))
             % store the glissade
             glissadeon  = [glissadeon   sacoff(kk)];

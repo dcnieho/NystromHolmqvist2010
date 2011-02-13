@@ -7,10 +7,12 @@ minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 V_threshold     = median(data.deg.vel)*2;
 
 % Detect possible blinks (where Nyström's SMI tracker apparently records
-% (0,), our EyeLink return's '.', which at this point should have been
+% (0,0), our EyeLink return's '.', which at this point should have been
 % converted to nan already) and noise (if the eyes move too fast too be
-% physiologically possible)
-qnoise = (data.pix.Xori == 0 & data.pix.Yori == 0) |...
+% physiologically possible). Note that as the origin was moved, we
+% shouldn't be detecting (0,0) here, but
+% -ETparams.screen.subjectStraightAhead
+qnoise = (data.pix.Xori == -ETparams.screen.subjectStraightAhead(1) & data.pix.Yori == -ETparams.screen.subjectStraightAhead(2)) |...
              data.deg.vel  > ETparams.blink.velocityThreshold |...
          abs(data.deg.acc) > ETparams.blink.accThreshold;
 

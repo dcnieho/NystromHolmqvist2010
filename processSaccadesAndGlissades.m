@@ -17,7 +17,7 @@ data    = processSaccadesAndGlissadesImplementation(data, 'glissade',ETparams);
 function data = processSaccadesAndGlissadesImplementation(data, fieldname, ETparams)
 
 % duration (in milliseconds)
-data.(fieldname).duration = (data.(fieldname).off-data.(fieldname).on)/ETparams.samplingFreq;
+data.(fieldname).duration = (data.(fieldname).off-data.(fieldname).on+1)/ETparams.samplingFreq;
 
 % amplitude & direction
 [data.(fieldname).amplitude, data.(fieldname).direction] = ...
