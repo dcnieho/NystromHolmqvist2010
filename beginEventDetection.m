@@ -47,7 +47,7 @@ ETparams.fixation.minDur                = 40;           % in milliseconds
 % 3: split fixation into multiple, providing each is at least minDur long
 %    (e.g. one 250 ms fixation with some data missing in the middle might
 %    be split up into a 100 ms and a 120 ms fixation)
-ETparams.fixations.treatNaN             = 3;
+ETparams.fixations.treatNaN             = 1;
 
 % process params
 ETparams = prepareParameters(ETparams);
