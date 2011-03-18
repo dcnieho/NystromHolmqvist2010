@@ -33,7 +33,7 @@ ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 
-ETparams.fixation.qDetect               = false;        % if true, do fixation detection
+ETparams.fixation.qDetect               = true;         % if true, do fixation detection
 ETparams.fixation.minDur                = 40;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations
