@@ -124,10 +124,10 @@ end
 
 if ETparams.data.qAlsoStoreComponentDerivs
     % also store velocities and acceleration in X and Y direction
-    data.deg.velX   = tempV(:,1) * ETparams.samplingFreq;
-    data.deg.velY   = tempV(:,2) * ETparams.samplingFreq;
-    data.deg.accX   = tempA(:,1) * ETparams.samplingFreq^2;
-    data.deg.accY   = tempA(:,2) * ETparams.samplingFreq^2;
+    data.deg.velAz  = tempV(:,1) * ETparams.samplingFreq;
+    data.deg.velEl  = tempV(:,2) * ETparams.samplingFreq;
+    data.deg.accAz  = tempA(:,1) * ETparams.samplingFreq^2;
+    data.deg.accEl  = tempA(:,2) * ETparams.samplingFreq^2;
 end
 
 if ETparams.data.qAlsoStoreandSmoothPixels
