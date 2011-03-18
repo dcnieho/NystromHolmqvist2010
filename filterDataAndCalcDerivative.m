@@ -74,8 +74,8 @@ ntaps   = 2*ceil(window)-1;
 
 if ETparams.data.qPreciseCalcDeriv
     % TODO implement: unfinished below!
-    % Calculate the filtered position
-    tempP = sgFilt([data.deg.Xori data.deg.Yori],0,ntaps);
+    % Calculate the filtered position, velocity and acceleration
+    [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
     
     % store filtered
     data.deg.X      = tempP(:,1);
@@ -121,6 +121,37 @@ else
     data.deg.vel    = hypot(tempV(:,1), tempV(:,2)) * ETparams.samplingFreq;
     data.deg.acc    = hypot(tempA(:,1), tempA(:,2)) * ETparams.samplingFreq^2;
 end
+
+if ETparams.data.qAlsoStoreComponentDerivs
+    % also store velocities and acceleration in X and Y direction
+    data.deg.velX   = tempV(:,1) * ETparams.samplingFreq;
+    data.deg.velY   = tempV(:,2) * ETparams.samplingFreq;
+    data.deg.accX   = tempA(:,1) * ETparams.samplingFreq^2;
+    data.deg.accY   = tempA(:,2) * ETparams.samplingFreq^2;
+end
+
+if ETparams.data.qAlsoStoreandSmoothPixels
+    % also calculate smoothing (and derivatives if wanted) for eye position
+    % in pixels
+    if ETparams.data.qAlsoStoreComponentDerivs
+        [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
+        % store filtered
+        data.pix.X      = tempP(:,1);
+        data.pix.Y      = tempP(:,2);
+        % also store velocities and acceleration in X and Y direction
+        data.pix.velX   = tempV(:,1) * ETparams.samplingFreq;
+        data.pix.velY   = tempV(:,2) * ETparams.samplingFreq;
+        data.pix.accX   = tempA(:,1) * ETparams.samplingFreq^2;
+        data.pix.accY   = tempA(:,2) * ETparams.samplingFreq^2;
+    else
+        tempP = sgFilt([data.deg.Xori data.deg.Yori],0,ntaps);
+        % store filtered
+        data.pix.X      = tempP(:,1);
+        data.pix.Y      = tempP(:,2);
+    end
+end
+
+
 
 
 
