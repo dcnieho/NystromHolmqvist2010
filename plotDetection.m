@@ -51,10 +51,15 @@ if nargin<=5 && isstruct(varargin{1})
     sacoff  = data.saccade.off;
     glisoff = data.glissade.off;
     glistyp = data.glissade.type;
-    fixon   = data.fixation.on;
-    fixoff  = data.fixation.off;
-    xfixpos = data.fixation.meanX;
-    yfixpos = data.fixation.meanY;
+    if isfield(data,'fixation')
+        qHaveFixations = true;
+        fixon   = data.fixation.on;
+        fixoff  = data.fixation.off;
+        xfixpos = data.fixation.meanX;
+        yfixpos = data.fixation.meanY;
+    else
+        qHaveFixations = false;
+    end
     % thresholds
     saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
     saccadeOnsetVelocityTreshold    = data.saccade.onsetVelocityTreshold;
@@ -70,10 +75,15 @@ mmt  = [min(time) max(time)];
 
 %%% plot X trace with fixation markers
 ax = subplot('position',[0.05 0.84 0.90 0.12]);
+if qHaveFixations
+    fixmarks = {fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
+                fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};    % fixation off markers
+else
+    fixmarks = {};
+end
 plotWithMark(time,xdata,...                                             % data (y,x)
              'time (ms) - fixations','Azimuth (°)',titel,...            % y-axis label, x-axis label, axis title
-             fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
-             fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
+             fixmarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
 
@@ -81,8 +91,7 @@ axis([mmt(1) mmt(2) rect(1) rect(3)]);
 ay = subplot('position',[0.05 0.68 0.90 0.12]);
 plotWithMark(time,ydata,...                                             % data (y,x)
              'time (ms) - fixations','elevation (°)','',...             % y-axis label, x-axis label, axis title
-             fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
-             fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4} ...  % fixation off markers
+             fixmarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
@@ -111,15 +120,19 @@ linkaxes([ax ay av],'x');
 
 
 %%% plot scanpath of raw data and of fixations
-asf = subplot('position',[0.05 0.06 0.43 0.40]);
-plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
-             'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
-             [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
-             1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % make first fixation marker blue
-             length(xfixpos),    {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % make last  fixation marker red
-            );
-axis(rect([1 3 2 4]));
-axis ij
+if qHaveFixations
+    asf = subplot('position',[0.05 0.06 0.43 0.40]);
+    plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
+                 'Hor (°)','Ver (°)','',...                                             % y-axis label, x-axis label, axis title
+                 [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
+                 1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % make first fixation marker blue
+                 length(xfixpos),    {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % make last  fixation marker red
+                );
+    axis(rect([1 3 2 4]));
+    axis ij
+else
+    asf = [];
+end
 
 asr = subplot('position',[0.52 0.06 0.43 0.40]);
 plotWithMark(xdata,ydata,...                                                        % data (y,x)

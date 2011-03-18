@@ -35,7 +35,7 @@ for kk = length(fixon):-1:1
     
     % If the fixation contains NaN samples, handle it
     if any(isnan(data.deg.vel(fixon(kk):fixoff(kk))))
-        switch ETparams.fixations.treatNaN
+        switch ETparams.fixation.treatNaN
             
             case 1
                 % NaN during fixation not allowed, so delete fixation

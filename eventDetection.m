@@ -38,8 +38,9 @@ data = estimateSaccadeVelocityThresholds(data,ETparams);
 data = detectSaccadesAndGlissades (data,ETparams);
 data = processSaccadesAndGlissades(data,ETparams);
 
-
 % Implicitly detect fixations
 %-------------------------------------
-data = detectFixations (data,ETparams);
-data = processFixations(data,ETparams);
+if ETparams.fixation.qDetect
+    data = detectFixations (data,ETparams);
+    data = processFixations(data,ETparams);
+end
