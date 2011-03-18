@@ -33,7 +33,7 @@ for i = 2%1:size(ETdata,1)
             if ~ishghandle(fhndl)
                 fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
             end
-            plotDetection(data{i,j},ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect.deg,sprintf('Subj %d, Trial %d',i,j));
+            plotDetection(data{i,j},'deg',ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect,sprintf('Subj %d, Trial %d',i,j));
             set(fhndl,'Visible','on');  % assert visibility to bring window to front again after keypress
             pause
             if ~ishghandle(fhndl)

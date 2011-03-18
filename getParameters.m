@@ -15,7 +15,7 @@ ETparams.data.qFlipX                    = false;
 % If true, datastream of eyeposition in pixels is also stored, smoothed and
 % the derivatives are taken. Might be needed in some usage cases. The
 % eventDetection however always runs on eye position in degrees.
-ETparams.data.qAlsoStoreandSmoothPixels = false;
+ETparams.data.qAlsoStoreandSmoothPixels = true;
 % Do a precise calculation of angular eye velocity and acceleration? If
 % not, we compute derivatives of eye azimuth and elevation analytically
 % from the parameters of a fitted polynomial and then apply Pythagoras'
