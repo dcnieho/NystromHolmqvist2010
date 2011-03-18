@@ -134,7 +134,7 @@ if ETparams.data.qAlsoStoreandSmoothPixels
     % also calculate smoothing (and derivatives if wanted) for eye position
     % in pixels
     if ETparams.data.qAlsoStoreComponentDerivs
-        [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
+        [tempP,tempV,tempA] = sgFilt([data.pix.Xori data.pix.Yori],[0 1 2],ntaps);
         % store filtered
         data.pix.X      = tempP(:,1);
         data.pix.Y      = tempP(:,2);
@@ -144,7 +144,7 @@ if ETparams.data.qAlsoStoreandSmoothPixels
         data.pix.accX   = tempA(:,1) * ETparams.samplingFreq^2;
         data.pix.accY   = tempA(:,2) * ETparams.samplingFreq^2;
     else
-        tempP = sgFilt([data.deg.Xori data.deg.Yori],0,ntaps);
+        tempP = sgFilt([data.pix.Xori data.pix.Yori],0,ntaps);
         % store filtered
         data.pix.X      = tempP(:,1);
         data.pix.Y      = tempP(:,2);
