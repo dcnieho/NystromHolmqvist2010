@@ -133,21 +133,17 @@ end
 if ETparams.data.qAlsoStoreandSmoothPixels
     % also calculate smoothing (and derivatives if wanted) for eye position
     % in pixels
+    tempP = sgFilt([data.pix.Xori data.pix.Yori],0,ntaps);
+    % store filtered
+    data.pix.X      = tempP(:,1);
+    data.pix.Y      = tempP(:,2);
     if ETparams.data.qAlsoStoreComponentDerivs
-        [tempP,tempV,tempA] = sgFilt([data.pix.Xori data.pix.Yori],[0 1 2],ntaps);
-        % store filtered
-        data.pix.X      = tempP(:,1);
-        data.pix.Y      = tempP(:,2);
+        [tempV,tempA] = sgFilt([data.pix.Xori data.pix.Yori],[1 2],ntaps);
         % also store velocities and acceleration in X and Y direction
         data.pix.velX   = tempV(:,1) * ETparams.samplingFreq;
         data.pix.velY   = tempV(:,2) * ETparams.samplingFreq;
         data.pix.accX   = tempA(:,1) * ETparams.samplingFreq^2;
         data.pix.accY   = tempA(:,2) * ETparams.samplingFreq^2;
-    else
-        tempP = sgFilt([data.pix.Xori data.pix.Yori],0,ntaps);
-        % store filtered
-        data.pix.X      = tempP(:,1);
-        data.pix.Y      = tempP(:,2);
     end
 end
 
