@@ -34,9 +34,12 @@ ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², 
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.minDur                 = 10;           % in milliseconds
+ETparams.saccade.allowNaN               = false;        % if true, allow NaNs in saccade intervals
 
+ETparams.glissade.qDetect               = true;         % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
+ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals
 
 ETparams.fixation.qDetect               = true;         % if true, do fixation detection
 ETparams.fixation.minDur                = 40;           % in milliseconds

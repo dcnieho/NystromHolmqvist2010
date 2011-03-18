@@ -29,7 +29,7 @@ for i = 2%1:size(ETdata,1)
         
         if 1
             % plot the trial (eye X, eye Y, velocity traces and scanpath,
-            % as well as detected events
+            % as well as detected events)
             if ~ishghandle(fhndl)
                 fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
             end

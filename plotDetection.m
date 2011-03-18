@@ -49,8 +49,13 @@ if nargin<=5 && isstruct(varargin{1})
     % markers
     sacon   = data.saccade.on;
     sacoff  = data.saccade.off;
-    glisoff = data.glissade.off;
-    glistyp = data.glissade.type;
+    if isfield(data,'glissade')
+        qHaveGlissades = true;
+        glisoff = data.glissade.off;
+        glistyp = data.glissade.type;
+    else
+        qHaveGlissades = false;
+    end
     if isfield(data,'fixation')
         qHaveFixations = true;
         fixon   = data.fixation.on;
@@ -96,21 +101,24 @@ plotWithMark(time,ydata,...                                             % data (
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
 % plot velocity trace with saccade and glissade markers
-qhighvelglissade = glistyp==2;      % determine glissade type: 1 is low velocity, 2 is high velocity
 av = subplot('position',[0.05 0.52 0.90 0.12]);
+if qHaveGlissades
+    qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
+    glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
+                 glisoff(~qhighvelglissade),{'g*'}};                    % low  velocity glissade off markers
+end
 plotWithMark(time,vel,...                                               % data (y,x)
              'time (ms) - saccades/glissades','Velocity (°/s)','',...   % y-axis label, x-axis label, axis title
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-             glisoff(qhighvelglissade),{'c*'}                     ,...  % high velocity glissade off markers
-             glisoff(~qhighvelglissade),{'g*'}                     ...  % low  velocity glissade off markers
+             glismarks{:} ...                                           % glissade markers (if any)
             );
 % add detection thresholds
 hold on;
 plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
 plot(mmt,[1 1]*saccadeOnsetVelocityTreshold,'r:')
 for p=1:length(sacoff)
-    plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityTreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere insde and index expression!
+    plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityTreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
 end
 hold off;
 axis([mmt(1) mmt(2) 0 max(vel)]);
