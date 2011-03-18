@@ -71,6 +71,17 @@ if ~isempty(dataon)
     data.deg.acc(noiseidxs) = nan;
 end
 
+% if we have smoothed eye position in pixels and its derivatives, throw the
+% NaNs in there as well
+if isfield(data.pix,'X')
+    qNaN = isnan(data.deg.X);
+    
+    data.pix.X(qNaN)   = nan;
+    data.pix.Y(qNaN)   = nan;
+    data.pix.vel(qNaN) = nan;
+    data.pix.acc(qNaN) = nan;
+end
+
 % lastly, notify if more than 20% nan
 if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
     disp('Warning: This trial contains > 20 % noise+blinks samples')
