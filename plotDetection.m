@@ -52,6 +52,9 @@ end
 xdata   = data.(datatype).X;
 ydata   = data.(datatype).Y;
 vel     = data.(datatype).vel;
+xdatcut = data.(datatype).Xfilt;
+ydatcut = data.(datatype).Yfilt;
+velcut  = data.(datatype).velfilt;
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 % markers
 sacon   = data.saccade.on;
@@ -90,7 +93,9 @@ if qHaveFixations
 else
     fixmarks = {};
 end
-plotWithMark(time,xdata,...                                             % data (y,x)
+hold on;
+plot(time,xdata,'g');
+plotWithMark(time,xdatcut,...                                           % data (y,x)
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              fixmarks{:} ...                                            % fixation markers (if any)
             );
@@ -99,7 +104,9 @@ axis([mmt(1) mmt(2) rect(1) rect(3)]);
 
 %%% plot Y trace with fixation markers
 ay = subplot('position',[0.05 0.68 0.90 0.12]);
-plotWithMark(time,ydata,...                                             % data (y,x)
+hold on;
+plot(time,ydata,'g');
+plotWithMark(time,ydatcut,...                                           % data (y,x)
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              fixmarks{:} ...                                            % fixation markers (if any)
             );
@@ -112,16 +119,20 @@ if qHaveGlissades
     qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
     glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
                  glisoff(~qhighvelglissade),{'g*'}};                    % low  velocity glissade off markers
+else
+    glismarks = {};
 end
 % at line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
-plotWithMark(time,vel,...                                               % data (y,x)
+plot(time,vel,'g');
+plotWithMark(time,velcut,...                                            % data (y,x)
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
              glismarks{:} ...                                           % glissade markers (if any)
             );
+hold on;
 % add detection thresholds
 if strcmp(datatype,'deg')
     % don't add if plotting pixels, it doesn't make any sense then
@@ -139,20 +150,15 @@ axis([mmt(1) mmt(2) 0 max(vel)]);
 linkaxes([ax ay av],'x');
 
 
-%%% plot scanpath of raw data and of fixations
-if qHaveFixations
-    asf = subplot('position',[0.05 0.06 0.43 0.40]);
-    plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
-                 xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
-                 [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
-                 1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % make first fixation marker blue
-                 length(xfixpos),    {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % make last  fixation marker red
-                );
-    axis(rect([1 3 2 4]));
-    axis ij
-else
-    asf = [];
-end
+%%% plot scanpath of raw data and of data with saccades cut out
+asf = subplot('position',[0.05 0.06 0.43 0.40]);
+plotWithMark(xdatcut,ydatcut,...                                                    % data (y,x)
+             xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
+             1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
+             length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
+            );
+axis(rect([1 3 2 4]));
+axis ij
 
 asr = subplot('position',[0.52 0.06 0.43 0.40]);
 plotWithMark(xdata,ydata,...                                                        % data (y,x)

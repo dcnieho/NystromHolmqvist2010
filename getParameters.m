@@ -4,7 +4,7 @@ function ETparams = getParameters
 ETparams.screen.resolution              = [1280 1024];
 ETparams.screen.size                    = [0.38 0.30];
 ETparams.screen.viewingDist             = 0.67;
-ETparams.screen.subjectStraightAhead    = [640 512];    % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
+ETparams.screen.subjectStraightAhead    = [640 312];    % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % flip the Y coordinate of the data? All the routines assume the origin of
 % the screen (0,0) is at the top left corner. You'll have to flip if the
@@ -36,7 +36,7 @@ ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the p
 ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals
 
-ETparams.glissade.qDetect               = false;        % if true, do glissade detection
+ETparams.glissade.qDetect               = true;         % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals
