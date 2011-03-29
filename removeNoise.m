@@ -4,7 +4,7 @@ function [data,qnoise] = removeNoise(data,ETparams)
 
 %%% prepare algorithm parameters
 minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
-V_threshold     = median(data.deg.vel)*2;
+V_threshold     = nanmedian(data.deg.vel)*2;
 
 % Detect possible blinks (where Nyström's SMI tracker apparently records
 % (0,0), our EyeLink return's '.', which at this point should have been

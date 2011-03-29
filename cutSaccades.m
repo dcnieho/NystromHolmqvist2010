@@ -61,7 +61,7 @@ for p=1:length(sacon)
 end
 
 % also interpolate NaNs that are still here
-qNaN = isnan(velX);
+qNaN = isnan(vel);
 if any(qNaN)
     fprintf('N NaN samples left: %d\n',sum(qNaN));
     [nanon,nanoff] = bool2bounds(qNaN);
@@ -70,7 +70,7 @@ if any(qNaN)
         nanon(1)    = [];
         nanoff(1)   = [];
     end
-    if ~isempty(nanoff) && nanoff(end)==length(velX)    % might be empty by now...
+    if ~isempty(nanoff) && nanoff(end)==length(vel)     % might be empty by now...
         nanon(end)  = [];
         nanoff(end) = [];
     end
