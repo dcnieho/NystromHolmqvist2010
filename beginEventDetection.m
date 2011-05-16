@@ -1,4 +1,10 @@
 clear all, clear functions, close all; clc
+%%-------------------------------------------------------------------------
+%%% This code is an implementation of 
+%%% Nyström, M. & Holmqvist, K. (in press), "An adaptive algorithm for
+%%% fixation, saccade, and glissade detection in eye-tracking data".
+%%% Behavior Research Methods
+%%-------------------------------------------------------------------------
 
 %%-------------------------------------------------------------------------
 %%% Init parameters
