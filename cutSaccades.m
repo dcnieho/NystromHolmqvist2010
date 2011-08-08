@@ -1,30 +1,24 @@
-function data = cutSaccades(data,ETparams,qReconstructPos)
+function data = cutSaccades(data,datatype,ETparams,qReconstructPos)
 
 % prepare parameters
 firstSecSamples = 1 * ETparams.samplingFreq;    % number of samples in one second (looks stupid, but if we later decide to want a different interval, we can change things here...)
 
 % get eye positions in pixels
-X       = data.pix.X;
-Y       = data.pix.Y;
+X       = data.(datatype).X;
+Y       = data.(datatype).Y;
 
 % get eye velocities in pixels
-vel     = data.pix.vel;
-velX    = -data.pix.velX;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
-velY    = -data.pix.velY;
-%velX(isnan(velX)) = 0;
+vel     = data.(datatype).vel;
+if strcmp(datatype,'pix')
+    velX    = -data.(datatype).velX;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+    velY    = -data.(datatype).velY;
+elseif strcmp(datatype,'deg')
+    velX    = -data.(datatype).velAz;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+    velY    = -data.(datatype).velEl;
+end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% preprocess on and offsets:
-% - fuse glissade after saccade
-% - fuse two saccades with little time between them
-% - the two above also incorporates: fuse saccade that starts at glissade offset
-
-[data.saccade.on,data.saccade.off] = mergeSaccadesAndGlissades(data,ETparams,10);
 sacon  = data.saccade.on;
 sacoff = data.saccade.off;
-
-% remove glissades, we fused them anyway
-data = rmfield(data,'glissade');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % step one: we want to deal with all the nan in the data, also the position
@@ -69,7 +63,7 @@ if any(qNaN)
     
     % replace original vel with this one as we'll need one with nans
     % removed
-    data.pix.vel = vel;
+    data.(datatype).vel = vel;
     
     % show how many NaN we have left now, those cannot be handled
     fprintf(' -> N NaN samples left: %d\n',sum(isnan(vel)));
@@ -83,7 +77,9 @@ for p=1:length(sacon)
     % special case: skip saccades during the first second, they are
     % probably to catch the blob as it appears at the beginning of the
     % trial. We skip this part of the data anyway for analysis
-    if 0 && sacon(p) <= firstSecSamples
+    % DN: this is only important for reconstructing eye position, so only
+    % use it if we want that
+    if qReconstructPos && sacon(p) <= firstSecSamples
         if any(isnan(vel(sacon(p):sacoff(p))))
             % if there is some NaN during this first interval, create a
             % position that linearly interpolates between begin and end
@@ -97,23 +93,23 @@ for p=1:length(sacon)
             velY(sacon(p):sacoff(p)) = diff(tempY(1:2))*ETparams.samplingFreq;
             vel(sacon(p):sacoff(p)) = hypot(diff(tempX(1:2)), diff(tempY(1:2)))*ETparams.samplingFreq;
         end
-        continue;
-    end
-    
-    % replace with interpolated velocity
-    if qReconstructPos
-        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
     else
-        vel = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
+        
+        % replace with interpolated velocity
+        if qReconstructPos
+            [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
+        else
+            vel = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
+        end
     end
 end
+data.(datatype).velfilt = vel;
 
 if qReconstructPos
     % plant version
-    data.pix.Xfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
-    data.pix.Yfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+    data.(datatype).Xfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
+    data.(datatype).Yfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
 end
-data.pix.velfilt = vel;
 
 
 
