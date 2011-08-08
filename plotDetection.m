@@ -95,6 +95,7 @@ plotWithMark(time,xdata,...                                             % data (
              fixmarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
+axis ij
 
 
 %%% plot Y trace with fixation markers
@@ -104,6 +105,7 @@ plotWithMark(time,ydata,...                                             % data (
              fixmarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
+axis ij
 
 
 %%% plot velocity trace with saccade and glissade markers

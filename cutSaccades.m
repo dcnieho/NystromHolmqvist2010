@@ -1,4 +1,4 @@
-function data = cutSaccades(data,ETparams)
+function data = cutSaccades(data,ETparams,qReconstructPos)
 
 % prepare parameters
 firstSecSamples = 1 * ETparams.samplingFreq;    % number of samples in one second (looks stupid, but if we later decide to want a different interval, we can change things here...)
@@ -9,7 +9,7 @@ Y       = data.pix.Y;
 
 % get eye velocities in pixels
 vel     = data.pix.vel;
-velX    = -data.pix.velX;   % not sure why, but the Savitzky-Golay filter gives me th wrong sign for the component velocities
+velX    = -data.pix.velX;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
 velY    = -data.pix.velY;
 %velX(isnan(velX)) = 0;
 
@@ -27,14 +27,63 @@ sacoff = data.saccade.off;
 data = rmfield(data,'glissade');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% step one: we want to deal with all the nan in the data, also the position
+% data
+qNaN = isnan(vel);
+if any(qNaN)
+    fprintf('N NaN samples: %d\n',sum(qNaN));
+    [nanon,nanoff] = bool2bounds(qNaN);
+    % gooi NaNnen aan begin en einde trial eruit, daar kunnen we niets mee
+    if nanon(1)==1
+        nanon(1)    = [];
+        nanoff(1)   = [];
+    end
+    if ~isempty(nanoff) && nanoff(end)==length(vel)     % might be empty by now...
+        nanon(end)  = [];
+        nanoff(end) = [];
+    end
+    
+    for p=1:length(nanon)
+        qDuringSac = nanon(p)>=sacon & nanoff(p)<=sacoff;
+        if any(qDuringSac)
+            % if nan is during saccade, use those as start and end points
+            % (probably blink)
+            assert(sum(qDuringSac)==1)  % anything else would be ridiculous!
+            on  = sacon (qDuringSac);
+            off = sacoff(qDuringSac);
+            sacon (qDuringSac) = [];
+            sacoff(qDuringSac) = [];
+        else
+            % pas indices aan, nanon(p) and nanoff(p) wijzen naar de eerste
+            % en laatste NaN in een serie
+            on  = nanon(p)-1;
+            off = nanoff(p)+1;
+        end
+        % replace with interpolated velocity
+        if qReconstructPos
+            [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off);
+        else
+            vel = replaceSaccade(X,Y,vel,velX,velY,on,off);
+        end
+    end
+    
+    % replace original vel with this one as we'll need one with nans
+    % removed
+    data.pix.vel = vel;
+    
+    % show how many NaN we have left now, those cannot be handled
+    fprintf(' -> N NaN samples left: %d\n',sum(isnan(vel)));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % per saccade, linearly interpolate eye velocity between saccade begin
 % point and end point
 for p=1:length(sacon)
-    % special case: skip saccades during the first second, they are 
+    % special case: skip saccades during the first second, they are
     % probably to catch the blob as it appears at the beginning of the
     % trial. We skip this part of the data anyway for analysis
-    if sacon(p) <= firstSecSamples
+    if 0 && sacon(p) <= firstSecSamples
         if any(isnan(vel(sacon(p):sacoff(p))))
             % if there is some NaN during this first interval, create a
             % position that linearly interpolates between begin and end
@@ -52,56 +101,18 @@ for p=1:length(sacon)
     end
     
     % replace with interpolated velocity
-    [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
-    
-    if 0
-        xc = CanonicalDiscreteSSModel(ETparams.sysdt,velX(sacon(p):sacoff(p))) + X(sacon(p));
-        yc = CanonicalDiscreteSSModel(ETparams.sysdt,velY(sacon(p):sacoff(p))) + Y(sacon(p));
+    if qReconstructPos
+        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
+    else
+        vel = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
     end
 end
 
-% also interpolate NaNs that are still here
-qNaN = isnan(vel);
-if any(qNaN)
-    fprintf('N NaN samples left: %d\n',sum(qNaN));
-    [nanon,nanoff] = bool2bounds(qNaN);
-    % gooi NaNnen aan begin en einde trial eruit, daar kunnen we niets mee
-    if nanon(1)==1
-        nanon(1)    = [];
-        nanoff(1)   = [];
-    end
-    if ~isempty(nanoff) && nanoff(end)==length(vel)     % might be empty by now...
-        nanon(end)  = [];
-        nanoff(end) = [];
-    end
-    
-    for p=1:length(nanon)
-        % replace with interpolated velocity
-        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,nanon(p)-1,nanoff(p)+1); % pas indices aan, nanon(p) and nanoff(p) wijzen naar de eerste en laatste NaN in een serie
-    end
-    
-    % show how many NaN we have left now, those cannot be handled
-    fprintf(' -> N NaN samples left: %d\n',sum(isnan(velX)));
+if qReconstructPos
+    % plant version
+    data.pix.Xfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
+    data.pix.Yfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
 end
-
-
-
-if 0
-    % reconstruct eye position from the altered velocity signal
-    % x_{k+1} = x_k + v_k*delta_t
-    int = 1/ETparams.samplingFreq;
-    for p=1:length(velX)
-        if p==1
-            ddxx(p) = X(1);
-        else
-            ddxx(p) = ddxx(p-1)+velX(p-1)*int;
-        end
-    end
-end
-
-% plant version
-data.pix.Xfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
-data.pix.Yfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
 data.pix.velfilt = vel;
 
 
@@ -114,8 +125,10 @@ function [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off)
 % replace with interpolated velocity
 vel(on:off)  = linspace(vel(on),vel(off),off-on+1);
 
-% get saccade direction and use it to compute the X and Y velocity
-% components
-ang = atan2(Y(off)-Y(on),X(off)-X(on));
-velX(on:off) = cos(ang)*vel(on:off);
-velY(on:off) = sin(ang)*vel(on:off);
+if nargout>1
+    % get saccade direction and use it to compute the X and Y velocity
+    % components
+    ang = atan2(Y(off)-Y(on),X(off)-X(on));
+    velX(on:off) = cos(ang)*vel(on:off);
+    velY(on:off) = sin(ang)*vel(on:off);
+end

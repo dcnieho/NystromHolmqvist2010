@@ -1,4 +1,4 @@
-function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
+function plotDetectionFilt(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and subplot
@@ -52,8 +52,13 @@ end
 xdata   = data.(datatype).X;
 ydata   = data.(datatype).Y;
 vel     = data.(datatype).vel;
-xdatcut = data.(datatype).Xfilt;
-ydatcut = data.(datatype).Yfilt;
+if isfield(data.(datatype),'Xfilt')
+    xdatcut = data.(datatype).Xfilt;
+    ydatcut = data.(datatype).Yfilt;
+    qReconstructPos = true;
+else
+    qReconstructPos = false;
+end
 velcut  = data.(datatype).velfilt;
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 % markers
@@ -94,23 +99,39 @@ else
     fixmarks = {};
 end
 hold on;
-plot(time,xdata,'g');
-plotWithMark(time,xdatcut,...                                           % data (y,x)
-             'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
-             fixmarks{:} ...                                            % fixation markers (if any)
-            );
+if qReconstructPos
+    plot(time,xdata,'g');
+    plotWithMark(time,xdatcut,...                                           % data (y,x)
+                 'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
+                 fixmarks{:} ...                                            % fixation markers (if any)
+                );
+else
+    plotWithMark(time,xdata,...                                             % data (y,x)
+                 'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
+                 fixmarks{:} ...                                            % fixation markers (if any)
+                );
+end
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
+axis ij
 
 
 %%% plot Y trace with fixation markers
 ay = subplot('position',[0.05 0.68 0.90 0.12]);
 hold on;
-plot(time,ydata,'g');
-plotWithMark(time,ydatcut,...                                           % data (y,x)
-             'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
-             fixmarks{:} ...                                            % fixation markers (if any)
-            );
+if qReconstructPos
+    plot(time,ydata,'g');
+    plotWithMark(time,ydatcut,...                                           % data (y,x)
+                 'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
+                 fixmarks{:} ...                                            % fixation markers (if any)
+                );
+else
+    plotWithMark(time,ydata,...                                           % data (y,x)
+                 'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
+                 fixmarks{:} ...                                            % fixation markers (if any)
+                );
+end
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
+axis ij
 
 
 %%% plot velocity trace with saccade and glissade markers
@@ -152,13 +173,15 @@ linkaxes([ax ay av],'x');
 
 %%% plot scanpath of raw data and of data with saccades cut out
 asf = subplot('position',[0.05 0.06 0.43 0.40]);
-plotWithMark(xdatcut,ydatcut,...                                                    % data (y,x)
-             xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
-             1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
-             length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
-            );
-axis(rect([1 3 2 4]));
-axis ij
+if qReconstructPos
+    plotWithMark(xdatcut,ydatcut,...                                                    % data (y,x)
+                 xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
+                 1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
+                 length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
+                );
+    axis(rect([1 3 2 4]));
+    axis ij
+end
 
 asr = subplot('position',[0.52 0.06 0.43 0.40]);
 plotWithMark(xdata,ydata,...                                                        % data (y,x)
