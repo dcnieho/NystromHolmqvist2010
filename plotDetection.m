@@ -1,4 +1,4 @@
-function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
+function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel,pic)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and subplot
@@ -12,8 +12,9 @@ function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
 % - rect: struct with extends of screen window, [upper left (x,y) lower
 %   right (x,y)]. rect will be read from rect.(datatype)
 % - title: can be empty
-% TODO: make way to select pixels or degrees for plotting (except velocity,
-% which is always plotted in °/s
+% - pic: optional. struct with two fields, imdata with the image and offset
+%       to encode the offset between the top left of the screen and of the
+%       picture.
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -28,7 +29,7 @@ function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
-error(nargchk(5,6,nargin,'struct'))
+error(nargchk(5,7,nargin,'struct'))
 
 %%% unpack the needed variables
 if nargin<6
@@ -67,8 +68,8 @@ if isfield(data,'fixation')
     qHaveFixations = true;
     fixon   = data.fixation.on;
     fixoff  = data.fixation.off;
-    xfixpos = data.fixation.meanX;
-    yfixpos = data.fixation.meanY;
+    xfixpos = data.fixation.(['meanX_' datatype]);
+    yfixpos = data.fixation.(['meanY_' datatype]);
 else
     qHaveFixations = false;
 end
@@ -146,6 +147,10 @@ linkaxes([ax ay av],'x');
 %%% plot scanpath of raw data and of fixations
 if qHaveFixations
     asf = subplot('position',[0.05 0.06 0.43 0.40]);
+    if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+        imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
+        hold on
+    end
     plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
@@ -159,6 +164,10 @@ else
 end
 
 asr = subplot('position',[0.52 0.06 0.43 0.40]);
+if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+    imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
+    hold on
+end
 plotWithMark(xdata,ydata,...                                                        % data (y,x)
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint

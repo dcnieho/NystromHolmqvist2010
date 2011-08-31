@@ -1,4 +1,4 @@
-function plotDetectionFilt(data,datatype,sampleRate,glissadeSearchWindow,rect,titel)
+function plotDetectionFilt(data,datatype,sampleRate,glissadeSearchWindow,rect,titel,pic)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and subplot
@@ -12,8 +12,9 @@ function plotDetectionFilt(data,datatype,sampleRate,glissadeSearchWindow,rect,ti
 % - rect: struct with extends of screen window, [upper left (x,y) lower
 %   right (x,y)]. rect will be read from rect.(datatype)
 % - title: can be empty
-% TODO: make way to select pixels or degrees for plotting (except velocity,
-% which is always plotted in °/s
+% - pic: optional. struct with two fields, imdata with the image and offset
+%       to encode the offset between the top left of the screen and of the
+%       picture.
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -28,7 +29,7 @@ function plotDetectionFilt(data,datatype,sampleRate,glissadeSearchWindow,rect,ti
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
-error(nargchk(5,6,nargin,'struct'))
+error(nargchk(5,7,nargin,'struct'))
 
 %%% unpack the needed variables
 if nargin<6
@@ -52,6 +53,9 @@ end
 xdata   = data.(datatype).X;
 ydata   = data.(datatype).Y;
 vel     = data.(datatype).vel;
+
+assert(isfield(data.(datatype),'velfilt'),'Saccades have not been cut from this data')
+velcut  = data.(datatype).velfilt;
 if isfield(data.(datatype),'Xfilt')
     xdatcut = data.(datatype).Xfilt;
     ydatcut = data.(datatype).Yfilt;
@@ -59,7 +63,6 @@ if isfield(data.(datatype),'Xfilt')
 else
     qReconstructPos = false;
 end
-velcut  = data.(datatype).velfilt;
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 % markers
 sacon   = data.saccade.on;
@@ -75,8 +78,8 @@ if isfield(data,'fixation')
     qHaveFixations = true;
     fixon   = data.fixation.on;
     fixoff  = data.fixation.off;
-    xfixpos = data.fixation.meanX;
-    yfixpos = data.fixation.meanY;
+    xfixpos = data.fixation.(['meanX_' datatype]);
+    yfixpos = data.fixation.(['meanY_' datatype]);
 else
     qHaveFixations = false;
 end
@@ -174,6 +177,10 @@ linkaxes([ax ay av],'x');
 %%% plot scanpath of raw data and of data with saccades cut out
 asf = subplot('position',[0.05 0.06 0.43 0.40]);
 if qReconstructPos
+    if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+        imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
+        hold on
+    end
     plotWithMark(xdatcut,ydatcut,...                                                    % data (y,x)
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
@@ -184,6 +191,10 @@ if qReconstructPos
 end
 
 asr = subplot('position',[0.52 0.06 0.43 0.40]);
+if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+    imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
+    hold on
+end
 plotWithMark(xdata,ydata,...                                                        % data (y,x)
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
