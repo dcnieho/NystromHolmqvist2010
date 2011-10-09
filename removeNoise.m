@@ -12,7 +12,7 @@ V_threshold     = nanmedian(data.deg.vel)*2;
 % physiologically possible). Note that as the origin was moved, we
 % shouldn't be detecting (0,0) here, but
 % -ETparams.screen.subjectStraightAhead
-qnoise = (data.pix.Xori == -ETparams.screen.subjectStraightAhead(1) & data.pix.Yori == -ETparams.screen.subjectStraightAhead(2)) |...
+qnoise = (data.pix.X == -ETparams.screen.subjectStraightAhead(1) & data.pix.Y == -ETparams.screen.subjectStraightAhead(2)) |...
              data.deg.vel  > ETparams.blink.velocityThreshold |...
          abs(data.deg.acc) > ETparams.blink.accThreshold;
 
@@ -48,6 +48,7 @@ data.deg.X(qnoise)      = nan;
 data.deg.Y(qnoise)      = nan;
 data.deg.vel(qnoise)    = nan;
 data.deg.acc(qnoise)    = nan;
+if ETparams.data.qDetrendWithMedianFilter
 
 % second pass: find those sections of data enclosed in nans that are too
 % short to be meaningful (less than minimum fixation duration) and delete

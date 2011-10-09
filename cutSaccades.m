@@ -54,11 +54,7 @@ if any(qNaN)
             off = nanoff(p)+1;
         end
         % replace with interpolated velocity
-        if qReconstructPos
-            [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off);
-        else
-            vel = replaceSaccade(X,Y,vel,velX,velY,on,off);
-        end
+        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off);
     end
     
     % replace original vel with this one as we'll need one with nans
@@ -96,12 +92,15 @@ for p=1:length(sacon)
     else
         
         % replace with interpolated velocity
-        if qReconstructPos
-            [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
-        else
-            vel = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
-        end
+        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
     end
+end
+if strcmp(datatype,'pix')
+    data.(datatype).velXfilt = velX;
+    data.(datatype).velYfilt = velY;
+elseif strcmp(datatype,'deg')
+    data.(datatype).velAzfilt = velX;
+    data.(datatype).velElfilt = velY;
 end
 data.(datatype).velfilt = vel;
 

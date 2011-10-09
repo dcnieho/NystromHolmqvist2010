@@ -48,6 +48,7 @@ else
     ylbl = ['Vertical (' unit ')'];
     vlbl = ['Velocity (' unit '/s)'];
 end
+clbl    = ['Xcorr  response'];  % double space on purpose, reads easier for me
 
 % time series
 xdata   = data.(datatype).X;
@@ -84,9 +85,27 @@ else
     qHaveFixations = false;
 end
 % thresholds
+if isfield(data.saccade,'xCorrPeakThreshold')
+    % used saccade template
+    qSaccadeTemplate = true;
+    saccadeXCorrPeakThreshold       = data.saccade.xCorrPeakThreshold;
+else
+    % detected saccades based on velocity trace
+    qSaccadeTemplate = false;
+end
+
 saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
-saccadeOnsetVelocityTreshold    = data.saccade.onsetVelocityTreshold;
-saccadeOffsetVelocityTreshold   = data.saccade.offsetVelocityTreshold;
+if isfield(data.saccade,'xCorrOffsetThreshold')
+    % refinement also run from xcorr responses
+    qSaccadeTemplateRefinement = true;
+    saccadeXCorrOnsetThreshold      = data.saccade.xCorrOnsetThreshold;
+    saccadeXCorrOffsetThreshold     = data.saccade.xCorrOffsetThreshold;
+else
+    % refinement run from velocity trace
+    qSaccadeTemplateRefinement = false;
+    saccadeOnsetVelocityThreshold   = data.saccade.onsetVelocityThreshold;
+    saccadeOffsetVelocityThreshold  = data.saccade.offsetVelocityThreshold;
+end
 glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
 
 
@@ -94,7 +113,11 @@ glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
 mmt  = [min(time) max(time)];
 
 %%% plot X trace with fixation markers
-ax = subplot('position',[0.05 0.84 0.90 0.12]);
+if qSaccadeTemplate
+    ax = subplot('position',[0.05 0.88 0.90 0.08]);
+else
+    ax = subplot('position',[0.05 0.84 0.90 0.12]);
+end
 if qHaveFixations
     fixmarks = {fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
                 fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};    % fixation off markers
@@ -119,7 +142,11 @@ axis ij
 
 
 %%% plot Y trace with fixation markers
-ay = subplot('position',[0.05 0.68 0.90 0.12]);
+if qSaccadeTemplate
+    ay = subplot('position',[0.05 0.76 0.90 0.08]);
+else
+    ay = subplot('position',[0.05 0.68 0.90 0.12]);
+end
 hold on;
 if qReconstructPos
     plot(time,ydata,'g');
@@ -138,7 +165,11 @@ axis ij
 
 
 %%% plot velocity trace with saccade and glissade markers
-av = subplot('position',[0.05 0.52 0.90 0.12]);
+if qSaccadeTemplate
+    av = subplot('position',[0.05 0.60 0.90 0.12]);
+else
+    av = subplot('position',[0.05 0.52 0.90 0.12]);
+end
 if qHaveGlissades
     qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
     glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
@@ -156,26 +187,65 @@ plotWithMark(time,velcut,...                                            % data (
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
              glismarks{:} ...                                           % glissade markers (if any)
             );
-hold on;
 % add detection thresholds
 if strcmp(datatype,'deg')
     % don't add if plotting pixels, it doesn't make any sense then
     hold on;
     plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
-    plot(mmt,[1 1]*saccadeOnsetVelocityTreshold,'r:')
-    for p=1:length(sacoff)
-        plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityTreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+    if ~qSaccadeTemplateRefinement
+        plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
+        for p=1:length(sacoff)
+            plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+        end
     end
     hold off;
 end
 axis([mmt(1) mmt(2) 0 max(vel)]);
 
-% link x-axis (time) of the three timeseries for easy viewing
-linkaxes([ax ay av],'x');
+%%% plot cross correlation output with saccade and glissade markers
+if qSaccadeTemplate
+    ac = subplot('position',[0.05 0.44 0.90 0.12]);
+    if qHaveGlissades
+        qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
+        glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
+                     glisoff(~qhighvelglissade),{'g*'}};                    % low  velocity glissade off markers
+    else
+        glismarks = {};
+    end
+    % at line at 0
+    plot([time(1) time(end)],[0 0],'b');
+    hold on;
+    plotWithMark(time,data.deg.xcorr_vel,...                                % data (y,x)
+                 'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
+                 sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
+                 sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
+                 glismarks{:} ...                                           % glissade markers (if any)
+                );
+    hold on;
+    % add detection thresholds
+    plot(mmt,[1 1]*saccadeXCorrPeakThreshold,'r--')
+    if qSaccadeTemplateRefinement
+        plot(mmt,[1 1]*saccadeXCorrOnsetThreshold,'r:')
+        for p=1:length(sacoff)
+            plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeXCorrOffsetThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+        end
+    end
+    hold off;
+    axis([mmt(1) mmt(2) 0 max(data.deg.xcorr_vel)]);
+else
+    ac = [];
+end
+
+% link x-axis (time) of the three/four timeseries for easy viewing
+linkaxes([ax ay av ac],'x');
 
 
 %%% plot scanpath of raw data and of data with saccades cut out
-asf = subplot('position',[0.05 0.06 0.43 0.40]);
+if qSaccadeTemplate
+    asf = subplot('position',[0.05 0.06 0.43 0.34]);
+else
+    asf = subplot('position',[0.05 0.06 0.43 0.40]);
+end
 if qReconstructPos
     if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
@@ -190,7 +260,11 @@ if qReconstructPos
     axis ij
 end
 
-asr = subplot('position',[0.52 0.06 0.43 0.40]);
+if qSaccadeTemplate
+    asr = subplot('position',[0.52 0.06 0.43 0.34]);
+else
+    asr = subplot('position',[0.52 0.06 0.43 0.40]);
+end
 if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on

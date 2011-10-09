@@ -28,6 +28,10 @@ data = filterDataAndCalcDerivative(data,ETparams);
 %-------------------------------------
 data = removeNoise(data,ETparams);
 
+% Detrend and apply saccade template
+%-------------------------------------
+data = detrendAndApplySaccadeTemplate(data,ETparams);
+
 % iteratively find the optimal noise threshold
 %-------------------------------------
 data = estimateSaccadeVelocityThresholds(data,ETparams);

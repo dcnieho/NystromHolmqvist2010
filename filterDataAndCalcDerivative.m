@@ -75,11 +75,8 @@ ntaps   = 2*ceil(window)-1;
 if ETparams.data.qPreciseCalcDeriv
     % TODO implement: unfinished below!
     % Calculate the filtered position, velocity and acceleration
-    [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
+    [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
     
-    % store filtered
-    data.deg.X      = tempP(:,1);
-    data.deg.Y      = tempP(:,2);
     
     % Now calculate eye velocity and acceleration precisely
     % See Equation 30 in Haslwanter T (1995) Mathematics of 3-dimensional
@@ -98,11 +95,8 @@ if ETparams.data.qPreciseCalcDeriv
     % maybe the Goldstein ref has it), that would be a good exercise.
 else
     % Calculate the filtered position, velocity and acceleration
-    [tempP,tempV,tempA] = sgFilt([data.deg.Xori data.deg.Yori],[0 1 2],ntaps);
+    [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
     
-    % store filtered
-    data.deg.X      = tempP(:,1);
-    data.deg.Y      = tempP(:,2);
     
     % calculate derivative magnitudes
     % note NOTE NOTE: This works fine for our purpose of detecting velocity
@@ -133,11 +127,7 @@ end
 if ETparams.data.qAlsoStoreandSmoothPixels
     % also calculate smoothing (and derivatives if wanted) for eye position
     % in pixels
-    [tempP,tempV,tempA] = sgFilt([data.pix.Xori data.pix.Yori],[0 1 2],ntaps);
-    
-    % store filtered
-    data.pix.X      = tempP(:,1);
-    data.pix.Y      = tempP(:,2);
+    [tempV,tempA] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
     
     % calculate derivative magnitudes
     data.pix.vel    = hypot(tempV(:,1), tempV(:,2)) * ETparams.samplingFreq;

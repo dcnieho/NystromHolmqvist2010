@@ -21,27 +21,27 @@ function data = prepareData(x,y,ETparams)
 % Res 35, 1727-1739, e.g. Figure 4
 
 % ensure column vectors
-data.pix.Xori = x(:);
-data.pix.Yori = y(:);
+data.pix.X = x(:);
+data.pix.Y = y(:);
 
 % flip X if specified
 if ETparams.data.qFlipX
-    data.pix.Xori = -data.pix.Xori + ETparams.screen.resolution(1);
+    data.pix.X = -data.pix.X + ETparams.screen.resolution(1);
 end
 % flip Y if specified
 if ETparams.data.qFlipY
-    data.pix.Yori = -data.pix.Yori + ETparams.screen.resolution(2);
+    data.pix.Y = -data.pix.Y + ETparams.screen.resolution(2);
 end
 
 % move origin to point on screen straight ahead of subject
-data.pix.Xori = data.pix.Xori - ETparams.screen.subjectStraightAhead(1);
-data.pix.Yori = data.pix.Yori - ETparams.screen.subjectStraightAhead(2);
+data.pix.X = data.pix.X - ETparams.screen.subjectStraightAhead(1);
+data.pix.Y = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 % finally, convert gaze position in pixels to Fick angles in degree
 % first convert pixels to cm away from origin
-pixPerMeter     = ETparams.screen.resolution ./ ETparams.screen.size;
+pixPerMeter = ETparams.screen.resolution ./ ETparams.screen.size;
 % Then convert to Fick angles (MATLAB's cart2sph models a Fick gimbal)
-[dx,dy]         = cart2sph(ETparams.screen.viewingDist, data.pix.Xori./pixPerMeter(1), data.pix.Yori./pixPerMeter(2));
+[dx,dy]     = cart2sph(ETparams.screen.viewingDist, data.pix.X./pixPerMeter(1), data.pix.Y./pixPerMeter(2));
 % convert to degrees (Fick angles)
-data.deg.Xori   = dx./pi*180;
-data.deg.Yori   = dy./pi*180;
+data.deg.X  = dx./pi*180;
+data.deg.Y  = dy./pi*180;
