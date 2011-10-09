@@ -45,6 +45,7 @@ if ETparams.data.qDetrendWithMedianFilter
         median_velocities = medianFilter(...
             lowpassFilter(data.(todo{p,1}).(todo{p,2}),ETparams.data.detrendLowpassFIRCoeffs), ...
             medianSamples); % smoothed median matches
+        
         data.(todo{p,1}).(todo{p,3}) = data.(todo{p,1}).(todo{p,2}) - median_velocities;
     end
 end

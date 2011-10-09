@@ -28,12 +28,11 @@ ETparams.data.qPreciseCalcDeriv         = false;
 ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 
 % Option to use median filter for detrending velocity data (e.g. removing
-% pursuit baseline speed). If saccade template (see below) is not used,
-% saccade detection is done on this detrended velocity trace. If saccade
-% templates are used, detrended velocity is only used as input to xcorr
-% with the saccade template
+% pursuit baseline speed). This is only useful if saccade templates are
+% used, detrended velocity is then used as input to xcorr with the saccade
+% template
 ETparams.data.qDetrendWithMedianFilter  = true;
-ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eyevelocity in degrees will be done
+ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eyevelocity in degrees will be done. Only set this to true if you want this data, this code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
 
 % Option to first convolve velocuty trace with the velocity profile of a

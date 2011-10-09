@@ -94,15 +94,15 @@ else
     qSaccadeTemplate = false;
 end
 
-saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
 if isfield(data.saccade,'xCorrOffsetThreshold')
     % refinement also run from xcorr responses
-    qSaccadeTemplateRefinement = true;
+    qSaccadeTemplateRefinement      = true;
     saccadeXCorrOnsetThreshold      = data.saccade.xCorrOnsetThreshold;
     saccadeXCorrOffsetThreshold     = data.saccade.xCorrOffsetThreshold;
 else
     % refinement run from velocity trace
-    qSaccadeTemplateRefinement = false;
+    qSaccadeTemplateRefinement      = false;
+    saccadePeakVelocityThreshold    = data.saccade.peakVelocityThreshold;
     saccadeOnsetVelocityThreshold   = data.saccade.onsetVelocityThreshold;
     saccadeOffsetVelocityThreshold  = data.saccade.offsetVelocityThreshold;
 end
@@ -177,7 +177,7 @@ if qHaveGlissades
 else
     glismarks = {};
 end
-% at line at 0
+% line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
 plot(time,vel,'g');
@@ -188,15 +188,13 @@ plotWithMark(time,velcut,...                                            % data (
              glismarks{:} ...                                           % glissade markers (if any)
             );
 % add detection thresholds
-if strcmp(datatype,'deg')
+if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement
     % don't add if plotting pixels, it doesn't make any sense then
     hold on;
     plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
-    if ~qSaccadeTemplateRefinement
-        plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
-        for p=1:length(sacoff)
-            plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
-        end
+    plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
+    for p=1:length(sacoff)
+        plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
     end
     hold off;
 end
@@ -212,7 +210,7 @@ if qSaccadeTemplate
     else
         glismarks = {};
     end
-    % at line at 0
+    % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
     plotWithMark(time,data.deg.xcorr_vel,...                                % data (y,x)

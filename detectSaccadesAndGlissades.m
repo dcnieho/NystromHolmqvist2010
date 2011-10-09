@@ -17,11 +17,7 @@ else
     field_peak  = 'peakVelocityThreshold';
     field_onset = 'onsetVelocityThreshold';
     field_offset= 'offsetVelocityThreshold';
-    if ETparams.data.qDetrendWithMedianFilter && ~ETparams.data.qApplySaccadeTemplate
-        vel     = data.deg.detrend_vel;
-    else
-        vel     = data.deg.vel;
-    end
+    vel         = data.deg.vel;
 end
 
 
@@ -37,6 +33,7 @@ end
 
 % If no saccades are detected, return
 if isempty(sacon)
+    fprintf('no saccades\n');
     return;
 end
 

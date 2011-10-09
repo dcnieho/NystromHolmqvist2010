@@ -44,11 +44,7 @@ end
 % create boolean matrix given refined noise bounds
 qnoise = bounds2bool(noiseon,noiseoff,length(data.deg.vel));
 % remove data that is due to noise
-data.deg.X(qnoise)      = nan;
-data.deg.Y(qnoise)      = nan;
 data.deg.vel(qnoise)    = nan;
-data.deg.acc(qnoise)    = nan;
-if ETparams.data.qDetrendWithMedianFilter
 
 % second pass: find those sections of data enclosed in nans that are too
 % short to be meaningful (less than minimum fixation duration) and delete
@@ -66,21 +62,27 @@ end
 if ~isempty(dataon)
     noiseidxs = bounds2ind(dataon,dataoff);
     % remove useless data
-    data.deg.X(noiseidxs)   = nan;
-    data.deg.Y(noiseidxs)   = nan;
     data.deg.vel(noiseidxs) = nan;
-    data.deg.acc(noiseidxs) = nan;
+end
+
+% now remove data from all other data fields that we have
+qNaN = isnan(data.deg.vel);
+fields = fieldnames(data.deg);
+for p=1:length(fields)
+    if strcmp(fields{p},'vel')
+        continue;
+    end
+    
+    data.deg.(fields{p})(qNaN) = nan;
 end
 
 % if we have smoothed eye position in pixels and its derivatives, throw the
 % NaNs in there as well
 if isfield(data.pix,'X')
-    qNaN = isnan(data.deg.X);
-    
-    data.pix.X(qNaN)   = nan;
-    data.pix.Y(qNaN)   = nan;
-    data.pix.vel(qNaN) = nan;
-    data.pix.acc(qNaN) = nan;
+    fields = fieldnames(data.pix);
+    for p=1:length(fields)
+        data.pix.(fields{p})(qNaN) = nan;
+    end
 end
 
 % lastly, notify if more than 20% nan

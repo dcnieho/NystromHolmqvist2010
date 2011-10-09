@@ -27,11 +27,7 @@ if ETparams.data.qApplySaccadeTemplate
 else
     field_peak  = 'peakVelocityThreshold';
     field_onset = 'onsetVelocityThreshold';
-    if ETparams.data.qDetrendWithMedianFilter
-        vel     = data.deg.detrend_vel;
-    else
-        vel     = data.deg.vel;
-    end
+    vel         = data.deg.vel;
 end
 
 % assign initial thresholds
