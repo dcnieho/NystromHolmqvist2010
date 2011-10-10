@@ -93,6 +93,10 @@ if ETparams.data.qPreciseCalcDeriv
     % safely take the acceleration numerically without adding too much
     % noise. Or we could derive the formula for acceleration ourself (or
     % maybe the Goldstein ref has it), that would be a good exercise.
+    
+    % see also http://www.u.arizona.edu/~pen/ame553/lessons.html, lesson 10
+    % (see also the textbook at http://www.u.arizona.edu/~pen/ame553/) and 
+    % http://www.rst.e-technik.tu-dortmund.de/cms/Medienpool/Downloads/Lehre/Vorlesungen/Robotics_Theory/Diff_Kinematics_4.pdf
 else
     % Calculate the filtered position, velocity and acceleration
     [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);

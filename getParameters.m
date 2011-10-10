@@ -35,8 +35,8 @@ ETparams.data.qDetrendWithMedianFilter  = true;
 ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eyevelocity in degrees will be done. Only set this to true if you want this data, this code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
 
-% Option to first convolve velocuty trace with the velocity profile of a
-% saccade. This will bring out the noise by reducing the amplitude of
+% Option to first convolve velocity trace with the velocity profile of a
+% saccade. This will bring out the saccades by reducing the amplitude of
 % features in the trace that are not like saccades. If this is set to true,
 % saccadic peaks are identified based on this xcorr response. Whether
 % refinement of saccade starts and ends, and glissade detection is also
@@ -63,10 +63,10 @@ ETparams.glissade.searchWindow          = 40;           % window after saccade i
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals
 
-% fixation here is defined as 'not saccade or glissade' it could thus also
+% fixation here is defined as 'not saccade or glissade', it could thus also
 % be pursuit
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 100;          % in milliseconds (longer as we're not interested in very short pursuit intervals)
+ETparams.fixation.minDur                = 100;          % in milliseconds (long as we're not interested in very short pursuit intervals)
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on other data
