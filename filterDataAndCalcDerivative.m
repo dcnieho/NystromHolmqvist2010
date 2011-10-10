@@ -1,8 +1,9 @@
 function data = filterDataAndCalcDerivative(data,ETparams)
-% We'll use the Savitzky-Golay filter for smoothing and differentiation,
-% which basically performs a polynomial least square fit in a moving
-% window. The eye position data is smoothed by extracting the zeroth order
-% coefficient of this polynomial. Eye velocity and acceleration and
+% By default, we'll use the Savitzky-Golay filter for smoothing and
+% differentiation (simply numerical difference calculation is also
+% possible), which basically performs a polynomial least square fit in a
+% moving window. The eye position data is smoothed by extracting the zeroth
+% order coefficient of this polynomial. Eye velocity and acceleration and
 % obtained by returning the higher order coefficients of the fitted
 % polynomial. Note that for kth order derivatives (k>1) we'd need to
 % multiply the ouput by k! to obtain the derivative coefficient (see Taylor
@@ -59,24 +60,48 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % the width of the velocity peak (3rd moment) is not present by a second
 % order polynomial fit.
 
-% prepare parameters
-%--------------------------------------------------------------------------
-% span of filter, use minimum length of saccade. Its very important to not
-% make the filter window wider than the narrowest feature we are interested
-% in, or we'll smooth out those features.
-window  = ceil(ETparams.saccade.minDur/1000*ETparams.samplingFreq);
-% number of filter taps
-ntaps   = 2*ceil(window)-1;
-
-% compute eye positions, velocities, and accelerations in pixels, convert
-% to degree
-%--------------------------------------------------------------------------
-
-if ETparams.data.qPreciseCalcDeriv
-    % TODO implement: unfinished below!
-    % Calculate the filtered position, velocity and acceleration
+% calculate component velocities and accelerations
+if ETparams.data.qNumericallyDifferentiate
+    tempV   = diff([data.deg.X data.deg.Y],1,1);
+    tempA   = diff([data.deg.X data.deg.Y],2,1);
+    
+    % make same length as position trace
+    tempV   = [tempV; tempV( end,:)];
+    tempA   = [tempA; tempA([end end],:)];
+    
+    % also calculate derivatives for eye position in pixels
+    if ETparams.data.qAlsoStoreandSmoothPixels
+        tempVpix    = diff([data.pix.X data.pix.Y],1,1);
+        tempApix    = diff([data.pix.X data.pix.Y],2,1);
+        
+        % make same length as position trace
+        tempVpix    = [tempVpix; tempVpix( end,:)];
+        tempApix    = [tempApix; tempApix([end end],:)];
+    end
+else
+    % prepare parameters
+    %--------------------------------------------------------------------------
+    % span of filter, use minimum length of saccade. Its very important to not
+    % make the filter window wider than the narrowest feature we are interested
+    % in, or we'll smooth out those features.
+    window  = ceil(ETparams.saccade.minDur/1000*ETparams.samplingFreq);
+    % number of filter taps
+    ntaps   = 2*ceil(window)-1;
+    
+    % calculate derivatives
     [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
     
+    % also calculate derivatives for eye position in pixels
+    if ETparams.data.qAlsoStoreandSmoothPixels
+        [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
+    end
+end
+
+% compute eye velocities, and accelerations
+%--------------------------------------------------------------------------
+if ETparams.data.qPreciseCalcDeriv
+    % TODO: implement
+    error('TODO')
     
     % Now calculate eye velocity and acceleration precisely
     % See Equation 30 in Haslwanter T (1995) Mathematics of 3-dimensional
@@ -98,11 +123,6 @@ if ETparams.data.qPreciseCalcDeriv
     % (see also the textbook at http://www.u.arizona.edu/~pen/ame553/) and 
     % http://www.rst.e-technik.tu-dortmund.de/cms/Medienpool/Downloads/Lehre/Vorlesungen/Robotics_Theory/Diff_Kinematics_4.pdf
 else
-    % Calculate the filtered position, velocity and acceleration
-    [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
-    
-    
-    % calculate derivative magnitudes
     % note NOTE NOTE: This works fine for our purpose of detecting velocity
     % and acceleration peaks, which in essense is all the algorithm really
     % does. Both fixations and smooth pursuit are periods of low velocity
@@ -129,20 +149,16 @@ if ETparams.data.qAlsoStoreComponentDerivs
 end
 
 if ETparams.data.qAlsoStoreandSmoothPixels
-    % also calculate smoothing (and derivatives if wanted) for eye position
-    % in pixels
-    [tempV,tempA] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
-    
     % calculate derivative magnitudes
-    data.pix.vel    = hypot(tempV(:,1), tempV(:,2)) * ETparams.samplingFreq;
-    data.pix.acc    = hypot(tempA(:,1), tempA(:,2)) * ETparams.samplingFreq^2;
+    data.pix.vel    = hypot(tempVpix(:,1), tempVpix(:,2)) * ETparams.samplingFreq;
+    data.pix.acc    = hypot(tempApix(:,1), tempApix(:,2)) * ETparams.samplingFreq^2;
     
     % also store velocities and acceleration in X and Y direction
     if ETparams.data.qAlsoStoreComponentDerivs
-        data.pix.velX   = tempV(:,1) * ETparams.samplingFreq;
-        data.pix.velY   = tempV(:,2) * ETparams.samplingFreq;
-        data.pix.accX   = tempA(:,1) * ETparams.samplingFreq^2;
-        data.pix.accY   = tempA(:,2) * ETparams.samplingFreq^2;
+        data.pix.velX   = tempVpix(:,1) * ETparams.samplingFreq;
+        data.pix.velY   = tempVpix(:,2) * ETparams.samplingFreq;
+        data.pix.accX   = tempApix(:,1) * ETparams.samplingFreq^2;
+        data.pix.accY   = tempApix(:,2) * ETparams.samplingFreq^2;
     end
 end
 

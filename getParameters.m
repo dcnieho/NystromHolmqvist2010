@@ -12,6 +12,12 @@ ETparams.screen.subjectStraightAhead    = [640 381.5];  % Specify the screen coo
 % is on the right side of the screen (sic).
 ETparams.data.qFlipY                    = false;
 ETparams.data.qFlipX                    = false;
+% By default, eye velocity and acceleration are computed with a
+% Savitzky-Golay differentiating filter (it basically fits a second order
+% polynomial in a moving window to the eye position data and takes the
+% derivatives analytically). Set the below to true to simply numerical
+% differentiate with matlab's diff()
+ETparams.data.qNumericallyDifferentiate = true;
 % If true, datastream of eyeposition in pixels is also stored, smoothed and
 % the derivatives are taken. Might be needed in some usage cases. The
 % eventDetection however always runs on eye position in degrees.
