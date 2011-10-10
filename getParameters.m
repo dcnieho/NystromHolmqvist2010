@@ -17,10 +17,11 @@ ETparams.data.qFlipX                    = false;
 % polynomial in a moving window to the eye position data and takes the
 % derivatives analytically). Set the below to true to simply numerical
 % differentiate with matlab's diff()
-ETparams.data.qNumericallyDifferentiate = true;
-% If true, datastream of eyeposition in pixels is also stored, smoothed and
-% the derivatives are taken. Might be needed in some usage cases. The
-% eventDetection however always runs on eye position in degrees.
+ETparams.data.qNumericallyDifferentiate = false;
+% If true, eyeposition trace in pixels is also stored and (smoothed, if
+% using Savitzky-Golay) derivatives are calculated. Might be needed in some
+% usage cases. The eventDetection however always runs on eye position in
+% degrees.
 ETparams.data.qAlsoStoreandSmoothPixels = true;
 % Do a precise calculation of angular eye velocity and acceleration? If
 % not, we compute derivatives of eye azimuth and elevation analytically
@@ -64,7 +65,7 @@ ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and
 ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals
 
-ETparams.glissade.qDetect               = true;         % if true, do glissade detection
+ETparams.glissade.qDetect               = false;        % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals

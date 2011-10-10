@@ -37,6 +37,12 @@ if isempty(sacon)
     return;
 end
 
+% % NASA style saccade detection
+% sacon   = sacon-10;
+% sacoff  = sacoff+10;
+% sacon(sacon<1)              = 1;
+% sacoff(sacoff>length(vel))  = length(vel);
+
 %%% prepare algorithm parameters
 % If the peak consists of =< minPeakSamples consequtive samples, it it
 % probably noise (1/6 of the min saccade duration)
@@ -262,6 +268,8 @@ end
 data.saccade .on                = sacon;
 data.saccade .off               = sacoff;
 data.saccade .(field_offset)    = saccadeOffsetTreshold;
-data.glissade.on                = glissadeon;
-data.glissade.off               = glissadeoff;
-data.glissade.type              = glissadetype;
+if ETparams.glissade.qDetect
+    data.glissade.on            = glissadeon;
+    data.glissade.off           = glissadeoff;
+    data.glissade.type          = glissadetype;
+end

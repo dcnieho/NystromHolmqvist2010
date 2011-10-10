@@ -12,19 +12,22 @@ SacMergeWindowSamp  = ceil(SacMergeWindow./1000 * ETparams.samplingFreq);
 % get saccade onset and offset markers
 sacon = data.saccade.on;
 sacoff = data.saccade.off;
-for p = 1:length(data.glissade.off)
-    % merge all glissades first before merging saccades, otherwise its
-    % difficult to handle complicated cases where two saccades, both
-    % followed with glissades, need to be fused (or even nastier).
-    % Splitting up is easier and robust.
-    
-    % for eah glissade, find corresponding saccade
-    % easy, as glissade onset is equal to fixation offset per definition
-    qsac = data.glissade.on(p) == sacoff;
-    assert(sum(qsac)==1)
-    
-    % change saccade offset to glissade offset
-    sacoff(qsac) = data.glissade.off(p);
+
+if isfield(data,'glissade')
+    for p = 1:length(data.glissade.off)
+        % merge all glissades first before merging saccades, otherwise its
+        % difficult to handle complicated cases where two saccades, both
+        % followed with glissades, need to be fused (or even nastier).
+        % Splitting up is easier and robust.
+        
+        % for eah glissade, find corresponding saccade
+        % easy, as glissade onset is equal to fixation offset per definition
+        qsac = data.glissade.on(p) == sacoff;
+        assert(sum(qsac)==1)
+        
+        % change saccade offset to glissade offset
+        sacoff(qsac) = data.glissade.off(p);
+    end
 end
 
 

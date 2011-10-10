@@ -5,7 +5,9 @@ function data = processSaccadesAndGlissades(data,ETparams)
 data    = processSaccadesAndGlissadesImplementation(data, 'saccade' ,ETparams);
 
 % Collect information about the glissade
-data    = processSaccadesAndGlissadesImplementation(data, 'glissade',ETparams);
+if isfield(data,'glissade')
+    data    = processSaccadesAndGlissadesImplementation(data, 'glissade',ETparams);
+end
 
 
 
