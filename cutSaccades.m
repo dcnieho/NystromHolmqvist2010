@@ -10,19 +10,19 @@ Y       = data.(datatype).Y;
 % get eye velocities in pixels
 vel     = data.(datatype).vel;
 if strcmp(datatype,'pix')
-    velX    = -data.(datatype).velX;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
-    velY    = -data.(datatype).velY;
+    velX    = data.pix.velX;
+    velY    = data.pix.velY;
 elseif strcmp(datatype,'deg')
-    velX    = -data.(datatype).velAz;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
-    velY    = -data.(datatype).velEl;
+    velX    = data.deg.velAz;
+    velY    = data.deg.velEl;
 end
 
 sacon  = data.saccade.on;
 sacoff = data.saccade.off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% step one: we want to deal with all the nan in the data, also the position
-% data
+% step one: we want to deal with all the nan in the data.
+% This is getting rid of blinks and such...
 qNaN = isnan(vel);
 if any(qNaN)
     fprintf('N NaN samples: %d\n',sum(qNaN));
@@ -54,19 +54,26 @@ if any(qNaN)
             off = nanoff(p)+1;
         end
         % replace with interpolated velocity
-        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off);
+        [vel,velX,velY] = replaceSaccade(vel,velX,velY,on,off);
     end
-    
-    % replace original vel with this one as we'll need one with nans
-    % removed
-    data.(datatype).vel = vel;
     
     % show how many NaN we have left now, those cannot be handled
     fprintf(' -> N NaN samples left: %d\n',sum(isnan(vel)));
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % replace original vel with this one as we'll need one with nans
+    % removed
+    data.(datatype).vel = vel;
+    if strcmp(datatype,'pix')
+        data.pix.velX = velX;
+        data.pix.velY = velY;
+    elseif strcmp(datatype,'deg')
+        data.deg.velAz = velX;
+        data.deg.velEl = velY;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % per saccade, linearly interpolate eye velocity between saccade begin
 % point and end point
 for p=1:length(sacon)
@@ -92,17 +99,20 @@ for p=1:length(sacon)
     else
         
         % replace with interpolated velocity
-        [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,sacon(p),sacoff(p));
+        [vel,velX,velY] = replaceSaccade(vel,velX,velY,sacon(p),sacoff(p));
     end
 end
-if strcmp(datatype,'pix')
-    data.(datatype).velXfilt = velX;
-    data.(datatype).velYfilt = velY;
-elseif strcmp(datatype,'deg')
-    data.(datatype).velAzfilt = velX;
-    data.(datatype).velElfilt = velY;
-end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% store filtered data
 data.(datatype).velfilt = vel;
+if strcmp(datatype,'pix')
+    data.pix.velXfilt = velX;
+    data.pix.velYfilt = velY;
+elseif strcmp(datatype,'deg')
+    data.deg.velAzfilt = velX;
+    data.deg.velElfilt = velY;
+end
 
 if qReconstructPos
     % plant version
@@ -113,17 +123,18 @@ end
 
 
 %%% helpers
-function [vel,velX,velY] = replaceSaccade(X,Y,vel,velX,velY,on,off)
+function [vel,velX,velY] = replaceSaccade(vel,velX,velY,on,off)
 % on and off are sample numbers (data indices) of saccade on- and offset
 % respectively
 
-% replace with interpolated velocity
-vel(on:off)  = linspace(vel(on),vel(off),off-on+1);
+npoint = off-on+1;
 
-if nargout>1
-    % get saccade direction and use it to compute the X and Y velocity
-    % components
-    ang = atan2(Y(off)-Y(on),X(off)-X(on));
-    velX(on:off) = cos(ang)*vel(on:off);
-    velY(on:off) = sin(ang)*vel(on:off);
-end
+% components: replace with linearly interpolated velocity
+velX(on:off) = linspace(velX(on),velX(off),npoint);
+velY(on:off) = linspace(velY(on),velY(off),npoint);
+
+% calculate interpolate 2D velocity. In effect this is now interpolated
+% with a bicubic spline. Thats fine, good even as no edges are introduced
+% into the data, as we care most about the component velocities in the
+% situations I can think of.
+vel(on:off)  = hypot(velX(on:off),velY(on:off));

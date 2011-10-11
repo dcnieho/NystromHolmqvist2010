@@ -90,10 +90,12 @@ else
     
     % calculate derivatives
     [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
+    tempV = -tempV;             % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandSmoothPixels
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
+        tempVpix = -tempVpix;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
     end
 end
 
