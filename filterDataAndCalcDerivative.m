@@ -66,8 +66,8 @@ if ETparams.data.qNumericallyDifferentiate
     tempA   = diff([data.deg.X data.deg.Y],2,1);
     
     % make same length as position trace
-    tempV   = [tempV; tempV( end,:)];
-    tempA   = [tempA; tempA([end end],:)];
+    tempV   = [tempV; tempV( end     ,:)] * ETparams.samplingFreq;
+    tempA   = [tempA; tempA([end end],:)] * ETparams.samplingFreq^2;
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandSmoothPixels
@@ -75,8 +75,8 @@ if ETparams.data.qNumericallyDifferentiate
         tempApix    = diff([data.pix.X data.pix.Y],2,1);
         
         % make same length as position trace
-        tempVpix    = [tempVpix; tempVpix( end,:)];
-        tempApix    = [tempApix; tempApix([end end],:)];
+        tempVpix    = [tempVpix; tempVpix( end     ,:)] * ETparams.samplingFreq;
+        tempApix    = [tempApix; tempApix([end end],:)] * ETparams.samplingFreq^2;
     end
 else
     % prepare parameters
@@ -90,77 +90,102 @@ else
     
     % calculate derivatives
     [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
-    tempV = -tempV;             % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+    tempV = -tempV * ETparams.samplingFreq;                 % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+    tempA =  tempA * ETparams.samplingFreq^2;
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandSmoothPixels
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
-        tempVpix = -tempVpix;   % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+        tempVpix = -tempVpix * ETparams.samplingFreq;       % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
+        tempApix =  tempApix * ETparams.samplingFreq^2;
     end
 end
 
 % compute eye velocities, and accelerations
 %--------------------------------------------------------------------------
 if ETparams.data.qPreciseCalcDeriv
-    % TODO: implement
+    % TODO: implement, acceleration still TODO
+    % also TODO: check signs! For Haslwanter, positive corresponds to
+    % leftward azimuth, downward elevation and clockwise torsion. We have
+    % the opposite and should thus be calculating the wrong axis here...
+    % check this!
     error('TODO')
     
     % Now calculate eye velocity and acceleration precisely
     % See Equation 30 in Haslwanter T (1995) Mathematics of 3-dimensional
     % eye rotations, Vision Res 35, 1727-1739. (look up that original
-    % Goldstein reference as well). Might also want to look up Fetter M,
-    % Haslwanter T, Misslisch M, Tweed D (1997) Three-dimensional kinematic
-    % principles of eye-, head-, and limb movements, Harwood Academic
-    % Publishers: Amsterdam, sounds relevant.
+    % Goldstein reference as well).
     % This allows us to use the analytical differentiation of the
     % polynomial fitted to eye azimuth and elevation (so-called coordinate
-    % velocities). This however still doesn't give me a scalar velocity I
-    % think.. need to look at the details of this and familiarize myself
-    % with the mathematical tools. Once we got velocity, I think we can
-    % safely take the acceleration numerically without adding too much
-    % noise. Or we could derive the formula for acceleration ourself (or
-    % maybe the Goldstein ref has it), that would be a good exercise.
+    % velocities).
+    % The eye velocity vector is commonly called omega, where the magnitude
+    % of omega is the angular velocity and its axis indicates the
+    % instantaneous axis of the eye rotation (Z-X-Y in the body reference
+    % frame, where a rotation along Z is roll/torsion, along X is
+    % pitch/elevation and along Y is yaw/azimuth).
     
     % see also http://www.u.arizona.edu/~pen/ame553/lessons.html, lesson 10
-    % (see also the textbook at http://www.u.arizona.edu/~pen/ame553/) and 
+    % (see also the textbook at http://www.u.arizona.edu/~pen/ame553/)
+    % -> has acceleration as a quaternion! Textbook (appendix) has
+    % equivalence formulas for velocity as quaternion and other schemes if
+    % i remember correctly.
+    % also: 
     % http://www.rst.e-technik.tu-dortmund.de/cms/Medienpool/Downloads/Lehre/Vorlesungen/Robotics_Theory/Diff_Kinematics_4.pdf
+    
+    % formula 30 in Haslwanter is for 3D rotation, but we have no knowledge
+    % of the torsional component, so we'll have to do with that set to 0
+    if 0
+        % if we had 3D data, and tempV(:,3) is the torsional velocity:
+        data.deg.omega = [...
+            tempV(:,3).*cosd(data.deg.X).*cosd(data.deg.Y) - tempV(:,2).*sind(data.deg.X)                   , ...
+            tempV(:,2).*cosd(data.deg.X)                   + tempV(:,3).*sind(data.deg.X).*cosd(data.deg.Y) , ...
+            tempV(:,1)                                     - tempV(:,3).*sind(data.deg.Y)                     ...
+            ];
+    else
+        % for lack of information about torsion, we set those parts to 0
+        % this means the instantaneous axis does not take changes in
+        % torsion into account and might therefore be systematically off.
+        data.deg.omega = [...
+                                                           - tempV(:,2).*sind(data.deg.X)                   , ...
+            tempV(:,2).*cosd(data.deg.X)                                                                    , ...
+            tempV(:,1)                                                                                        ...
+            ];
+    end
+    data.deg.vel    = sqrt(sum(data.deg.omega.^2,2));
 else
-    % note NOTE NOTE: This works fine for our purpose of detecting velocity
-    % and acceleration peaks, which in essense is all the algorithm really
-    % does. Both fixations and smooth pursuit are periods of low velocity
-    % interspersed with high velocity peaks of the saccades. So as long as
-    % we get good peaks we can run our algorithm and we don't have to care
-    % about their exact height. However, when you are interested in the
-    % exact eye velocity/acceleration (both during saccades and during
-    % pursuit), you'll have to use the derivatives of the eye rotation
-    % vectors (the exact method above). This trick using Pythagoras'
-    % theorem is pretty crude as actually it only applies in Cartesian
-    % space, not in the spherical system we use.
-    % get magnitude of velocity and acceleration vectors, dont forget to
-    % scale by sampling rate.
-    data.deg.vel    = hypot(tempV(:,1), tempV(:,2)) * ETparams.samplingFreq;
-    data.deg.acc    = hypot(tempA(:,1), tempA(:,2)) * ETparams.samplingFreq^2;
+    % Calculate eye velocity and acceleration straightforwardly by applying
+    % Pythagoras' theorem. This gives us no information about the
+    % instantaneous axis of the eye rotation, but eye velocity is
+    % calculated correctly, yielding the same result as the the "precise"
+    % formula above that calculates the eye velocity vector. When only 2D
+    % rotational information is available, it is easy to show
+    % algebraically that the two solutions are equivalent.
+    % This is no longer true when taking torsional velocity into account.
+    % I am not sure whether the same things are true for acceleration as I
+    % haven't found or deducted the precise formulae yet.
+    data.deg.vel    = hypot(tempV(:,1), tempV(:,2));
+    data.deg.acc    = hypot(tempA(:,1), tempA(:,2));
 end
 
 if ETparams.data.qAlsoStoreComponentDerivs
     % also store velocities and acceleration in X and Y direction
-    data.deg.velAz  = tempV(:,1) * ETparams.samplingFreq;
-    data.deg.velEl  = tempV(:,2) * ETparams.samplingFreq;
-    data.deg.accAz  = tempA(:,1) * ETparams.samplingFreq^2;
-    data.deg.accEl  = tempA(:,2) * ETparams.samplingFreq^2;
+    data.deg.velAz  = tempV(:,1);
+    data.deg.velEl  = tempV(:,2);
+    data.deg.accAz  = tempA(:,1);
+    data.deg.accEl  = tempA(:,2);
 end
 
 if ETparams.data.qAlsoStoreandSmoothPixels
     % calculate derivative magnitudes
-    data.pix.vel    = hypot(tempVpix(:,1), tempVpix(:,2)) * ETparams.samplingFreq;
-    data.pix.acc    = hypot(tempApix(:,1), tempApix(:,2)) * ETparams.samplingFreq^2;
+    data.pix.vel    = hypot(tempVpix(:,1), tempVpix(:,2));
+    data.pix.acc    = hypot(tempApix(:,1), tempApix(:,2));
     
     % also store velocities and acceleration in X and Y direction
     if ETparams.data.qAlsoStoreComponentDerivs
-        data.pix.velX   = tempVpix(:,1) * ETparams.samplingFreq;
-        data.pix.velY   = tempVpix(:,2) * ETparams.samplingFreq;
-        data.pix.accX   = tempApix(:,1) * ETparams.samplingFreq^2;
-        data.pix.accY   = tempApix(:,2) * ETparams.samplingFreq^2;
+        data.pix.velX   = tempVpix(:,1);
+        data.pix.velY   = tempVpix(:,2);
+        data.pix.accX   = tempApix(:,1);
+        data.pix.accY   = tempApix(:,2);
     end
 end
 
