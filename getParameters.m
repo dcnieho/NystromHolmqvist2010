@@ -39,7 +39,7 @@ ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X
 % used, detrended velocity is then used as input to xcorr with the saccade
 % template
 ETparams.data.qDetrendWithMedianFilter  = true;
-ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eyevelocity in degrees will be done. Only set this to true if you want this data, this code doesn't use it
+ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eye velocity in degrees will be done. Only set this to true if you want this data, the code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
 
 % Option to first convolve velocity trace with the velocity profile of a
@@ -50,7 +50,8 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % done on the response trace however depends on
 % ETparams.saccade.qSaccadeTemplateRefine. I'd recommend to leave that to
 % false as the profiles of the saccades is distorted after convolution with
-% the template.
+% the template. ETparams.data.qDetrendWithMedianFilter must be true when
+% using this.
 % See also ETparams.saccade.xCorrPeakThreshold
 ETparams.data.qApplySaccadeTemplate     = true;
 
