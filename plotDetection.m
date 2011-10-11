@@ -1,4 +1,4 @@
-function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel,pic)
+function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,titel,pic)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and subplot
@@ -7,6 +7,8 @@ function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel,
 % - data: see below for the fields it needs to contain, they're all
 %         unpacked in the same place so its easy to see
 % - datatype: 'pix' or 'deg'
+% - veltype: type of velocity to plot. 'vel': 2D velocity,
+%   'velX': X/azimuthal velocity, 'velY': Y/elevational velocity
 % - sampleRate
 % - glissadeSearchWindow: in milliseconds
 % - rect: struct with extends of screen window, [upper left (x,y) lower
@@ -29,32 +31,66 @@ function plotDetection(data,datatype,sampleRate,glissadeSearchWindow,rect,titel,
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
-error(nargchk(5,7,nargin,'struct'))
+error(nargchk(6,8,nargin,'struct'))
 
 %%% unpack the needed variables
-if nargin<6
+if nargin<7
     titel = '';
 end
 
 rect = rect.(datatype);
+
+% prepare labels
+switch veltype
+    case 'vel'
+        vlbltype = '2D';
+    case 'velX'
+        if strcmp(datatype,'deg')
+            vlbltype = 'Azi';
+        else
+            vlbltype = 'X';
+        end
+    case 'velY'
+        if strcmp(datatype,'deg')
+            vlbltype = 'Ele';
+        else
+            vlbltype = 'Y';
+        end
+end
 if strcmp(datatype,'deg')
     unit = '°';
     xlbl = ['Azimuth (' unit ')'];
     ylbl = ['Elevation (' unit ')'];
-    vlbl = ['Velocity (' unit '/s)'];
 else
     unit = 'pix';
     xlbl = ['Horizontal (' unit ')'];
     ylbl = ['Vertical (' unit ')'];
-    vlbl = ['Velocity (' unit '/s)'];
 end
-clbl    = ['Xcorr  response'];  % double space on purpose, reads easier for me
+vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
+clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
 % time series
+% position
 xdata   = data.(datatype).X;
 ydata   = data.(datatype).Y;
-vel     = data.(datatype).vel;
+
+% time
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
+
+% velocity
+if strcmp(datatype,'pix')
+    vel     = data.pix.(veltype);
+elseif strcmp(datatype,'deg')
+    switch veltype
+        case 'vel'
+            vel     = data.deg.vel;
+        case 'velX'
+            vel     = data.deg.velAz;
+        case 'velY'
+            vel     = data.deg.velEl;
+    end
+end
+
 % markers
 sacon   = data.saccade.on;
 sacoff  = data.saccade.off;
@@ -159,8 +195,14 @@ plotWithMark(time,vel,...                                               % data (
              glismarks{:} ...                                           % glissade markers (if any)
             );
 % add detection thresholds
-if strcmp(datatype,'deg') ~qSaccadeTemplateRefinement
-    % don't add if plotting pixels, it doesn't make any sense then
+if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
+    % dont plot if:
+    % 1. if plotting pixels, as thresholds are in °/s
+    % 2. if refinement was done with the saccade template responses as no
+    %    velocity thresholds are then used; it would be misleading to plot
+    %    them here
+    % 3. if we're plotting a component velocity, as thresholds are for 2D
+    %    velocity
     hold on;
     plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
     plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
@@ -169,7 +211,10 @@ if strcmp(datatype,'deg') ~qSaccadeTemplateRefinement
     end
     hold off;
 end
-axis([mmt(1) mmt(2) 0 max(vel)]);
+axis([mmt(1) mmt(2) min(0,min(vel)) max(vel)]);
+if ~strcmp(veltype,'vel')
+    axis ij
+end
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
@@ -200,7 +245,7 @@ if qSaccadeTemplate
         end
     end
     hold off;
-    axis([mmt(1) mmt(2) 0 max(data.deg.xcorr_vel)]);
+    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.xcorr_vel))]);   % xcorr values above 2.5 seem to only occur due to noise
 else
     ac = [];
 end
@@ -216,7 +261,7 @@ if qHaveFixations
     else
         asf = subplot('position',[0.05 0.06 0.43 0.40]);
     end
-    if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+    if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
     end
@@ -237,7 +282,7 @@ if qSaccadeTemplate
 else
     asr = subplot('position',[0.52 0.06 0.43 0.40]);
 end
-if nargin>=7 && strcmp(datatype,'pix') && ~isempty(pic)
+if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on
 end

@@ -243,7 +243,10 @@ if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel'
     end
     hold off;
 end
-axis([mmt(1) mmt(2) min(vel) max(vel)]);
+axis([mmt(1) mmt(2) min(0,min(vel)) max(vel)]);
+if ~strcmp(veltype,'vel')
+    axis ij
+end
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
@@ -274,7 +277,7 @@ if qSaccadeTemplate
         end
     end
     hold off;
-    axis([mmt(1) mmt(2) 0 max(data.deg.xcorr_vel)]);
+    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.xcorr_vel))]);   % xcorr values above 2.5 seem to only occur due to noise
 else
     ac = [];
 end
