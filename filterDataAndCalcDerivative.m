@@ -106,9 +106,11 @@ end
 if ETparams.data.qPreciseCalcDeriv
     % TODO: implement, acceleration still TODO
     % also TODO: check signs! For Haslwanter, positive corresponds to
-    % leftward azimuth, downward elevation and clockwise torsion. We have
-    % the opposite and should thus be calculating the wrong axis here...
-    % check this!
+    % leftward azimuth, downward elevation and clockwise torsion. As noted
+    % in prepareData and below, our axes do not form a consistent
+    % right-handed system and should thus be calculating the wrong axis
+    % here...
+    % revise our coordinate system first when needed!
     error('TODO')
     
     % Now calculate eye velocity and acceleration precisely
@@ -120,9 +122,15 @@ if ETparams.data.qPreciseCalcDeriv
     % velocities).
     % The eye velocity vector is commonly called omega, where the magnitude
     % of omega is the angular velocity and its axis indicates the
-    % instantaneous axis of the eye rotation (Z-X-Y in the body reference
-    % frame, where a rotation along Z is roll/torsion, along X is
-    % pitch/elevation and along Y is yaw/azimuth).
+    % instantaneous axis of the eye rotation. Omega, a vector in the
+    % head-fixed reference frame, is ordered Z-X-Y where a vector the Z
+    % direction points in the primary position, an X vector points leftward
+    % and an Y vector upward. A rotation along Z is roll/torsion, along X
+    % is pitch/elevation and along Y is yaw/azimuth (see Haslwanter 1995,
+    % Eq. 1 and Figure 1). As noted in prepareData, our current head
+    % reference axes do not conform nor even form a consistently
+    % righthanded system. When interested in using this code, revise our
+    % axes!
     
     % see also http://www.u.arizona.edu/~pen/ame553/lessons.html, lesson 10
     % (see also the textbook at http://www.u.arizona.edu/~pen/ame553/)
