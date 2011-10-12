@@ -1,11 +1,6 @@
 function [data] = mergeSaccadesAndGlissades(data)
 
-% preprocess on and offsets:
-% - fuse glissade after saccade
-% - the two above also incorporates: fuse saccade that starts at glissade offset
-
-% get saccade onset and offset markers
-sacon   = data.saccade.on;
+% get saccade offset markers
 sacoff  = data.saccade.off;
 
 if isfield(data,'glissade')
@@ -25,25 +20,6 @@ if isfield(data,'glissade')
     end
 end
 
-data.saccade.on     = sacon;
+% store merged offset markers. Don't remove glissade markers, user can do
+% that themselves if they don't want them.
 data.saccade.off    = sacoff;
-
-
-% kk=1;
-% while kk < length(sacon)    % NB: doesn't process last saccade (useless of course!)
-%     % walk through all saccades and see if followed shortly by another
-%     % saccade
-%     
-%     if sacon(kk+1)-sacoff(kk) <= SacMergeWindowSamp
-%         % if yes, merge, continue
-%         sacoff(kk) = sacoff(kk+1);
-%         
-%         sacon(kk+1)  = [];
-%         sacoff(kk+1) = [];
-%         
-%         continue;
-%     else
-%         % else, process next saccade
-%         kk = kk+1;
-%     end
-% end

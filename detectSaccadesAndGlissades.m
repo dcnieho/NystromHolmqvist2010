@@ -284,8 +284,43 @@ while kk <= length(sacon)
 end
 
 % now deal with saccades that are too close together, fuse two saccades
-% with little time between them
-SacMergeWindowSamp
+% with little time between them. This needs to run even if the window
+% length is 0 as the above has been seen to generate saccade starts before
+% the end of the previous saccade. We could check for that above, or we
+% could just prune/merge them here.
+kk=1;
+while kk < length(sacon)    % NB: doesn't process last saccade (useless anyway of course!)
+    % walk through all saccades and see if followed shortly by another
+    % saccade.
+    
+    % If there is a glissades for this saccade, check from the end of the
+    % glissade, otherwise check from the end of the saccade
+    qHaveGlissade = sacoff(kk)==glissadeon;
+    if any(qHaveGlissade)
+        assert(sum(qHaveGlissade)==1)  % anything else would be ridiculous!
+        thisoff = glissadeoff(qHaveGlissade);
+    else
+        thisoff = sacoff(kk);
+    end
+    
+    % check if start of next saccade occurs within the window
+    if sacon(kk+1)-thisoff <= SacMergeWindowSamp
+        % if yes, merge, continue
+        sacoff(kk) = sacoff(kk+1);
+        
+        % remove next saccade...
+        sacon(kk+1)  = [];
+        sacoff(kk+1) = [];
+        
+        % ... and glissade that is caught in between
+        glissadeon (qHaveGlissade) = [];
+        glissadeoff(qHaveGlissade) = [];
+        continue;
+    else
+        % else, process next saccade
+        kk = kk+1;
+    end
+end
 
 %%% output
 data.saccade .on                = sacon;

@@ -55,7 +55,7 @@ ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for 
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template, not from the velocity trace
 ETparams.saccade.localNoiseWindowLength = 50;           % in, millisecond, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
 ETparams.saccade.minDur                 = 10;           % in milliseconds
-ETparams.saccade.mergeWindow            = 100;          % merge saccades that are less than this appart (this is counted from saccade or glissade end (if any) to next saccade start)
+ETparams.saccade.mergeWindow            = 100;          % merge saccades that are less than this appart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals
 
 ETparams.glissade.qDetect               = false;        % if true, do glissade detection
