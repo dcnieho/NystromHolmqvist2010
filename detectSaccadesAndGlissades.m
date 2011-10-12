@@ -30,6 +30,12 @@ else
 end
 [sacon,sacoff]  = bool2bounds(qAboveThresh);
 
+%%% make vector that will contain true where saccades are detected
+% this is used as some part so the algorithm (e.g. offset velocity
+% threshold) needs to analyze data that is not during saccades or
+% glissades.
+qSacGlisOrNan   = isnan(vel);
+
 
 % If no saccades are detected, return
 if isempty(sacon)
@@ -44,13 +50,15 @@ end
 % sacoff(sacoff>length(vel))  = length(vel);
 
 %%% prepare algorithm parameters
+minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ETparams.samplingFreq);
+maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000                * ETparams.samplingFreq);
+glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000          * ETparams.samplingFreq);
+minSacSeparationSamples = ceil(ETparams.saccade.minSeparation/1000          * ETparams.samplingFreq);
+localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ETparams.samplingFreq);
 % If the peak consists of =< minPeakSamples consequtive samples, it it
 % probably noise (1/6 of the min saccade duration)
 minPeakSamples          = ceil(ETparams.saccade.minDur/6000        * ETparams.samplingFreq);
-minSacSamples           = ceil(ETparams.saccade.minDur/1000        * ETparams.samplingFreq);
-minFixSamples           = ceil(ETparams.fixation.minDur/1000       * ETparams.samplingFreq);
-maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000       * ETparams.samplingFreq);
-glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000 * ETparams.samplingFreq);
+
 
 %%% Process one velocity peak at the time.
 % Keep a counter here of how many peaks from sacon we have processed
@@ -100,14 +108,19 @@ while kk <= length(sacon)
     sacon(kk) = i;                                              % velocity minimum is last sample before "acceleration" sign change
     
     % Calculate local noise during 'fixation' before the saccade start (the
-    % adaptive part)
-    % this assumes the saccade is preceded by fixation (or at least by the
-    % same eye velocity and noise level as after the saccade - its the best
-    % we can do).
-    localVelNoise = vel(max(1,sacon(kk) - minFixSamples) : sacon(kk));
+    % adaptive part), excluding data that is during known saccade time or
+    % missing.
+    % This assumes the saccade is preceded the same eye velocity and noise
+    % level as after the saccade - its the best we can do.
+    % starting from the already refined saccade beginning we get
+    % minFixSamples samples before the saccade, or as many as we can get,
+    % that are not nan and not during saccade.
+    idx = find(~qSacGlisOrNan(1:sacon(kk)-1),localNoiseWindowSamples,'last');
+    localVelNoise = vel(idx);
     localVelNoise = mean(localVelNoise) + 3*std(localVelNoise);
         
-    % Check whether the local vel. noise exceeds the peak vel. threshold.
+    % Check whether the local velocity noise exceeds the peak velocity
+    % threshold
     if ~isnan(localVelNoise) && localVelNoise < data.saccade.(field_peak)
         saccadeOffsetTreshold(kk) = localVelNoise*0.3 + data.saccade.(field_onset)*0.7; % 30% local + 70% global
     else
@@ -158,7 +171,8 @@ while kk <= length(sacon)
     %%%%
     % Done. All the above criteria are fulfilled, we've got a saccade.
     %%%%
-    
+    % flag it in the trace
+    qSacGlisOrNan(sacon(kk):sacoff(kk)) = true;
     
     
     %----------------------------------------------------------------------  
@@ -256,6 +270,9 @@ while kk <= length(sacon)
                     sacoff(kk+1) = [];
                     continue;
                 end
+                
+                % flag it in the trace
+                qSacGlisOrNan(glissadeon(end):glissadeoff(end)) = true;
             end
         end
     end
@@ -263,6 +280,9 @@ while kk <= length(sacon)
     % increase counter, process next peak
     kk = kk+1;
 end
+
+% now deal with saccades that are too close together
+minSacSeparationSamples
 
 %%% output
 data.saccade .on                = sacon;

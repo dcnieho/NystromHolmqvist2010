@@ -19,8 +19,10 @@ data.fixation.duration = (data.fixation.off-data.fixation.on+1) / ETparams.sampl
 
        
 %%% and now some that are best done in a for-loop
-data.fixation.meanX             = zeros(size(data.fixation.on));
-data.fixation.meanY             = zeros(size(data.fixation.on));
+data.fixation.meanX_deg         = zeros(size(data.fixation.on));
+data.fixation.meanY_deg         = zeros(size(data.fixation.on));
+data.fixation.meanX_pix         = zeros(size(data.fixation.on));
+data.fixation.meanY_pix         = zeros(size(data.fixation.on));
 data.fixation.meanVelocity      = zeros(size(data.fixation.on));
 data.fixation.peakVelocity      = zeros(size(data.fixation.on));
 data.fixation.meanAcceleration  = zeros(size(data.fixation.on));
@@ -29,8 +31,11 @@ for p=1:length(data.fixation.on)
     idxs = data.fixation.on(p) : data.fixation.off(p);
     
     % average eye position
-    data.fixation.meanX(p)              = nanmean(data.deg.X(idxs));
-    data.fixation.meanY(p)              = nanmean(data.deg.Y(idxs));
+    data.fixation.meanX_deg(p)          = nanmean(data.deg.X(idxs));
+    data.fixation.meanY_deg(p)          = nanmean(data.deg.Y(idxs));
+    % and convert it to degrees
+    [data.fixation.meanX_pix(p),data.fixation.meanY_pix(p)] = ...
+        fick2pix(data.fixation.meanX_deg(p), data.fixation.meanY_deg(p),ETparams);
     
     % mean and peak velocity and acceleration
     data.fixation.meanVelocity(p)       = nanmean(data.deg.vel(idxs));

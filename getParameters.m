@@ -53,7 +53,9 @@ ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.xCorrPeakThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template, not from the velocity trace
+ETparams.saccade.localNoiseWindowLength = 50;           % in, millisecond, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
 ETparams.saccade.minDur                 = 10;           % in milliseconds
+ETparams.saccade.minSeparation          = 100;          % merge saccades that are less than this appart (this is counted from saccade or glissade end (if any) to next saccade start)
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals
 
 ETparams.glissade.qDetect               = false;        % if true, do glissade detection
@@ -64,7 +66,7 @@ ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in
 % fixation here is defined as 'not saccade or glissade', it could thus also
 % be pursuit
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 100;          % in milliseconds (long as we're not interested in very short pursuit intervals)
+ETparams.fixation.minDur                = 40;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on other data
