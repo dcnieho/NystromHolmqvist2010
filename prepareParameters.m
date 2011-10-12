@@ -23,7 +23,7 @@ if ETparams.data.qDetrendWithMedianFilter
     
     if ETparams.samplingFreq ~= 240
         % resample at ETparams.samplingFreq
-        p = polyfit(-3:3,filter_coeffs_240,6);
+        p = polyfit(-3:3,filter_coeffs_240,4);  % fourth order polynomial seems to interpolate this one very nicely!
         num_samples = round(ETparams.samplingFreq/240 * length(filter_coeffs_240));
         filter_coeffs = polyval(p,linspace(-3,3,num_samples));
     else
@@ -55,7 +55,7 @@ if ETparams.data.qApplySaccadeTemplate
     
     if ETparams.samplingFreq ~= 240
         % resample at sampling_rate
-        p = polyfit(-3:3,saccade_template_240,6);
+        p = polyfit(-3:3,saccade_template_240,6);  % sixth order polynomial seems better for this one
         num_samples = round(ETparams.samplingFreq/240 * length(saccade_template_240));
         saccade_template = polyval(p,linspace(-3,3,num_samples));
     else
