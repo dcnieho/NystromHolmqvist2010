@@ -32,7 +32,8 @@ qNaN = isnan(vel);
 if any(qNaN)
     fprintf('N NaN samples: %d\n',sum(qNaN));
     [nanon,nanoff] = bool2bounds(qNaN);
-    % gooi NaNnen aan begin en einde trial eruit, daar kunnen we niets mee
+    % gooi NaNnen gevonden aan begin en einde trial eruit, daar kunnen we
+    % niets mee...
     if nanon(1)==1
         nanon(1)    = [];
         nanoff(1)   = [];

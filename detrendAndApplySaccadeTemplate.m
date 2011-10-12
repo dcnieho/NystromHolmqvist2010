@@ -60,11 +60,26 @@ if ETparams.data.qApplySaccadeTemplate
     else
         field = 'vel';
     end
+    thisdata = data.deg.(field);
+    
+    % replace nan with 0 so our filter responses don't get cut short by NaN
+    % -> maximize the extent of the data in which we can detect velocity
+    % peaks. Important as high speeds are common next to missing data
+    qNan = isnan(thisdata);
+    thisdata(qNan) = 0;
     
     % cross correlate, dealing with end effects by putting NaN there
     correlation_responses   = [NaN(trans,1); ...
-                                conv(data.deg.(field),ETparams.data.saccadeTemplate,'valid'); ...
+                                conv(thisdata,ETparams.data.saccadeTemplate,'valid'); ...
                                 NaN(trans,1)];
+                            
+    % put nans back in as long runs of zero might bias the threshold
+    % estimation step to lower thresholds. Only remoe where filter would
+    % have been running on nan only
+    [nanon,nanoff]  = bool2bounds(qNan);
+    nanon           = nanon +trans;
+    nanoff          = nanoff-trans;
+    correlation_responses(bounds2ind(nanon,nanoff)) = nan;
     
     % scale and take absolute
     data.deg.velXCorr       = abs(correlation_responses .* ETparams.data.saccadeTemplateFilterScale);

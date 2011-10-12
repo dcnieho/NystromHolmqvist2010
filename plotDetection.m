@@ -116,20 +116,20 @@ else
     qHaveFixations = false;
 end
 % thresholds
-if isfield(data.saccade,'xCorrPeakThreshold')
+if isfield(data.saccade,'peakXCorrThreshold')
     % used saccade template
     qSaccadeTemplate = true;
-    saccadeXCorrPeakThreshold       = data.saccade.xCorrPeakThreshold;
+    saccadePeakXCorrThreshold       = data.saccade.peakXCorrThreshold;
 else
     % detected saccades based on velocity trace
     qSaccadeTemplate = false;
 end
 
-if isfield(data.saccade,'xCorrOffsetThreshold')
+if isfield(data.saccade,'offsetXCorrThreshold')
     % refinement also run from xcorr responses
     qSaccadeTemplateRefinement      = true;
-    saccadeXCorrOnsetThreshold      = data.saccade.xCorrOnsetThreshold;
-    saccadeXCorrOffsetThreshold     = data.saccade.xCorrOffsetThreshold;
+    saccadeOnsetXCorrThreshold      = data.saccade.onsetXCorrThreshold;
+    saccadeOffsetXCorrThreshold     = data.saccade.offsetXCorrThreshold;
 else
     % refinement run from velocity trace
     qSaccadeTemplateRefinement      = false;
@@ -242,11 +242,11 @@ if qSaccadeTemplate
                 );
     hold on;
     % add detection thresholds
-    plot(mmt,[1 1]*saccadeXCorrPeakThreshold,'r--')
+    plot(mmt,[1 1]*saccadePeakXCorrThreshold,'r--')
     if qSaccadeTemplateRefinement
-        plot(mmt,[1 1]*saccadeXCorrOnsetThreshold,'r:')
+        plot(mmt,[1 1]*saccadeOnsetXCorrThreshold,'r:')
         for p=1:length(sacoff)
-            plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeXCorrOffsetThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+            plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetXCorrThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
         end
     end
     hold off;

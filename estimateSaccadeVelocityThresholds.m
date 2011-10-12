@@ -19,34 +19,47 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 minFixSamples       = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 centralFixSamples   = ceil(ETparams.saccade.minDur /6000 * ETparams.samplingFreq);
 
-% select parameters and data to work with
+% running (possibly partially) on xcorr output
 if ETparams.data.qApplySaccadeTemplate
-    field_peak  = 'xCorrPeakThreshold';
-    field_onset = 'xCorrOnsetThreshold';
-    vel         = data.deg.velXCorr;
-else
-    field_peak  = 'peakVelocityThreshold';
-    field_onset = 'onsetVelocityThreshold';
-    vel         = data.deg.vel;
+    [data.saccade.peakXCorrThreshold, meanData, stdData] = ...
+        doOptimize(data.deg.velXCorr,ETparams.saccade.peakXCorrThreshold,.01, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+    
+    if ETparams.saccade.qSaccadeTemplateRefine
+        data.saccade.onsetXCorrThreshold = meanData + 3*stdData;
+    end
 end
 
+% running on velocity trace, also if peaks are detected from the cross
+% correlation trace.
+% ETparams.saccade.qSaccadeTemplateRefine determines whether saccade
+% onset/offset refinement is based on the velocity trace (false). If so,
+% these are needed.
+if ~ETparams.data.qApplySaccadeTemplate || ~ETparams.saccade.qSaccadeTemplateRefine
+    [data.saccade.peakVelocityThreshold, meanData, stdData] = ...
+        doOptimize(data.deg.vel,ETparams.saccade.peakVelocityThreshold,1, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+    
+    data.saccade.onsetVelocityThreshold = meanData + 3*stdData;
+end
+
+
+
+
+function [peakThreshold, meanData, stdData] = doOptimize(data,initialThreshold,exitCriterion,minFixSamples, centralFixSamples, qUseCentralSamples)
 % assign initial thresholds
-data.saccade.(field_peak) = ETparams.saccade.(field_peak);
+peakThreshold = initialThreshold;
 previousPeakDetectionThreshold = inf;
 
 % iterate while we're gaining more than a 1° decrease in saccade peak
 % velocity threshold
-while ( ETparams.data.qApplySaccadeTemplate && previousPeakDetectionThreshold - data.saccade.(field_peak) > .01)... % running on xcorr output
-        ||...
-      (~ETparams.data.qApplySaccadeTemplate && previousPeakDetectionThreshold - data.saccade.(field_peak) > 1)...   % running on velocity trace
+while previousPeakDetectionThreshold - peakThreshold > exitCriterion
     
-    previousPeakDetectionThreshold = data.saccade.(field_peak);
+    previousPeakDetectionThreshold = peakThreshold;
     
     % Find parts where the velocity is below the threshold, possible
     % fixation time (though this is still crude)
-    qBelowThresh = vel < data.saccade.(field_peak);
+    qBelowThresh = data < peakThreshold;
     
-    if nargin==2 || qusecentralsample
+    if qUseCentralSamples
         % We need to cut off the edges of the testing intervals and only
         % use parts of the data that are likely to belong to fixations or
         % the iteration will not converge to a lower threshold. So always
@@ -74,36 +87,20 @@ while ( ETparams.data.qApplySaccadeTemplate && previousPeakDetectionThreshold - 
         threshon    = threshon +floor(centralFixSamples);
         threshoff   = threshoff-ceil (centralFixSamples);
         
+        % TODO: remove where one onset is running past the other offset,
+        % for increased correctness...
+        
         % convert to data selection indices
         idx         = bounds2ind(threshon,threshoff);
         
         % get mean and std of this data
-        meanVel     = nanmean(vel(idx));
-        stdVel      = nanstd (vel(idx));
+        meanData    = nanmean(data(idx));
+        stdData     = nanstd (data(idx));
     else
-        meanVel     = nanmean(vel(qBelowThresh));
-        stdVel      = nanstd (vel(qBelowThresh));
+        meanData    = nanmean(data(qBelowThresh));
+        stdData     = nanstd (data(qBelowThresh));
     end
     
-    % calculate new thresholds
-    data.saccade.(field_peak)       = meanVel + 6*stdVel;
-    data.saccade.(field_onset)      = meanVel + 3*stdVel;
-end
-
-% Calculate peak and onset velocity threshold as well, even if peaks
-% are detected from the cross correlation trace.
-% ETparams.saccade.qSaccadeTemplateRefine determines whether saccade
-% onset/offset refinement is based on the velocity trace (false). If so,
-% these are needed.
-if ETparams.data.qApplySaccadeTemplate && ~ETparams.saccade.qSaccadeTemplateRefine
-    if nargin==2 || qusecentralsample
-        % get mean and std of this data
-        meanVel     = nanmean(data.deg.vel(idx));
-        stdVel      = nanstd (data.deg.vel(idx));
-    else
-        meanVel     = nanmean(data.deg.vel(qBelowThresh));
-        stdVel      = nanstd (data.deg.vel(qBelowThresh));
-    end
-    data.saccade.peakVelocityThreshold   = meanVel + 6*stdVel;
-    data.saccade.onsetVelocityThreshold  = meanVel + 3*stdVel;
+    % calculate new threshold
+    peakThreshold   = meanData + 6*stdData;
 end

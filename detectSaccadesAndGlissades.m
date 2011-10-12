@@ -5,9 +5,9 @@ function data = detectSaccadesAndGlissades(data,ETparams)
 % select parameter and data to work with
 if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
     % run full detection algorithm from the cross correlation trace
-    field_peak  = 'xCorrPeakThreshold';
-    field_onset = 'xCorrOnsetThreshold';
-    field_offset= 'xCorrOffsetThreshold';
+    field_peak  = 'peakXCorrThreshold';
+    field_onset = 'onsetXCorrThreshold';
+    field_offset= 'offsetXCorrThreshold';
     vel         = data.deg.velXCorr;
 else
     % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
@@ -24,7 +24,7 @@ end
 %%% find where velocity data is above threshold
 if ETparams.data.qApplySaccadeTemplate
     % find peaks from xcorr responses
-    qAboveThresh    = data.deg.velXCorr > data.saccade.xCorrPeakThreshold;
+    qAboveThresh    = data.deg.velXCorr > data.saccade.peakXCorrThreshold;
 else
     qAboveThresh    = data.deg.vel      > data.saccade.peakVelocityThreshold;
 end
@@ -53,11 +53,13 @@ end
 minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ETparams.samplingFreq);
 maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000                * ETparams.samplingFreq);
 glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000          * ETparams.samplingFreq);
-minSacSeparationSamples = ceil(ETparams.saccade.minSeparation/1000          * ETparams.samplingFreq);
 localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ETparams.samplingFreq);
 % If the peak consists of =< minPeakSamples consequtive samples, it it
 % probably noise (1/6 of the min saccade duration)
-minPeakSamples          = ceil(ETparams.saccade.minDur/6000        * ETparams.samplingFreq);
+minPeakSamples          = ceil(ETparams.saccade.minDur/6000                 * ETparams.samplingFreq);
+% if saccade is followed by another saccade by less than SacMergeWindow (in
+% ms), they'll be merged
+SacMergeWindowSamp      = ceil(ETparams.saccade.mergeWindow./1000           * ETparams.samplingFreq);
 
 
 %%% Process one velocity peak at the time.
@@ -281,8 +283,9 @@ while kk <= length(sacon)
     kk = kk+1;
 end
 
-% now deal with saccades that are too close together
-minSacSeparationSamples
+% now deal with saccades that are too close together, fuse two saccades
+% with little time between them
+SacMergeWindowSamp
 
 %%% output
 data.saccade .on                = sacon;
