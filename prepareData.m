@@ -19,37 +19,68 @@ function data = prepareData(x,y,ETparams)
 % positive X axis points righward and the positive Y axis points downward.
 % Furthermore, positive rotations around the Y axis are rightward, but
 % positive rotations around the X axis are downard too (frankly, this is
-% not a consistent right-handed sytem, this rotation should then be
-% upward). This doesn't matter until we want to correctly calculate the teh
-% axis of eye rotation. We'll then have to revise all code to conform to
-% Haslwanter's convention, for ease of use.
+% not a consistent right-handed or left-handed sytem, this rotation should
+% then be upward). This doesn't matter until we want to correctly calculate
+% the axis of eye rotation. We'll then have to revise all code to conform
+% to Haslwanter's convention, for ease of use.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Positive axes with Z pointing from head into the screen
+%
+%                 Z
+%                #
+%              ###
+%            #####
+%            #
+%           #
+%          #
+%        #
+%       #                                     #
+%      #                                      ###
+%     ############################################ X
+%     #                                       ###
+%     #                                       #
+%     #
+%     #
+%     #
+%     #
+%     #
+%     #
+%     #
+%     #
+%     #
+%     #
+%   #####
+%    ###
+%     #
+%     Y
 
 % ensure column vectors
-data.pix.X = x(:);
-data.pix.Y = y(:);
+data.pix.X      = x(:);
+data.pix.Y      = y(:);
 
 % flip X if specified
 if ETparams.data.qFlipX
-    data.pix.X = -data.pix.X + ETparams.screen.resolution(1);
+    data.pix.X  = -data.pix.X + ETparams.screen.resolution(1);
 end
 % flip Y if specified
 if ETparams.data.qFlipY
-    data.pix.Y = -data.pix.Y + ETparams.screen.resolution(2);
+    data.pix.Y  = -data.pix.Y + ETparams.screen.resolution(2);
 end
 
 % move origin to point on screen straight ahead of subject
-data.pix.X = data.pix.X - ETparams.screen.subjectStraightAhead(1);
-data.pix.Y = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
+data.pix.X      = data.pix.X - ETparams.screen.subjectStraightAhead(1);
+data.pix.Y      = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 % finally, convert gaze position in pixels to Fick angles in degree
 % first convert pixels to cm away from origin
-pixPerMeter = ETparams.screen.resolution ./ ETparams.screen.size;
+pixPerMeter     = ETparams.screen.resolution ./ ETparams.screen.size;
 % Then convert to Fick angles (MATLAB's cart2sph models a Fick gimbal)
 % although their reference Z axis is our Y axis, their X axis is our Z axis
 % and their Y axis is our X axis:
 % cart2sph: X Y Z
 % our Fick: Z X Y
-[dx,dy]     = cart2sph(ETparams.screen.viewingDist, data.pix.X./pixPerMeter(1), data.pix.Y./pixPerMeter(2));
+[dx,dy]         = cart2sph(ETparams.screen.viewingDist, data.pix.X./pixPerMeter(1), data.pix.Y./pixPerMeter(2));
 % convert to degrees (Fick angles)
-data.deg.X  = dx./pi*180;
-data.deg.Y  = dy./pi*180;
+data.deg.X      = dx./pi*180;
+data.deg.Y      = dy./pi*180;
