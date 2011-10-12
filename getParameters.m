@@ -64,7 +64,11 @@ ETparams.glissade.maxDur                = 80;           % in milliseconds
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals
 
 % fixation here is defined as 'not saccade or glissade', it could thus also
-% be pursuit
+% be pursuit. For detecting "fixations", the code starts out with all
+% intervals that are not saccade or glissade and then processes them
+% according to the below settings. It could thus be that some parts of the
+% trace end up unclassified as they don't qualify as saccade, glissade or
+% "fixation".
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
 ETparams.fixation.minDur                = 100;          % in milliseconds
 % How to deal with NaNs during possible fixation periods:
