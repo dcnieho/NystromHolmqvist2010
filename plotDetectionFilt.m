@@ -33,6 +33,8 @@ function plotDetectionFilt(data,datatype,veltype,sampleRate,glissadeSearchWindow
 
 error(nargchk(6,8,nargin,'struct'))
 
+assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
+
 %%% unpack the needed variables
 if nargin<7
     titel = '';
@@ -70,14 +72,23 @@ vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
 % time series
-assert(isfield(data.(datatype),'velfilt'),'Saccades have not been cut from this data')
+assert(isfield(data.(datatype),'velFilt'),'Saccades have not been cut from this data')
 % position
-xdata   = data.(datatype).X;
-ydata   = data.(datatype).Y;
+if strcmp(datatype,'pix')
+    xdata   = data.pix.X;
+    ydata   = data.pix.Y;
+elseif strcmp(datatype,'deg')
+    xdata   = data.deg.Azi;
+    ydata   = data.deg.Ele;
+end
 
-if isfield(data.(datatype),'Xfilt')
-    xdatcut = data.(datatype).Xfilt;
-    ydatcut = data.(datatype).Yfilt;
+if strcmp(datatype,'pix') && isfield(data.pix,'Xfilt')
+    xdatcut = data.pix.XFilt;
+    ydatcut = data.pix.YFilt;
+    qReconstructPos = true;
+elseif strcmp(datatype,'deg') && isfield(data.deg,'AziFilt')
+    xdatcut = data.deg.AziFilt;
+    ydatcut = data.deg.EleFilt;
     qReconstructPos = true;
 else
     qReconstructPos = false;
@@ -89,18 +100,18 @@ time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 % velocity
 if strcmp(datatype,'pix')
     vel     = data.pix.(veltype);
-    velcut  = data.pix.([veltype 'filt']);
+    velcut  = data.pix.([veltype 'Filt']);
 elseif strcmp(datatype,'deg')
     switch veltype
         case 'vel'
             vel     = data.deg.vel;
-            velcut  = data.deg.velfilt;
+            velcut  = data.deg.velFilt;
         case 'velX'
-            vel     = data.deg.velAz;
-            velcut  = data.deg.velAzfilt;
+            vel     = data.deg.velAzi;
+            velcut  = data.deg.velAziFilt;
         case 'velY'
-            vel     = data.deg.velEl;
-            velcut  = data.deg.velElfilt;
+            vel     = data.deg.velEle;
+            velcut  = data.deg.velEleFilt;
     end
 end
 
@@ -261,7 +272,7 @@ if qSaccadeTemplate
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,data.deg.xcorr_vel,...                                % data (y,x)
+    plotWithMark(time,data.deg.velXCorr,...                                 % data (y,x)
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -277,7 +288,7 @@ if qSaccadeTemplate
         end
     end
     hold off;
-    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.xcorr_vel))]);   % xcorr values above 2.5 seem to only occur due to noise
+    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.velXCorr))]);    % xcorr values above 2.5 seem to only occur due to noise
 else
     ac = [];
 end

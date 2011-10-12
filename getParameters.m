@@ -17,18 +17,18 @@ ETparams.data.qFlipX                    = false;
 % polynomial in a moving window to the eye position data and takes the
 % derivatives analytically). Set the below to true to simply numerical
 % differentiate with matlab's diff()
-ETparams.data.qNumericallyDifferentiate = false;
-% If true, eyeposition trace in pixels is also stored and (smoothed, if
-% using Savitzky-Golay) derivatives are calculated. Might be needed in some
-% usage cases. The eventDetection however always runs on eye position in
-% degrees.
-ETparams.data.qAlsoStoreandSmoothPixels = true;
+ETparams.data.qNumericallyDifferentiate = true;
+% If true, eyeposition trace in pixels is also stored and derivatives
+% (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
+% some usage cases. The eventDetection however always runs on eye position
+% in degrees.
+ETparams.data.qAlsoStoreandDiffPixels   = true;
 ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 
 % Option to use median filter for detrending velocity data (e.g. removing
 % pursuit baseline speed). This is only useful if saccade templates are
-% used, detrended velocity is then used as input to xcorr with the saccade
-% template
+% used, detrended velocity, if available, is then used as input to xcorr
+% with the saccade template.
 ETparams.data.qDetrendWithMedianFilter  = true;
 ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eye velocity in degrees will be done. Only set this to true if you want this data, the code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
@@ -41,8 +41,7 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % done on the response trace however depends on
 % ETparams.saccade.qSaccadeTemplateRefine. I'd recommend to leave that to
 % false as the profiles of the saccades is distorted after convolution with
-% the template. ETparams.data.qDetrendWithMedianFilter must be true when
-% using this.
+% the template.
 % See also ETparams.saccade.xCorrPeakThreshold
 ETparams.data.qApplySaccadeTemplate     = true;
 

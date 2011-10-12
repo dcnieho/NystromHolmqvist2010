@@ -82,5 +82,5 @@ pixPerMeter     = ETparams.screen.resolution ./ ETparams.screen.size;
 % our Fick: Z X Y
 [dx,dy]         = cart2sph(ETparams.screen.viewingDist, data.pix.X./pixPerMeter(1), data.pix.Y./pixPerMeter(2));
 % convert to degrees (Fick angles)
-data.deg.X      = dx./pi*180;
-data.deg.Y      = dy./pi*180;
+data.deg.Azi    = dx./pi*180;
+data.deg.Ele    = dy./pi*180;

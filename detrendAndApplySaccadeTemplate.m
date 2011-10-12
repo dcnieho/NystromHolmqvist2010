@@ -18,24 +18,24 @@ if ETparams.data.qDetrendWithMedianFilter
     % decide which traces to detrend
     % we'll always want to do eye velocity in degrees as thats what the
     % saccade detection code runs on
-    todo            = {'deg','vel','detrend_vel'};
+    todo            = {'deg','vel','velDetrend'};
     
     if ETparams.data.qDetrendAll
         if ETparams.data.qAlsoStoreComponentDerivs
             % also azimuthal and elevational velocities
             todo        = [todo;...
-                            {'deg','velAz','detrend_velAz';...
-                             'deg','velEl','detrend_velEl'}];
+                            {'deg','velAzi','velAziDetrend';...
+                             'deg','velEle','velEleDetrend'}];
         end
-        if ETparams.data.qAlsoStoreandSmoothPixels
+        if ETparams.data.qAlsoStoreandDiffPixels
             % also pixels
             todo        = [todo;...
-                            {'pix','vel','detrend_vel'}];
+                            {'pix','vel','velDetrend'}];
             if ETparams.data.qAlsoStoreComponentDerivs
                 % also X and Y speeds
                 todo    = [todo;...
-                            {'pix','velX','detrend_velX';...
-                             'pix','velY','detrend_velY'}];
+                            {'pix','velX','velXDetrend';...
+                             'pix','velY','velYDetrend'}];
             end
         end
     end
@@ -56,7 +56,7 @@ if ETparams.data.qApplySaccadeTemplate
     trans                   = floor(length(ETparams.data.saccadeTemplate)/2);
     % choose data
     if ETparams.data.qDetrendWithMedianFilter
-        field = 'detrend_vel';
+        field = 'velDetrend';
     else
         field = 'vel';
     end
@@ -67,5 +67,5 @@ if ETparams.data.qApplySaccadeTemplate
                                 NaN(trans,1)];
     
     % scale and take absolute
-    data.deg.xcorr_vel      = abs(correlation_responses .* ETparams.data.saccadeTemplateFilterScale);
+    data.deg.velXCorr       = abs(correlation_responses .* ETparams.data.saccadeTemplateFilterScale);
 end

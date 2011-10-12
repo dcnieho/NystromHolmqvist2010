@@ -50,8 +50,6 @@ end
 
 % calculate saccade template FIR
 if ETparams.data.qApplySaccadeTemplate
-    assert(ETparams.data.qDetrendWithMedianFilter,'ETparams.data.qDetrendWithMedianFilter must be true if you want to use the saccade template');
-    
     lstone_velocity_saccade_template_7 = [.03 .106 .221 .285 .221 .106 .03];
     saccade_template_240 = lstone_velocity_saccade_template_7;
     

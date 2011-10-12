@@ -8,7 +8,7 @@ if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefin
     field_peak  = 'xCorrPeakThreshold';
     field_onset = 'xCorrOnsetThreshold';
     field_offset= 'xCorrOffsetThreshold';
-    vel         = data.deg.xcorr_vel;
+    vel         = data.deg.velXCorr;
 else
     % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
     % are detected based on xcorr responses, refinement is done from the
@@ -24,9 +24,9 @@ end
 %%% find where velocity data is above threshold
 if ETparams.data.qApplySaccadeTemplate
     % find peaks from xcorr responses
-    qAboveThresh    = data.deg.xcorr_vel > data.saccade.xCorrPeakThreshold;
+    qAboveThresh    = data.deg.velXCorr > data.saccade.xCorrPeakThreshold;
 else
-    qAboveThresh    = data.deg.vel       > data.saccade.peakVelocityThreshold;
+    qAboveThresh    = data.deg.vel      > data.saccade.peakVelocityThreshold;
 end
 [sacon,sacoff]  = bool2bounds(qAboveThresh);
 
@@ -206,11 +206,11 @@ while kk <= length(sacon)
                 %   only replace with this high velocity glissade if detected
                 %   end is later
                 if max(...  % amplitude
-                        calcAmplitudeFick(data.deg.X(sacoff(kk)),data.deg.Y(sacoff(kk)) , data.deg.X(sacoff(kk+idx)),data.deg.Y(sacoff(kk+idx)))...
+                        calcAmplitudeFick(data.deg.Azi(sacoff(kk)),data.deg.Ele(sacoff(kk)) , data.deg.Azi(sacoff(kk+idx)),data.deg.Ele(sacoff(kk+idx)))...
                       ) ...
                    < ...
                    max(...
-                        calcAmplitudeFick(data.deg.X( sacon(kk)),data.deg.Y( sacon(kk)) , data.deg.X(sacoff(kk)    ),data.deg.Y(sacoff(kk)    ))...
+                        calcAmplitudeFick(data.deg.Azi( sacon(kk)),data.deg.Ele( sacon(kk)) , data.deg.Azi(sacoff(kk)    ),data.deg.Ele(sacoff(kk)    ))...
                       ) && ...
                    ((~isempty(foundGlissadeOff) && sacoff(kk+idx)>foundGlissadeOff) || isempty(foundGlissadeOff))   % end later then low velocity glissade
                     % found potential glissade, store it

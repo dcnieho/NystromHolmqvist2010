@@ -3,9 +3,14 @@ function data = cutSaccades(data,datatype,ETparams,qReconstructPos)
 % prepare parameters
 firstSecSamples = 1 * ETparams.samplingFreq;    % number of samples in one second (looks stupid, but if we later decide to want a different interval, we can change things here...)
 
-% get eye positions in pixels
-X       = data.(datatype).X;
-Y       = data.(datatype).Y;
+% get eye positions in pixels/degree
+if strcmp(datatype,'pix')
+    X   = data.pix.X;
+    Y   = data.pix.Y;
+elseif strcmp(datatype,'deg')
+    X   = data.deg.Azi;
+    Y   = data.deg.Ele;
+end
 
 % get eye velocities in pixels
 vel     = data.(datatype).vel;
@@ -13,8 +18,8 @@ if strcmp(datatype,'pix')
     velX    = data.pix.velX;
     velY    = data.pix.velY;
 elseif strcmp(datatype,'deg')
-    velX    = data.deg.velAz;
-    velY    = data.deg.velEl;
+    velX    = data.deg.velAzi;
+    velY    = data.deg.velEle;
 end
 
 sacon  = data.saccade.on;
@@ -68,8 +73,8 @@ if any(qNaN)
         data.pix.velX = velX;
         data.pix.velY = velY;
     elseif strcmp(datatype,'deg')
-        data.deg.velAz = velX;
-        data.deg.velEl = velY;
+        data.deg.velAzi = velX;
+        data.deg.velEle = velY;
     end
 end
 
@@ -105,19 +110,27 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % store filtered data
-data.(datatype).velfilt = vel;
+data.(datatype).velFilt = vel;
 if strcmp(datatype,'pix')
-    data.pix.velXfilt = velX;
-    data.pix.velYfilt = velY;
+    data.pix.velXFilt = velX;
+    data.pix.velYFilt = velY;
 elseif strcmp(datatype,'deg')
-    data.deg.velAzfilt = velX;
-    data.deg.velElfilt = velY;
+    data.deg.velAziFilt = velX;
+    data.deg.velEleFilt = velY;
 end
 
 if qReconstructPos
     % plant version
-    data.(datatype).Xfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
-    data.(datatype).Yfilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+    XFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
+    YFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+    
+    if strcmp(datatype,'pix')
+        data.pix.XFilt = XFilt;
+        data.pix.YFilt = YFilt;
+    elseif strcmp(datatype,'deg')
+        data.deg.AziFilt = XFilt;
+        data.deg.EleFilt = YFilt;
+    end
 end
 
 

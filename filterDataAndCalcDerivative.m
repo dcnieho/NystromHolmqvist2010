@@ -62,15 +62,15 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 
 % calculate component velocities and accelerations
 if ETparams.data.qNumericallyDifferentiate
-    tempV   = diff([data.deg.X data.deg.Y],1,1);
-    tempA   = diff([data.deg.X data.deg.Y],2,1);
+    tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
+    tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
     
     % make same length as position trace
     tempV   = [tempV; tempV( end     ,:)] * ETparams.samplingFreq;
     tempA   = [tempA; tempA([end end],:)] * ETparams.samplingFreq^2;
     
     % also calculate derivatives for eye position in pixels
-    if ETparams.data.qAlsoStoreandSmoothPixels
+    if ETparams.data.qAlsoStoreandDiffPixels
         tempVpix    = diff([data.pix.X data.pix.Y],1,1);
         tempApix    = diff([data.pix.X data.pix.Y],2,1);
         
@@ -89,12 +89,12 @@ else
     ntaps   = 2*ceil(window)-1;
     
     % calculate derivatives
-    [tempV,tempA] = sgFilt([data.deg.X data.deg.Y],[1 2],ntaps);
+    [tempV,tempA] = sgFilt([data.deg.Azi data.deg.Ele],[1 2],ntaps);
     tempV = -tempV * ETparams.samplingFreq;                 % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
     tempA =  tempA * ETparams.samplingFreq^2;
     
     % also calculate derivatives for eye position in pixels
-    if ETparams.data.qAlsoStoreandSmoothPixels
+    if ETparams.data.qAlsoStoreandDiffPixels
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
         tempVpix = -tempVpix * ETparams.samplingFreq;       % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
         tempApix =  tempApix * ETparams.samplingFreq^2;
@@ -145,18 +145,18 @@ if ETparams.data.qPreciseCalcDeriv
     if 0
         % if we had 3D data, and tempV(:,3) is the torsional velocity:
         data.deg.omega = [...
-            tempV(:,3).*cosd(data.deg.X).*cosd(data.deg.Y) - tempV(:,2).*sind(data.deg.X)                   , ...
-            tempV(:,2).*cosd(data.deg.X)                   + tempV(:,3).*sind(data.deg.X).*cosd(data.deg.Y) , ...
-            tempV(:,1)                                     - tempV(:,3).*sind(data.deg.Y)                     ...
+            tempV(:,3).*cosd(data.deg.Azi).*cosd(data.deg.Ele) - tempV(:,2).*sind(data.deg.Azi)                     , ...
+            tempV(:,2).*cosd(data.deg.Azi)                     + tempV(:,3).*sind(data.deg.Azi).*cosd(data.deg.ele) , ...
+            tempV(:,1)                                         - tempV(:,3).*sind(data.deg.Ele)                       ...
             ];
     else
         % for lack of information about torsion, we set those parts to 0
         % this means the instantaneous axis does not take changes in
         % torsion into account and might therefore be systematically off.
         data.deg.omega = [...
-                                                           - tempV(:,2).*sind(data.deg.X)                   , ...
-            tempV(:,2).*cosd(data.deg.X)                                                                    , ...
-            tempV(:,1)                                                                                        ...
+                                                               - tempV(:,2).*sind(data.deg.Azi)                     , ...
+            tempV(:,2).*cosd(data.deg.Azi)                                                                          , ...
+            tempV(:,1)                                                                                                ...
             ];
     end
     data.deg.vel    = sqrt(sum(data.deg.omega.^2,2));
@@ -177,13 +177,13 @@ end
 
 if ETparams.data.qAlsoStoreComponentDerivs
     % also store velocities and acceleration in X and Y direction
-    data.deg.velAz  = tempV(:,1);
-    data.deg.velEl  = tempV(:,2);
-    data.deg.accAz  = tempA(:,1);
-    data.deg.accEl  = tempA(:,2);
+    data.deg.velAzi = tempV(:,1);
+    data.deg.velEle = tempV(:,2);
+    data.deg.accAzi = tempA(:,1);
+    data.deg.accEle = tempA(:,2);
 end
 
-if ETparams.data.qAlsoStoreandSmoothPixels
+if ETparams.data.qAlsoStoreandDiffPixels
     % calculate derivative magnitudes
     data.pix.vel    = hypot(tempVpix(:,1), tempVpix(:,2));
     data.pix.acc    = hypot(tempApix(:,1), tempApix(:,2));

@@ -71,8 +71,13 @@ clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
 % time series
 % position
-xdata   = data.(datatype).X;
-ydata   = data.(datatype).Y;
+if strcmp(datatype,'pix')
+    xdata   = data.pix.X;
+    ydata   = data.pix.Y;
+elseif strcmp(datatype,'deg')
+    xdata   = data.deg.Azi;
+    ydata   = data.deg.Ele;
+end
 
 % time
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
@@ -85,9 +90,9 @@ elseif strcmp(datatype,'deg')
         case 'vel'
             vel     = data.deg.vel;
         case 'velX'
-            vel     = data.deg.velAz;
+            vel     = data.deg.velAzi;
         case 'velY'
-            vel     = data.deg.velEl;
+            vel     = data.deg.velEle;
     end
 end
 
@@ -229,7 +234,7 @@ if qSaccadeTemplate
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,data.deg.xcorr_vel,...                                % data (y,x)
+    plotWithMark(time,data.deg.velXCorr,...                                 % data (y,x)
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -245,7 +250,7 @@ if qSaccadeTemplate
         end
     end
     hold off;
-    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.xcorr_vel))]);   % xcorr values above 2.5 seem to only occur due to noise
+    axis([mmt(1) mmt(2) 0 min(2.5,max(data.deg.velXCorr))]);    % xcorr values above 2.5 seem to only occur due to noise
 else
     ac = [];
 end

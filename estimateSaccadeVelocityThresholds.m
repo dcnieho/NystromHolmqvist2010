@@ -23,7 +23,7 @@ centralFixSamples   = ceil(ETparams.saccade.minDur /6000 * ETparams.samplingFreq
 if ETparams.data.qApplySaccadeTemplate
     field_peak  = 'xCorrPeakThreshold';
     field_onset = 'xCorrOnsetThreshold';
-    vel         = data.deg.xcorr_vel;
+    vel         = data.deg.velXCorr;
 else
     field_peak  = 'peakVelocityThreshold';
     field_onset = 'onsetVelocityThreshold';
