@@ -87,9 +87,6 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
         threshon    = threshon +floor(centralFixSamples);
         threshoff   = threshoff-ceil (centralFixSamples);
         
-        % TODO: remove where one onset is running past the other offset,
-        % for increased correctness...
-        
         % convert to data selection indices
         idx         = bounds2ind(threshon,threshoff);
         
