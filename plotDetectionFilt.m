@@ -169,12 +169,26 @@ glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
 %%% determine time axis limits
 mmt  = [min(time) max(time)];
 
-%%% plot X trace with fixation markers
+%%% determine subplot positions
 if qSaccadeTemplate
-    ax = subplot('position',[0.05 0.88 0.90 0.08]);
+    xplotPos = [0.05 0.88 0.90 0.08];
+    yplotPos = [0.05 0.76 0.90 0.08];
+    vplotPos = [0.05 0.60 0.90 0.12];
+    cplotPos = [0.05 0.44 0.90 0.12];
+    cutplotPos = [0.05 0.06 0.43 0.34];
+    rawplotPos = [0.52 0.06 0.43 0.34];
 else
-    ax = subplot('position',[0.05 0.84 0.90 0.12]);
+    xplotPos = [0.05 0.84 0.90 0.12];
+    yplotPos = [0.05 0.68 0.90 0.12];
+    vplotPos = [0.05 0.52 0.90 0.12];
+    cutplotPos = [0.05 0.06 0.43 0.40];
+    rawplotPos = [0.52 0.06 0.43 0.40];
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% plot X trace with fixation markers
+ax = subplot('position',xplotPos);
 hold on;
 if qReconstructPos
     plot(time,xdata,'g');
@@ -193,11 +207,7 @@ axis ij
 
 
 %%% plot Y trace with fixation markers
-if qSaccadeTemplate
-    ay = subplot('position',[0.05 0.76 0.90 0.08]);
-else
-    ay = subplot('position',[0.05 0.68 0.90 0.12]);
-end
+ay = subplot('position',yplotPos);
 hold on;
 if qReconstructPos
     plot(time,ydata,'g');
@@ -218,11 +228,7 @@ axis ij
 
 
 %%% plot velocity trace with saccade and glissade markers
-if qSaccadeTemplate
-    av = subplot('position',[0.05 0.60 0.90 0.12]);
-else
-    av = subplot('position',[0.05 0.52 0.90 0.12]);
-end
+av = subplot('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
@@ -258,7 +264,7 @@ end
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
-    ac = subplot('position',[0.05 0.44 0.90 0.12]);
+    ac = subplot('position',cplotPos);
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -289,12 +295,8 @@ linkaxes([ax ay av ac],'x');
 
 
 %%% plot scanpath of raw data and of data with saccades cut out
-if qSaccadeTemplate
-    asf = subplot('position',[0.05 0.06 0.43 0.34]);
-else
-    asf = subplot('position',[0.05 0.06 0.43 0.40]);
-end
 if qReconstructPos
+    asf = subplot('position',cutplotPos);
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
@@ -306,13 +308,11 @@ if qReconstructPos
                 );
     axis(rect([1 3 2 4]));
     axis ij
+else
+    asf = [];
 end
 
-if qSaccadeTemplate
-    asr = subplot('position',[0.52 0.06 0.43 0.34]);
-else
-    asr = subplot('position',[0.52 0.06 0.43 0.40]);
-end
+asr = subplot('position',rawplotPos);
 if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on
