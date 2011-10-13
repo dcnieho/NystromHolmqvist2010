@@ -10,6 +10,7 @@ if isfield(data.pix,'vel')
     data = flagBlinksAndRemoveMissing(data,'pix',false);
 end
 
+% TODO: Rename internals
 
 
 

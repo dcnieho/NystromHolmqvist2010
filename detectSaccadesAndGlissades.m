@@ -279,6 +279,7 @@ while kk <= length(sacon)
     kk = kk+1;
 end
 
+
 %--------------------------------------------------------------------------
 % MERGING SACCADES
 %--------------------------------------------------------------------------
@@ -292,47 +293,22 @@ if 0
         sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4});
 end
 
-kk=1;
-while kk < length(sacon)    % NB: doesn't process last saccade (useless anyway of course!)
-    % walk through all saccades and see if followed shortly by another
-    % saccade.
-    
-    % If there is a glissades for this saccade, check from the end of the
-    % glissade, otherwise check from the end of the saccade
-    qHaveGlissade = sacoff(kk)==glissadeon;
-    if any(qHaveGlissade)
-        assert(sum(qHaveGlissade)==1)  % anything else would be ridiculous!
-        thisoff = glissadeoff(qHaveGlissade);
-    else
-        thisoff = sacoff(kk);
-    end
-    
-    % check if start of next saccade occurs within the window
-    if sacon(kk+1) <= thisoff
-        % if yes, merge, continue
-        sacoff(kk) = sacoff(kk+1);
-        
-        % remove next saccade...
-        sacon(kk+1)                 = [];
-        sacoff(kk+1)                = [];
-        saccadeOffsetTreshold(kk+1) = [];
-        
-        % ... and glissade that is caught in between
-        glissadeon (qHaveGlissade) = [];
-        glissadeoff(qHaveGlissade) = [];
-        continue;
-    else
-        % else, process next saccade
-        kk = kk+1;
-    end
-end
+% build input for this algorithm
+saccade.on              = sacon;
+saccade.off             = sacoff;
+saccade.(field_offset)  = saccadeOffsetTreshold;
+glissade.on             = glissadeon;
+glissade.off            = glissadeoff;
+glissade.type           = glissadetype;
 
-%%% output
-data.saccade .on                = sacon;
-data.saccade .off               = sacoff;
-data.saccade .(field_offset)    = saccadeOffsetTreshold;
+[saccade,glissade] = mergeIntervals(saccade,glissade,0);
+
+
+%--------------------------------------------------------------------------
+% OUTPUT
+%--------------------------------------------------------------------------
+% need to concat structs...
+data.saccade    = cell2struct([struct2cell(data.saccade); struct2cell(saccade)],[fieldnames(data.saccade); fieldnames(saccade)]);
 if ETparams.glissade.qDetect
-    data.glissade.on            = glissadeon;
-    data.glissade.off           = glissadeoff;
-    data.glissade.type          = glissadetype;
+    data.glissade   = glissade;
 end

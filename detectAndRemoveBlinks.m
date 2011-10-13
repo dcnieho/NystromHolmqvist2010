@@ -5,15 +5,18 @@ function data = detectAndRemoveBlinks(data,ETparams)
 % Blinks are detect in one of two ways.
 % 1. Velocity or acceleration trace shows speeds above what is
 %    physiologically possible.
-% 2. Large amplitude almost purely vertical movements present in the trace
-%    usually accompanied with outlier speeds. Furthermore, these have an
+% 2. High-amplitude downward excursions of recorded gaze position usually
+%    accompanied with outlier speeds. Furthermore, these have an
 %    impossible downward peak-like shape in the position trace.
 
 
+% prepare parameters
+% if blink is followed by another blink by less than mergeWindow (in ms),
+% they'll be merged
+blinkMergeWindowSamples = ceil(ETparams.blink.mergeWindow./1000 * ETparams.samplingFreq);
 
 
-
-% first, check NaNs are in the same places in all traces. Sanity data integrity check
+% TODO: first, check NaNs are in the same places in all traces. Sanity data integrity check
 fn = fieldnames(data.deg);
 % all position fields should have same NaNs, ass should all velocity fields
 % and all acceleration fields
@@ -114,8 +117,6 @@ for p = 1:length(sacon)
     end
 end
 
-% TODO: merge very close blinks
-
 % build information about blinks
 [blinkon,idx]   = sort(blinkon);
 blinkoff        = blinkoff(idx);
@@ -123,18 +124,24 @@ data.blink.on   = blinkon;
 data.blink.off  = blinkoff;
 
 % now remove saccades that were flagged as blink
-sacFields   = fieldnames(data.saccade);
-qScalar     = structfun(@isscalar,data.saccade);
-sacFields(qScalar) = [];
-for p=1:length(sacFields)
-    data.saccade.(sacFields{p})(qIsBlink) = [];
+% first remove their corresponding glissades, if any
+if ETparams.glissade.qDetect
+    qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
+    data.glissade   = removeElementFromStructFields(data.glissade,qRemoveGlissade);
 end
+
+% then deal with the saccades
+data.saccade    = removeElementFromStructFields(data.saccade,qIsBlink);
+
+% merge very close blinks.
+data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
 
 
 % create boolean matrix given blink bounds
 qBlink = bounds2bool(blinkon+1,blinkoff-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
 % remove data that is due to noise
 data.deg.vel(qBlink)    = nan;
+% TODO: other traces?
 
 % lastly, notify if more than 20% nan
 if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
