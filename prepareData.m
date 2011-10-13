@@ -73,14 +73,4 @@ data.pix.X      = data.pix.X - ETparams.screen.subjectStraightAhead(1);
 data.pix.Y      = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 % finally, convert gaze position in pixels to Fick angles in degree
-% first convert pixels to cm away from origin
-pixPerMeter     = ETparams.screen.resolution ./ ETparams.screen.size;
-% Then convert to Fick angles (MATLAB's cart2sph models a Fick gimbal)
-% although their reference Z axis is our Y axis, their X axis is our Z axis
-% and their Y axis is our X axis:
-% cart2sph: X Y Z
-% our Fick: Z X Y
-[dx,dy]         = cart2sph(ETparams.screen.viewingDist, data.pix.X./pixPerMeter(1), data.pix.Y./pixPerMeter(2));
-% convert to degrees (Fick angles)
-data.deg.Azi    = dx./pi*180;
-data.deg.Ele    = dy./pi*180;
+[data.deg.Azi, data.deg.Ele] = pix2fick(data.pix.X,data.pix.Y,ETparams);

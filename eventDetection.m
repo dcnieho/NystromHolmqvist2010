@@ -2,19 +2,24 @@ function data = eventDetection(x,y,ETparams)
 %--------------------------------------------------------------------------
 % README
 %
-% This code processes the recorded eye movement data to extract saccades,
+% This code is based on an implementation of Nyström, M. & Holmqvist, K.
+% (2010), "An adaptive algorithm for fixation, saccade, and glissade
+% detection in eye-tracking data". Behavior Research Methods 42(1):188-204.
+% It processes the recorded eye movement data to extract saccades,
 % glissades and fixations.
-% Observe that the algorithm is suitable ONLY for data collected from
-% viewers keeping their heads relatively still while watching static
-% stimuli. Note that at present it is not designed to handle data
-% containing smooth pursuit movements.
+%
+% Observe that if the saccade template extension (not from Nyström et al.'s
+% article) is used, ETparams.data.qApplySaccadeTemplate==true, this
+% algorithm can handle data containing saccades during smooth pursuit as
+% well.
 %
 % This code only requires only requires the statistics toolbox for the
-% functions nanmean and nanstd. If you do not have access to this toolbox,
-% you can get a nanmean implementation from Peter Acklam's website:
+% functions nanmean, nanmedian and nanstd. If you do not have access to
+% this toolbox, you can get a nanmean implementation from Peter Acklam's
+% website:
 % http://home.online.no/~pjacklam/matlab/software/util/statutil/nanmean.m
-% you'll have to implement nanstd yourself following this nanmean as an
-% example
+% you'll have to implement nanmedian and nanstd yourself following this
+% nanmean as an example
 
 % Prepare data (move origin, things like that)
 %-------------------------------------

@@ -33,7 +33,7 @@ for p=1:length(data.fixation.on)
     % average eye position
     data.fixation.meanX_deg(p)          = nanmean(data.deg.X(idxs));
     data.fixation.meanY_deg(p)          = nanmean(data.deg.Y(idxs));
-    % and convert it to degrees
+    % and convert it to pixels
     [data.fixation.meanX_pix(p),data.fixation.meanY_pix(p)] = ...
         fick2pix(data.fixation.meanX_deg(p), data.fixation.meanY_deg(p),ETparams);
     
