@@ -2,7 +2,19 @@ function data = detectSaccadesAndGlissades(data,ETparams)
 % Detects start and end by criteria on either the eye velocity or the xcorr
 % response between the velocity trace and a saccade template
 
-% select parameter and data to work with
+%%% prepare algorithm parameters
+minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ETparams.samplingFreq);
+maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000                * ETparams.samplingFreq);
+glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000          * ETparams.samplingFreq);
+localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ETparams.samplingFreq);
+% If the peak consists of =< minPeakSamples consequtive samples, it it
+% probably noise (1/6 of the min saccade duration)
+minPeakSamples          = ceil(ETparams.saccade.minDur/6000                 * ETparams.samplingFreq);
+% if saccade is followed by another saccade by less than SacMergeWindow (in
+% ms), they'll be merged
+SacMergeWindowSamp      = ceil(ETparams.saccade.mergeWindow./1000           * ETparams.samplingFreq);
+
+%%% select parameters and data to work with
 if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
     % run full detection algorithm from the cross correlation trace
     field_peak  = 'peakXCorrThreshold';
@@ -12,8 +24,7 @@ if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefin
 else
     % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
     % are detected based on xcorr responses, refinement is done from the
-    % velocity trace (recommended). The detrended velocity trace is used
-    % iff it is available and if the saccade template is not used
+    % velocity trace (recommended).
     field_peak  = 'peakVelocityThreshold';
     field_onset = 'onsetVelocityThreshold';
     field_offset= 'offsetVelocityThreshold';
@@ -48,18 +59,6 @@ end
 % sacoff  = sacoff+10;
 % sacon(sacon<1)              = 1;
 % sacoff(sacoff>length(vel))  = length(vel);
-
-%%% prepare algorithm parameters
-minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ETparams.samplingFreq);
-maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000                * ETparams.samplingFreq);
-glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000          * ETparams.samplingFreq);
-localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ETparams.samplingFreq);
-% If the peak consists of =< minPeakSamples consequtive samples, it it
-% probably noise (1/6 of the min saccade duration)
-minPeakSamples          = ceil(ETparams.saccade.minDur/6000                 * ETparams.samplingFreq);
-% if saccade is followed by another saccade by less than SacMergeWindow (in
-% ms), they'll be merged
-SacMergeWindowSamp      = ceil(ETparams.saccade.mergeWindow./1000           * ETparams.samplingFreq);
 
 
 %%% Process one velocity peak at the time.
@@ -283,6 +282,10 @@ while kk <= length(sacon)
     kk = kk+1;
 end
 
+
+%--------------------------------------------------------------------------
+% MERGING SACCADES
+%--------------------------------------------------------------------------
 % now deal with saccades that are too close together, fuse two saccades
 % with little time between them. This needs to run even if the window
 % length is 0 as the above has been seen to generate saccade starts before
@@ -309,8 +312,9 @@ while kk < length(sacon)    % NB: doesn't process last saccade (useless anyway o
         sacoff(kk) = sacoff(kk+1);
         
         % remove next saccade...
-        sacon(kk+1)  = [];
-        sacoff(kk+1) = [];
+        sacon(kk+1)                 = [];
+        sacoff(kk+1)                = [];
+        saccadeOffsetTreshold(kk+1) = [];
         
         % ... and glissade that is caught in between
         glissadeon (qHaveGlissade) = [];

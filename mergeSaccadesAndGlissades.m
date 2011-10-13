@@ -1,4 +1,6 @@
 function [data] = mergeSaccadesAndGlissades(data)
+% NB: You would need to rerun processSaccadesAndGlissades.m after this as
+% the saccades flags have just changed
 
 % get saccade offset markers
 sacoff  = data.saccade.off;
@@ -10,7 +12,7 @@ if isfield(data,'glissade')
         % followed with glissades, need to be fused (or even nastier).
         % Splitting up is easier and robust.
         
-        % for eah glissade, find corresponding saccade
+        % for each glissade, find corresponding saccade
         % easy, as glissade onset is equal to fixation offset per definition
         qsac = data.glissade.on(p) == sacoff;
         assert(sum(qsac)==1)
