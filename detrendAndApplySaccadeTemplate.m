@@ -74,7 +74,7 @@ if ETparams.data.qApplySaccadeTemplate
                                 NaN(trans,1)];
                             
     % put nans back in as long runs of zero might bias the threshold
-    % estimation step to lower thresholds. Only remoe where filter would
+    % estimation step to lower thresholds. Only remove where filter would
     % have been running on nan only
     [nanon,nanoff]  = bool2bounds(qNan);
     nanon           = nanon +trans;
