@@ -10,9 +10,6 @@ localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ET
 % If the peak consists of =< minPeakSamples consequtive samples, it it
 % probably noise (1/6 of the min saccade duration)
 minPeakSamples          = ceil(ETparams.saccade.minDur/6000                 * ETparams.samplingFreq);
-% if saccade is followed by another saccade by less than SacMergeWindow (in
-% ms), they'll be merged
-SacMergeWindowSamp      = ceil(ETparams.saccade.mergeWindow./1000           * ETparams.samplingFreq);
 
 %%% select parameters and data to work with
 if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
@@ -282,15 +279,19 @@ while kk <= length(sacon)
     kk = kk+1;
 end
 
-
 %--------------------------------------------------------------------------
 % MERGING SACCADES
 %--------------------------------------------------------------------------
-% now deal with saccades that are too close together, fuse two saccades
-% with little time between them. This needs to run even if the window
-% length is 0 as the above has been seen to generate saccade starts before
-% the end of the previous saccade. We could check for that above, or we
-% could just prune/merge them here.
+% The above has been seen to generate saccade starts before the end of the
+% previous saccade. We could check for that above, or we could just
+% prune/merge them here.
+if 0
+    % debug
+    plotWithMark(1:length(data.deg.vel),data.deg.vel,'sample nr','vel','',...
+        sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...
+        sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4});
+end
+
 kk=1;
 while kk < length(sacon)    % NB: doesn't process last saccade (useless anyway of course!)
     % walk through all saccades and see if followed shortly by another
@@ -307,7 +308,7 @@ while kk < length(sacon)    % NB: doesn't process last saccade (useless anyway o
     end
     
     % check if start of next saccade occurs within the window
-    if sacon(kk+1)-thisoff <= SacMergeWindowSamp
+    if sacon(kk+1) <= thisoff
         % if yes, merge, continue
         sacoff(kk) = sacoff(kk+1);
         

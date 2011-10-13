@@ -18,7 +18,7 @@ function data = prepareData(x,y,ETparams)
 % Furthermore, it should be noted that due to our lab conventions, the
 % positive X axis points righward and the positive Y axis points downward.
 % Furthermore, positive rotations around the Y axis are rightward, but
-% positive rotations around the X axis are downard too (frankly, this is
+% positive rotations around the X axis are downward too (frankly, this is
 % not a consistent right-handed or left-handed sytem, this rotation should
 % then be upward). This doesn't matter until we want to correctly calculate
 % the axis of eye rotation. We'll then have to revise all code to conform

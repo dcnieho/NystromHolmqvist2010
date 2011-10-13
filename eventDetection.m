@@ -44,10 +44,21 @@ data = estimateSaccadeVelocityThresholds(data,ETparams);
 % Detect saccades and glissades
 % then, get information about them
 %-------------------------------------
-data = detectSaccadesAndGlissades (data,ETparams);
+data = detectSaccadesAndGlissades(data,ETparams);
+
+% Detect and remove blinks
+% Do this before saccades are merged, or we might also
+% remove saccades that occured right after a blink
+%-------------------------------------
+data = detectAndRemoveBlinks(data,ETparams);
+
+% Now merge saccades with short intervals between them
+% and get information about them
+%-------------------------------------
 data = processSaccadesAndGlissades(data,ETparams);
 
 % Implicitly detect fixations
+% and get information about them
 %-------------------------------------
 if ETparams.fixation.qDetect
     data = detectFixations (data,ETparams);

@@ -55,8 +55,8 @@ ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for 
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template, not from the velocity trace
 ETparams.saccade.localNoiseWindowLength = 50;           % in, millisecond, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
 ETparams.saccade.minDur                 = 10;           % in milliseconds
-ETparams.saccade.mergeWindow            = 100;          % merge saccades that are less than this appart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
-ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals
+ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this appart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
+ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals. If false, blink detection dies as its basic assumption is that blinks were already detected as saccades due to their large vertical velocity
 
 ETparams.glissade.qDetect               = false;        % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
@@ -70,7 +70,7 @@ ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in
 % trace end up unclassified as they don't qualify as saccade, glissade or
 % "fixation".
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 100;          % in milliseconds
+ETparams.fixation.minDur                = 30;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on other data
