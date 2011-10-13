@@ -14,8 +14,13 @@ if isfield(data.pix,'vel')
     [data,qBlinkPix] = flagBlinksAndRemoveMissing(data,'pix',false);
     
     % there should be no difference in missing between the pixel and degree
-    % traces so this should always be true    assert(isequal(qBlinkPix,qBlinkDeg))
+    % traces so this should always be true
+    assert(isequal(qBlinkPix,qBlinkDeg))
 end
+
+% build information about blinks
+data.blink.on   = data.saccade.on (qBlinkDeg);
+data.blink.off  = data.saccade.off(qBlinkDeg);
 
 % now remove saccades that were flagged as blink
 sacFields   = fieldnames(data.saccade);

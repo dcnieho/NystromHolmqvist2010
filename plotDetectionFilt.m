@@ -118,21 +118,28 @@ end
 % markers
 sacon   = data.saccade.on;
 sacoff  = data.saccade.off;
-if isfield(data,'glissade')
-    qHaveGlissades = true;
-    glisoff = data.glissade.off;
-    glistyp = data.glissade.type;
+if isfield(data,'blink')
+    blinkMarks = {data.blink.on, {'mo','MarkerFaceColor','magenta','MarkerSize',4}, ... % blink on  markers
+                  data.blink.off,{'mo','MarkerFaceColor','magenta','MarkerSize',4}};    % blink off markers
 else
-    qHaveGlissades = false;
+    blinkMarks = {};
+end
+if isfield(data,'glissade')
+    qhighvelglissade = data.glissade.type==2;                                           % determine glissade type: 1 is low velocity, 2 is high velocity
+    glismarks = {data.glissade.off(qhighvelglissade) ,{'c*'},...                        % high velocity glissade off markers
+                 data.glissade.off(~qhighvelglissade),{'g*'}};                          % low  velocity glissade off markers
+else
+    glismarks = {};
 end
 if isfield(data,'fixation')
     qHaveFixations = true;
-    fixon   = data.fixation.on;
-    fixoff  = data.fixation.off;
     xfixpos = data.fixation.(['meanX_' datatype]);
     yfixpos = data.fixation.(['meanY_' datatype]);
+    fixmarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
+                 data.fixation.off,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};     % fixation off markers
 else
     qHaveFixations = false;
+    fixmarks = {};
 end
 % thresholds
 if isfield(data.saccade,'peakXCorrThreshold')
@@ -168,12 +175,6 @@ if qSaccadeTemplate
 else
     ax = subplot('position',[0.05 0.84 0.90 0.12]);
 end
-if qHaveFixations
-    fixmarks = {fixon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % fixation on  markers
-                fixoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};    % fixation off markers
-else
-    fixmarks = {};
-end
 hold on;
 if qReconstructPos
     plot(time,xdata,'g');
@@ -202,12 +203,14 @@ if qReconstructPos
     plot(time,ydata,'g');
     plotWithMark(time,ydatcut,...                                           % data (y,x)
                  'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
-                 fixmarks{:} ...                                            % fixation markers (if any)
+                 fixmarks{:}, ...                                           % fixation markers (if any)
+                 blinkMarks{:} ...                                          % blink markers (if any)
                 );
 else
-    plotWithMark(time,ydata,...                                           % data (y,x)
+    plotWithMark(time,ydata,...                                             % data (y,x)
                  'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
-                 fixmarks{:} ...                                            % fixation markers (if any)
+                 fixmarks{:}, ...                                           % fixation markers (if any)
+                 blinkMarks{:} ...                                          % blink markers (if any)
                 );
 end
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
@@ -220,13 +223,6 @@ if qSaccadeTemplate
 else
     av = subplot('position',[0.05 0.52 0.90 0.12]);
 end
-if qHaveGlissades
-    qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
-    glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
-                 glisoff(~qhighvelglissade),{'g*'}};                    % low  velocity glissade off markers
-else
-    glismarks = {};
-end
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
@@ -235,7 +231,8 @@ plotWithMark(time,velcut,...                                            % data (
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-             glismarks{:} ...                                           % glissade markers (if any)
+             glismarks{:}, ...                                          % glissade markers (if any)
+             blinkMarks{:} ...                                          % blink markers (if any)
             );
 % add detection thresholds
 if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
@@ -262,13 +259,6 @@ end
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
     ac = subplot('position',[0.05 0.44 0.90 0.12]);
-    if qHaveGlissades
-        qhighvelglissade = glistyp==2;                                      % determine glissade type: 1 is low velocity, 2 is high velocity
-        glismarks = {glisoff(qhighvelglissade) ,{'c*'},...                  % high velocity glissade off markers
-                     glisoff(~qhighvelglissade),{'g*'}};                    % low  velocity glissade off markers
-    else
-        glismarks = {};
-    end
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -276,7 +266,8 @@ if qSaccadeTemplate
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-                 glismarks{:} ...                                           % glissade markers (if any)
+                 glismarks{:}, ...                                          % glissade markers (if any)
+                 blinkMarks{:} ...                                          % blink markers (if any)
                 );
     hold on;
     % add detection thresholds
