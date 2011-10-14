@@ -40,20 +40,20 @@ if ETparams.data.qDetrendWithMedianFilter
         end
     end
         
-    % do detrending
+    % do detrending -- don't have to deal with nans here unless the median
+    % filter width is smaller than half the lowpass filter's number of taps
     for p=1:size(todo,1)
         median_velocities = medianFilter(...
-            lowpassFilter(data.(todo{p,1}).(todo{p,2}),ETparams.data.detrendLowpassFIRCoeffs), ...
-            medianSamples); % smoothed median matches
+            applyFilter(data.(todo{p,1}).(todo{p,2}),ETparams.data.detrendLowpassFIRCoeffs), ...    % lowpass filter first
+            medianSamples);                                                                         % then median filter
         
         data.(todo{p,1}).(todo{p,3}) = data.(todo{p,1}).(todo{p,2}) - median_velocities;
     end
 end
 
 if ETparams.data.qApplySaccadeTemplate
-    % convolute and deal with the end effects
-    % part of convolution where filter runs off the data, at both ends
-    trans                   = floor(length(ETparams.data.saccadeTemplate)/2);
+    % convolute (do "pattern matching") and deal with the end effects
+    
     % choose data
     if ETparams.data.qDetrendWithMedianFilter
         field = 'velDetrend';
@@ -65,23 +65,15 @@ if ETparams.data.qApplySaccadeTemplate
     % replace nan with 0 so our filter responses don't get cut short by NaN
     % -> maximize the extent of the data in which we can detect velocity
     % peaks. Important as high speeds are common next to missing data
-    qNan = isnan(thisdata);
-    thisdata(qNan) = 0;
+    qNan                    = isnan(thisdata);
+    thisdata(qNan)          = 0;
     
-    % cross correlate, dealing with end effects by putting NaN there
-    correlation_responses   = [NaN(trans,1); ...
-                                conv(thisdata,ETparams.data.saccadeTemplate,'valid'); ...
-                                NaN(trans,1)];
-                            
-    % put nans back in as long runs of zero might bias the threshold
-    % estimation step to lower thresholds. Only remove where filter would
-    % have been centered on a nan
-    [nanon,nanoff]  = bool2bounds(qNan);
-    nanon           = nanon +trans;
-    nanoff          = nanoff-trans;
-    qReplace        = nanoff>=nanon;
-    correlation_responses(bounds2ind(nanon(qReplace),nanoff(qReplace))) = nan;
-    
+    % cross correlate, dealing with end effects by putting repeating first/last valid output
+    correlation_responses   = applyFilter(thisdata,ETparams.data.saccadeTemplate);
     % scale and take absolute
     data.deg.velXCorr       = abs(correlation_responses .* ETparams.data.saccadeTemplateFilterScale);
+                            
+    % put nans back in as long runs of zero might bias the threshold
+    % estimation step to lower thresholds.
+    data.deg.velXCorr(qNan) = nan;
 end

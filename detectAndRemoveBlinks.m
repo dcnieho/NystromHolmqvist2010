@@ -5,9 +5,10 @@ function data = detectAndRemoveBlinks(data,ETparams)
 % Blinks are detect in one of two ways.
 % 1. Velocity or acceleration trace shows speeds above what is
 %    physiologically possible.
-% 2. High-amplitude downward excursions of recorded gaze position usually
-%    accompanied with outlier speeds. Furthermore, these have an
-%    impossible downward peak-like shape in the position trace.
+% 2. With the Eyelink, blinks are usually evident as high-amplitude
+%    downward excursions of recorded gaze position, usually accompanied
+%    with outlier speeds. Furthermore, these have an impossible downward
+%    peak-like shape in the position trace.
 
 
 % prepare parameters
@@ -16,10 +17,19 @@ function data = detectAndRemoveBlinks(data,ETparams)
 blinkMergeWindowSamples = ceil(ETparams.blink.mergeWindow./1000 * ETparams.samplingFreq);
 
 
-% TODO: first, check NaNs are in the same places in all traces. Sanity data integrity check
-fn = fieldnames(data.deg);
-% all position fields should have same NaNs, ass should all velocity fields
-% and all acceleration fields
+% First a sanity data integrity check: check NaN positionss are in the same
+% places in all traces, if not I must have introduced some bug somewhere.
+% Not that its important for the correct functioning of this function by
+% the way...
+velFieldsDeg = checkNansSameForAllFields(data,'deg');
+
+% if we have smoothed eye position in pixels and its derivatives, check as
+% well
+if ETparams.data.qAlsoStoreandDiffPixels
+    velFieldsPix = checkNansSameForAllFields(data,'pix');
+    % and check correspondence between degrees and pixels
+    assert(~any(xor(isnan(data.deg.vel),isnan(data.pix.vel))),'NaNs not same in data.deg.vel and data.pix.vel');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Method 1: unphysiological eye movements
@@ -51,7 +61,7 @@ for p = 1:length(blinkon)
         qIsBlink(qEnclosed) = true;
         
         if 0
-            % debug
+            % debug, plot interval detected as blink
             figure(200),clf
             plot(data.deg.Ele(blinkon(p):blinkoff(p)))
             title(sprintf('blink %d',p))
@@ -105,7 +115,9 @@ for p = 1:length(sacon)
     % 1. saccade is downward
     % 2. it is downward by at least 5 degrees
     % 3. final amplitude is less than 40% of max amplitude (the eye apparently turned around)
-    % -> We're dealing with a blink
+    % -> We're dealing with a blink. Yes, thats rather arbitrary, but it
+    %    did a good job for the data I was analyzing. You might want to do
+    %    something else for another experiment (or another Eye tracker!).
     if nanmean(eye_pos)>0 && ...    % 1
             eye_max > 5 && ...      % 2
             eye_end < eye_max*.4    % 3
@@ -117,7 +129,7 @@ for p = 1:length(sacon)
         qIsBlink(p) = true;
         
         if 0
-            % debug
+            % debug, plot interval detected as blink
             figure(200),clf
             plot(eye_pos)
             title(sprintf('saccade %d',p))
@@ -135,11 +147,11 @@ data.blink.off  = blinkoff(idx);
 % first remove their corresponding glissades, if any
 if ETparams.glissade.qDetect
     qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
-    data.glissade   = removeElementFromStructFields(data.glissade,qRemoveGlissade);
+    data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
 end
 
 % then deal with the saccades
-data.saccade    = removeElementFromStructFields(data.saccade,qIsBlink);
+data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 
 % merge very close blinks.
 data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
@@ -148,9 +160,28 @@ data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
 if ETparams.blink.qReplaceWithNan
     % create boolean matrix given blink bounds
     qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
+    
     % remove data that is due to noise
-    data.deg.vel(qBlink)    = nan;
-    % TODO: other traces?
+    if ETparams.blink.qReplaceAllVelWithNan
+        % do all velocity-based traces as well (we've found the relevant
+        % fields above already!)
+        data.deg    = replaceElementsInStruct(data.deg,qBlink,nan,velFieldsDeg);
+        
+        % if we have derivatives of eye position in pixels, throw the NaNs
+        % in there as well
+        if ETparams.data.qAlsoStoreandDiffPixels
+            data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
+        end
+    else
+        % only the 2D velocity field 'vel'
+        data.deg    = replaceElementsInStruct(data.deg,qBlink,nan,{'vel'});
+        
+        % if we have derivatives of eye position in pixels, throw the NaNs
+        % in there as well
+        if ETparams.data.qAlsoStoreandDiffPixels
+            data.pix= replaceElementsInStruct(data.pix,qBlink,nan,{'vel'});
+        end
+    end
     
     % lastly, notify if more than 20% nan
     if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
@@ -159,4 +190,29 @@ if ETparams.blink.qReplaceWithNan
     else
         data.qNoiseTrial = false;
     end
+end
+
+
+
+
+% helper function for checking whether nans are in same positions for all
+% traces
+function velFields = checkNansSameForAllFields(data,datatype)
+
+fn = fieldnames(data.(datatype));
+% all position fields should have same NaNs, as should all velocity fields
+% and all acceleration fields
+qAccFields = cellfun(@(x) length(x)>2 && strcmp(x(1:3),'acc'),fn);
+accFields  = fn(qAccFields);
+for p=1:length(accFields)-1
+    assert(~any(xor(isnan(data.(datatype).(accFields{p})),isnan(data.(datatype).(accFields{p+1})))),'NaNs not same in data.%1$s.%2$s and data.%1$s.%3$s',datatype,accFields{p},accFields{p+1});
+end
+qVelFields = cellfun(@(x) length(x)>2 && strcmp(x(1:3),'vel'),fn);
+velFields  = fn(qVelFields);
+for p=1:length(velFields)-1
+    assert(~any(xor(isnan(data.(datatype).(velFields{p})),isnan(data.(datatype).(velFields{p+1})))),'NaNs not same in data.%1$s.%2$s and data.%1$s.%3$s',datatype,velFields{p},velFields{p+1});
+end
+posFields  = fn(~(qVelFields | qAccFields));
+for p=1:length(posFields)-1
+    assert(~any(xor(isnan(data.(datatype).(posFields{p})),isnan(data.(datatype).(posFields{p+1})))),'NaNs not same in data.%1$s.%2$s and data.%1$s.%3$s',datatype,posFields{p},posFields{p+1});
 end

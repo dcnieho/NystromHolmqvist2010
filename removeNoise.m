@@ -23,28 +23,18 @@ if ~isempty(dataon)
 end
 
 % now remove data from all other data fields that we have
-qNaN = isnan(data.deg.vel);
-fields = fieldnames(data.deg);
-for p=1:length(fields)
-    if strcmp(fields{p},'vel')
-        continue;
-    end
-    
-    data.deg.(fields{p})(qNaN) = nan;
-end
+qNaN        = isnan(data.deg.vel);
+data.deg    = replaceElementsInStruct(data.deg,qNaN,nan);
 
 % if we have smoothed eye position in pixels and its derivatives, throw the
 % NaNs in there as well
 if isfield(data.pix,'X')
-    fields = fieldnames(data.pix);
-    for p=1:length(fields)
-        data.pix.(fields{p})(qNaN) = nan;
-    end
+    data.pix    = replaceElementsInStruct(data.pix,qNaN,nan);
 end
 
 % lastly, notify if more than 20% nan
-if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
-    fprintf('Warning: This trial contains %.2f%% missing samples\n',sum(isnan(data.deg.vel))/length(data.deg.vel)*100);
+if sum(qNaN)/length(data.deg.vel) > 0.20
+    fprintf('Warning: This trial contains %.2f%% missing samples\n',sum(qNaN)/length(data.deg.vel)*100);
     data.qNoiseTrial = true;
 else
     data.qNoiseTrial = false;

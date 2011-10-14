@@ -34,11 +34,11 @@ while kk < length(mainSet.on)      % NB: doesn't process last interval (useless 
         mainSet.off(kk) = mainSet.off(kk+1);
         
         % remove next saccade...
-        mainSet         = removeElementFromStructFields(mainSet,kk+1);
+        mainSet         = replaceElementsInStruct(mainSet,kk+1,[]);
         
         % ... and glissade that is caught in between
         if ~isempty(extraSet)
-            extraSet    = removeElementFromStructFields(extraSet,qHaveExtraOffset);
+            extraSet    = replaceElementsInStruct(extraSet,qHaveExtraOffset,[]);
         end
         
         continue;
