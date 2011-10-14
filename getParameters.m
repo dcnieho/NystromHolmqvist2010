@@ -17,7 +17,8 @@ ETparams.data.qFlipX                    = false;
 % polynomial in a moving window to the eye position data and takes the
 % derivatives analytically). Set the below to true to simply numerical
 % differentiate with matlab's diff()
-ETparams.data.qNumericallyDifferentiate = true;
+ETparams.data.qNumericallyDifferentiate = false;
+ETparams.data.filterWindow              = 10;           % ms, if using Savitzky-Golay, filter window length. Make sure its narrower than smallest features you want to detect
 % If true, eyeposition trace in pixels is also stored and derivatives
 % (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
 % some usage cases. The eventDetection however always runs on eye position
@@ -50,6 +51,7 @@ ETparams.samplingFreq                   = 500;
 ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it is noise or blinks
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks
 ETparams.blink.mergeWindow              = 50;           % merge blinks that are less than this apart. Set to 0 if you don't want any merging.
+ETparams.blink.qReplaceWithNan          = true;         % if true, blinks in the trace are replaced with NaN
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template

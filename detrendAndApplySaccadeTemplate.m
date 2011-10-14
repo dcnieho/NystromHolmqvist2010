@@ -75,11 +75,12 @@ if ETparams.data.qApplySaccadeTemplate
                             
     % put nans back in as long runs of zero might bias the threshold
     % estimation step to lower thresholds. Only remove where filter would
-    % have been running on nan only
+    % have been centered on a nan
     [nanon,nanoff]  = bool2bounds(qNan);
     nanon           = nanon +trans;
     nanoff          = nanoff-trans;
-    correlation_responses(bounds2ind(nanon,nanoff)) = nan;
+    qReplace        = nanoff>=nanon;
+    correlation_responses(bounds2ind(nanon(qReplace),nanoff(qReplace))) = nan;
     
     % scale and take absolute
     data.deg.velXCorr       = abs(correlation_responses .* ETparams.data.saccadeTemplateFilterScale);

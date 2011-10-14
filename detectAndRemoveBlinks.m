@@ -49,6 +49,14 @@ for p = 1:length(blinkon)
         
         % mark saccade as blink
         qIsBlink(qEnclosed) = true;
+        
+        if 0
+            % debug
+            figure(200),clf
+            plot(data.deg.Ele(blinkon(p):blinkoff(p)))
+            title(sprintf('blink %d',p))
+            pause
+        end
     else
         % all blinks should have been detected as saccades in the previous
         % steps
@@ -95,12 +103,12 @@ for p = 1:length(sacon)
     
     % if:
     % 1. saccade is downward
-    % 2. it is downward by at least 3 degrees
-    % 3. final amplitude is less than 20% of max amplitude (the eye apparently turned around)
+    % 2. it is downward by at least 5 degrees
+    % 3. final amplitude is less than 40% of max amplitude (the eye apparently turned around)
     % -> We're dealing with a blink
     if nanmean(eye_pos)>0 && ...    % 1
-            eye_max > 3 && ...      % 2
-            eye_end < eye_max/5     % 3
+            eye_max > 5 && ...      % 2
+            eye_end < eye_max*.4    % 3
         
         % add info about blink
         blinkon  = [blinkon  sacon(p) ];
@@ -110,6 +118,7 @@ for p = 1:length(sacon)
         
         if 0
             % debug
+            figure(200),clf
             plot(eye_pos)
             title(sprintf('saccade %d',p))
             pause
@@ -119,9 +128,8 @@ end
 
 % build information about blinks
 [blinkon,idx]   = sort(blinkon);
-blinkoff        = blinkoff(idx);
 data.blink.on   = blinkon;
-data.blink.off  = blinkoff;
+data.blink.off  = blinkoff(idx);
 
 % now remove saccades that were flagged as blink
 % first remove their corresponding glissades, if any
@@ -136,17 +144,19 @@ data.saccade    = removeElementFromStructFields(data.saccade,qIsBlink);
 % merge very close blinks.
 data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
 
-
-% create boolean matrix given blink bounds
-qBlink = bounds2bool(blinkon+1,blinkoff-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
-% remove data that is due to noise
-data.deg.vel(qBlink)    = nan;
-% TODO: other traces?
-
-% lastly, notify if more than 20% nan
-if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
-    disp('Warning: This trial contains > 20% missing+blinks samples')
-    data.qNoiseTrial = true;
-else
-    data.qNoiseTrial = false;
+% replace with nan if wanted
+if ETparams.blink.qReplaceWithNan
+    % create boolean matrix given blink bounds
+    qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
+    % remove data that is due to noise
+    data.deg.vel(qBlink)    = nan;
+    % TODO: other traces?
+    
+    % lastly, notify if more than 20% nan
+    if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
+        fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',sum(isnan(data.deg.vel))/length(data.deg.vel)*100);
+        data.qNoiseTrial = true;
+    else
+        data.qNoiseTrial = false;
+    end
 end

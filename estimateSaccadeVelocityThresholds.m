@@ -17,7 +17,7 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 
 % prepare algorithm parameters
 minFixSamples       = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
-centralFixSamples   = ceil(ETparams.saccade.minDur /6000 * ETparams.samplingFreq);
+centralFixSamples   = ceil(ETparams.saccade.minDur /3000 * ETparams.samplingFreq);
 
 % running (possibly partially) on xcorr output
 if ETparams.data.qApplySaccadeTemplate
@@ -84,8 +84,8 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
         
         % shrink them as done in Nystrom's version, to make sure we don't
         % catch the data that is still during the saccade
-        threshon    = threshon +floor(centralFixSamples);
-        threshoff   = threshoff-ceil (centralFixSamples);
+        threshon    = threshon  + centralFixSamples;
+        threshoff   = threshoff - centralFixSamples;
         
         % convert to data selection indices
         idx         = bounds2ind(threshon,threshoff);

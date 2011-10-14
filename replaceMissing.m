@@ -33,7 +33,7 @@ end
 qNaN = isnan(vel);
 if any(qNaN)
     if qPrintInfo
-        fprintf('  N NaN samples: %d\n',sum(qNaN));
+        fprintf('  N NaN samples: %d (%.2f%%)\n',sum(qNaN),sum(qNaN)./length(vel)*100);
     end
     
     [nanon,nanoff] = bool2bounds(qNaN);
@@ -59,7 +59,7 @@ if any(qNaN)
     
     if qPrintInfo
         % show how many NaN we have left now, those cannot be handled
-        fprintf('   -> N NaN samples left: %d\n',sum(isnan(vel)));
+        fprintf('   -> N NaN samples left: %d (%.2f%%)\n',sum(isnan(vel)),sum(isnan(vel))./length(vel)*100);
     end
     
     % store data with nans removed

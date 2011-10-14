@@ -60,7 +60,9 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % the width of the velocity peak (3rd moment) is not present by a second
 % order polynomial fit.
 
+
 % calculate component velocities and accelerations
+%--------------------------------------------------------------------------
 if ETparams.data.qNumericallyDifferentiate
     tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
     tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
@@ -84,7 +86,7 @@ else
     % span of filter, use minimum length of saccade. Its very important to not
     % make the filter window wider than the narrowest feature we are interested
     % in, or we'll smooth out those features.
-    window  = ceil(ETparams.saccade.minDur/1000*ETparams.samplingFreq);
+    window  = ceil(ETparams.data.filterWindow/1000*ETparams.samplingFreq);
     % number of filter taps
     ntaps   = 2*ceil(window)-1;
     
