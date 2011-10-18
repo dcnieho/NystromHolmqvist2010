@@ -9,6 +9,9 @@ function data = detectAndRemoveBlinks(data,ETparams)
 %    downward excursions of recorded gaze position, usually accompanied
 %    with outlier speeds. Furthermore, these have an impossible downward
 %    peak-like shape in the position trace.
+%
+% All of this code is kind of a kludge that happens to work for our
+% dataset. Redo properly once....
 
 
 % prepare parameters
@@ -54,32 +57,59 @@ for p = 1:length(blinkon)
     
     if any(qEnclosed)
         assert(sum(qEnclosed)==1)  % anything else would be ridiculous at this stage as no overlapping saccades should exist!
-        blinkon(p)  = sacon (qEnclosed);
+        blinkon (p) = sacon (qEnclosed);
         blinkoff(p) = sacoff(qEnclosed);
         
         % mark saccade as blink
         qIsBlink(qEnclosed) = true;
-        
-        if 0
-            % debug, plot interval detected as blink
-            figure(200),clf
-            plot(data.deg.Ele(blinkon(p):blinkoff(p)))
-            title(sprintf('blink %d',p))
-            pause
-        end
     else
         % all blinks should have been detected as saccades in the previous
         % steps
-        error('Not implemented/shouldn''t occur. Find blink start end in another way.')
+        warning('There is unphysiological movement in this trial that was not detected as a saccade. This might not have been dealt with properly although I''ll attempt. See sample %d, time %.1f ms\n',blinkon(p),blinkon(p)*1000/ETparams.samplingFreq);
+        
+        % see if eye position somehow plateaud during blink and thats
+        % causing this trouble
+        if nanmean(data.deg.Ele(blinkon(p):blinkoff(p)))> 10    % eye position more than 10 degrees off where it should be (again this is just for our horizontal tracking expt!!)
+            % take previous and next saccade and take that as blink
+            % interval
+            previousSaccade = sacoff-blinkon(p);
+            previousSaccadeidx = sum(previousSaccade<0);
+            nextSaccade     = sacon-blinkoff(p);
+            nextSaccadeidx  = sum(nextSaccade<0)+1;
+            
+            assert(previousSaccadeidx+1==nextSaccadeidx,'Couldn''t deal with potential blink...');
+            
+            blinkon (p) = sacon (previousSaccadeidx);
+            blinkoff(p) = sacoff(    nextSaccadeidx);
+            
+            % mark saccades as blink
+            qIsBlink([previousSaccadeidx nextSaccadeidx]) = true;
+        else
+            error('Couldn''t deal with potential blink...')
+        end
+    end
+    
+    if 0
+        % debug, plot interval detected as blink
+        figure(200),clf
+        plot(data.deg.Ele(blinkon(p):blinkoff(p)))
+        title(sprintf('blink %d',p))
+        pause
     end
 end
 
 % multiple unphysiological segments might be enclosed by same saccade, in
 % which case the same blink is detected multiple times. Remove duplicated
-[~,idx] = unique(blinkon);
-blinkon  = blinkon (idx);
-blinkoff = blinkoff(idx);
-assert(all(blinkoff>blinkon) && all(blinkoff(1:end-1)<blinkon(2:end)))  % sanity checks
+[~,idx]     = unique(blinkon);
+blinkon     = blinkon (idx);
+blinkoff    = blinkoff(idx);
+% merge overlapping, this only happens when we dealt with trouble above....
+% hack hacks need to be cleaned up
+blink       = mergeIntervals(struct('on',blinkon,'off',blinkoff),[],0);
+blinkon     = blink.on;
+blinkoff    = blink.off;
+% sanity checks
+assert(all(blinkoff>blinkon) && all(blinkoff(1:end-1)<blinkon(2:end)))
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
