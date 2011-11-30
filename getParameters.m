@@ -62,7 +62,7 @@ ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals. If false, blink detection dies as its basic assumption is that blinks were already detected as saccades due to their large vertical velocity
 
-ETparams.glissade.qDetect               = false;        % if true, do glissade detection
+ETparams.glissade.qDetect               = true;         % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals

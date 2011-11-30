@@ -1,28 +1,36 @@
-function data = replaceMissing(data)
+function data = replaceMissing(data,qInterpMissingPos)
 % Currently, this only replaces missing data with linear interpolation for
 % the velocity traces. It should be straightforward to implement if you
 % need this for position or other traces.
 
 % process data
-data = interpolateMissing(data,'deg',true);
+data = interpolateMissing(data,'deg',qInterpMissingPos,true);
 
 if isfield(data.pix,'vel')
-    data = interpolateMissing(data,'pix',false);
+    data = interpolateMissing(data,'pix',qInterpMissingPos,false);
 end
 
 
 
 
-function data = interpolateMissing(data,datatype,qPrintInfo)
+function data = interpolateMissing(data,datatype,qInterpMissingPos,qPrintInfo)
 
 % get eye velocities in pixels/degree
 vel     = data.(datatype).vel;
 if strcmp(datatype,'pix')
     velX    = data.pix.velX;
     velY    = data.pix.velY;
+    if qInterpMissingPos
+        X   = data.pix.X;
+        Y   = data.pix.Y;
+    end
 elseif strcmp(datatype,'deg')
     velX    = data.deg.velAzi;
     velY    = data.deg.velEle;
+    if qInterpMissingPos
+        X   = data.deg.Azi;
+        Y   = data.deg.Ele;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,6 +61,11 @@ if any(qNaN)
         off = nanoff(p)+1;
         % replace with interpolated velocity
         [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,on,off);
+        
+        if qInterpMissingPos
+            X(on:off) = linspace(X(on), X(off), off-on+1);
+            Y(on:off) = linspace(Y(on), Y(off), off-on+1);
+        end
     end
     
     if qPrintInfo
@@ -65,8 +78,16 @@ if any(qNaN)
     if strcmp(datatype,'pix')
         data.pix.velX = velX;
         data.pix.velY = velY;
+        if qInterpMissingPos
+            data.pix.X = X;
+            data.pix.Y = Y;
+        end
     elseif strcmp(datatype,'deg')
         data.deg.velAzi = velX;
         data.deg.velEle = velY;
+        if qInterpMissingPos
+            data.deg.Azi = X;
+            data.deg.Ele = Y;
+        end
     end
 end

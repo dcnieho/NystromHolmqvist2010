@@ -1,4 +1,4 @@
-function data = cutSaccades(data,datatype,ETparams, qReconstructPos,skipFirstWindow)
+function data = cutSaccades(data,datatype,ETparams, cutPostrace,skipFirstWindow)
 
 % prepare parameters
 % Number of samples at beginning of trial where we leave saccades
@@ -37,7 +37,7 @@ for p=1:length(sacon)
     % trial. We skip this part of the data anyway for analysis
     % DN: this is only important for reconstructing eye position, so only
     % use it if we want that
-    if qReconstructPos && sacon(p) <= skipWindowSamples
+    if cutPostrace==1 && sacon(p) <= skipWindowSamples
         if any(isnan(vel(sacon(p):sacoff(p))))
             % if there is some NaN during this first interval, create a
             % position that linearly interpolates between begin and end
@@ -69,10 +69,21 @@ elseif strcmp(datatype,'deg')
     data.deg.velEleFilt = velY;
 end
 
-if qReconstructPos
-    % plant version
-    XFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
-    YFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+if cutPostrace>0    % else don't recreate position
+    switch cutPostrace
+        case 1
+            % integrate velocities using plant
+            XFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
+            YFilt = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+        case 2
+            % simply linearly interpolate position
+            XFilt = X;
+            YFilt = Y;
+            for p=1:length(sacon)
+                XFilt(sacon(p):sacoff(p)) = linspace(X(sacon(p)), X(sacoff(p)), sacoff(p)-sacon(p)+1);
+                YFilt(sacon(p):sacoff(p)) = linspace(Y(sacon(p)), Y(sacoff(p)), sacoff(p)-sacon(p)+1);
+            end
+    end
     
     if strcmp(datatype,'pix')
         data.pix.XFilt = XFilt;

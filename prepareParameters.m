@@ -50,36 +50,42 @@ end
 
 % calculate saccade template FIR
 if ETparams.data.qApplySaccadeTemplate
-    lstone_velocity_saccade_template_7 = [.03 .106 .221 .285 .221 .106 .03];
-    saccade_template_240 = lstone_velocity_saccade_template_7;
-    
-    if ETparams.samplingFreq ~= 240
-        % resample at sampling_rate
-        p = polyfit(-3:3,saccade_template_240,6);  % sixth order polynomial seems better for this one
-        num_samples = round(ETparams.samplingFreq/240 * length(saccade_template_240));
-        saccade_template = polyval(p,linspace(-3,3,num_samples));
+    if 0
+        % resample Lee Stone saccade template
+        lstone_velocity_saccade_template_7 = [.03 .106 .221 .285 .221 .106 .03];
+        saccade_template_240 = lstone_velocity_saccade_template_7;
+        
+        if ETparams.samplingFreq ~= 240
+            % resample at sampling_rate
+            p = polyfit(-3:3,saccade_template_240,6);  % sixth order polynomial seems better for this one
+            num_samples = round(ETparams.samplingFreq/240 * length(saccade_template_240));
+            saccade_template = polyval(p,linspace(-3,3,num_samples));
+            
+            if 1
+                % plot resampled saccade template
+                figure(201)
+                clf
+                plot(-3:3,saccade_template_240,'o');
+                hold on
+                
+                plot(-3:.01:3,polyval(p,-3:.01:3),'g')
+                plot(linspace(-3,3,num_samples),saccade_template,'r.');
+            end
+        else
+            saccade_template = saccade_template_240;
+        end
     else
-        saccade_template = saccade_template_240;
+        % calculate and use minimum snap velocity template
+        num_samples = round(ETparams.samplingFreq/240 * 7); % Lee Stone's template is 7 taps at 240 Hz -> 29.2 ms. Stay as close to that as possible
+        sampInt     = 1/ETparams.samplingFreq*1000;
+        saccade_template = saccadeTemplate(1,num_samples*sampInt,sampInt,1);
     end
     
     % normalize template
-    if 1
-        saccade_template = saccade_template ./ sum(saccade_template);
-    end
+    saccade_template = saccade_template ./ sum(saccade_template);
     
     % ensure column vector
     ETparams.data.saccadeTemplate = saccade_template(:);
-    
-    if 0
-        % plot resampled saccade template
-        figure(201)
-        clf
-        plot(-3:3,saccade_template_240,'.');
-        hold on
-        
-        plot(-3:.01:3,polyval(p,-3:.01:3),'g')
-        plot(linspace(-3,3,num_samples),ETparams.data.saccadeTemplate,'r.');
-    end
     
     % calculate filter scale for normalization
     saccade_size = sum(ETparams.data.saccadeTemplate) / ETparams.samplingFreq;
