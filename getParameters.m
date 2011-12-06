@@ -51,8 +51,7 @@ ETparams.samplingFreq                   = 500;
 ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it is noise or blinks
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks
 ETparams.blink.mergeWindow              = 50;           % merge blinks that are less than this apart. Set to 0 if you don't want any merging.
-ETparams.blink.qReplaceWithNan          = true;         % if true, blinks in the 2D velocity trace are replaced with NaN
-ETparams.blink.qReplaceAllVelWithNan    = false;        % if true, blinks in the all velocity traces are replaced with NaN
+ETparams.blink.qReplaceVelWithNan       = true;         % if true, blinks in all the velocity traces are replaced with NaN
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template

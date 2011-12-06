@@ -11,7 +11,10 @@ function data = detectAndRemoveBlinks(data,ETparams)
 %    peak-like shape in the position trace.
 %
 % All of this code is kind of a kludge that happens to work for our
-% dataset. Redo properly once....
+% dataset. Redo properly once.... If you don't care about accurate saccade
+% counts, you can just comment out the call to this function, blinks are
+% detected as saccades anyway, and removed cleaner than this is doing it
+% seems.....
 
 
 % prepare parameters
@@ -154,7 +157,13 @@ for p = 1:length(sacon)
         
         % add info about blink
         blinkon  = [blinkon  sacon(p) ];
-        blinkoff = [blinkoff sacoff(p)];
+        % take glissade into account when finding end time
+        if ETparams.glissade.qDetect && any(data.glissade.on==sacoff(p))
+            qgliss = data.glissade.on==sacoff(p);
+            blinkoff = [blinkoff data.glissade.off(qgliss)];
+        else
+            blinkoff = [blinkoff sacoff(p)];
+        end
         % mark saccade as blink
         qIsBlink(p) = true;
         
@@ -187,30 +196,19 @@ data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
 
 % replace with nan if wanted
-if ETparams.blink.qReplaceWithNan
+if ETparams.blink.qReplaceVelWithNan
     % create boolean matrix given blink bounds
     qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
     
     % remove data that is due to noise
-    if ETparams.blink.qReplaceAllVelWithNan
-        % do all velocity-based traces as well (we've found the relevant
-        % fields above already!)
-        data.deg    = replaceElementsInStruct(data.deg,qBlink,nan,velFieldsDeg);
-        
-        % if we have derivatives of eye position in pixels, throw the NaNs
-        % in there as well
-        if ETparams.data.qAlsoStoreandDiffPixels
-            data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
-        end
-    else
-        % only the 2D velocity field 'vel'
-        data.deg    = replaceElementsInStruct(data.deg,qBlink,nan,{'vel'});
-        
-        % if we have derivatives of eye position in pixels, throw the NaNs
-        % in there as well
-        if ETparams.data.qAlsoStoreandDiffPixels
-            data.pix= replaceElementsInStruct(data.pix,qBlink,nan,{'vel'});
-        end
+    % do all velocity-based traces as well (we've found the relevant
+    % fields above already!)
+    data.deg    = replaceElementsInStruct(data.deg,qBlink,nan,velFieldsDeg);
+    
+    % if we have derivatives of eye position in pixels, throw the NaNs
+    % in there as well
+    if ETparams.data.qAlsoStoreandDiffPixels
+        data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
     end
     
     % lastly, notify if more than 20% nan
@@ -227,7 +225,7 @@ end
 
 % helper function for checking whether nans are in same positions for all
 % traces
-function velFields = checkNansSameForAllFields(data,datatype)
+function [velFields,posFields,accFields] = checkNansSameForAllFields(data,datatype)
 
 fn = fieldnames(data.(datatype));
 % all position fields should have same NaNs, as should all velocity fields
