@@ -5,20 +5,19 @@ function data = processSaccadesAndGlissades(data,ETparams)
 % MERGING SACCADES
 %--------------------------------------------------------------------------
 % now deal with saccades that are too close together, fuse two saccades
-% with little time between them. This needs to run even if the window
-% length is 0 as the above has been seen to generate saccade starts before
-% the end of the previous saccade. We could check for that above, or we
-% could just prune/merge them here.
+% with little time between them.
 
-% prepare parameters
-% if saccade is followed by another saccade by less than mergeWindow (in
-% ms), they'll be merged
-SacMergeWindowSamples = ceil(ETparams.saccade.mergeWindow./1000 * ETparams.samplingFreq);
-
-if ETparams.glissade.qDetect
-    [data.saccade,data.glissade] = mergeIntervals(data.saccade,data.glissade,SacMergeWindowSamples);
-else
-    data.saccade                 = mergeIntervals(data.saccade,     []      ,SacMergeWindowSamples);
+if ETparams.saccade.mergeWindow>0
+    % prepare parameters
+    % if saccade is followed by another saccade by less than mergeWindow (in
+    % ms), they'll be merged
+    SacMergeWindowSamples = ceil(ETparams.saccade.mergeWindow./1000 * ETparams.samplingFreq);
+    
+    if ETparams.glissade.qDetect
+        [data.saccade,data.glissade] = mergeIntervals(data.saccade,data.glissade,SacMergeWindowSamples);
+    else
+        data.saccade                 = mergeIntervals(data.saccade,     []      ,SacMergeWindowSamples);
+    end
 end
 
 

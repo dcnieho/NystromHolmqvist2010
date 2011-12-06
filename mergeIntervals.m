@@ -7,7 +7,10 @@ function [mainSet,extraSet] = mergeIntervals(mainSet,extraSet,windowSamples)
 % when checking the nearness of the next onset in the main set (e.g
 % checking if the glissade offset is close to the onset of the next
 % saccade).
-% When windowSamples is set to 0, overlapping intervals are merged.
+% When windowSamples is set to 0, only overlapping intervals are merged.
+% the code below is not commented in general words, but for the case of
+% merging saccades, which might be followed by glissades as that's easier
+% to follow.
 
 kk=1;
 while kk < length(mainSet.on)      % NB: doesn't process last interval (useless anyway of course!)

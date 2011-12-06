@@ -19,19 +19,19 @@ ETparams.data.qFlipX                    = false;
 % differentiate with matlab's diff()
 ETparams.data.qNumericallyDifferentiate = false;
 ETparams.data.filterWindow              = 10;           % ms, if using Savitzky-Golay, filter window length. Make sure its narrower than smallest features you want to detect
+ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 % If true, eyeposition trace in pixels is also stored and derivatives
 % (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
-% some usage cases. The eventDetection however always runs on eye position
-% in degrees.
+% some usage cases. The eventDetection however always runs on eye
+% pos/vel/acc in degrees.
 ETparams.data.qAlsoStoreandDiffPixels   = true;
-ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 
 % Option to use median filter for detrending velocity data (e.g. removing
 % pursuit baseline speed). This is only useful if saccade templates are
-% used, detrended velocity, if available, is then used as input to xcorr
+% used. Detrended velocity, if available, is then used as input to xcorr
 % with the saccade template.
 ETparams.data.qDetrendWithMedianFilter  = true;
-ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only eye velocity in degrees will be done. Only set this to true if you want this data, the code doesn't use it
+ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only 2D eye velocity in degrees will be done. Only set this to true if you want this data, the code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
 
 % Option to first convolve velocity trace with the velocity profile of a
@@ -55,7 +55,7 @@ ETparams.blink.qReplaceVelWithNan       = true;         % if true, blinks in all
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
-ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template, not from the velocity trace
+ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template (true), not from the velocity trace (false). Leave this to false to avoid distortion of saccade beginning and end due to low-pass filtering of template. Must be false if saccade template isn't used
 ETparams.saccade.localNoiseWindowLength = 50;           % in, millisecond, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
 ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.

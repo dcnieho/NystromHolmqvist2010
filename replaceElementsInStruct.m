@@ -11,7 +11,7 @@ function str = replaceElementsInStruct(str,idxOrBool,elem,fieldFilter)
 % struct are simply matched against the filter and any in both are
 % included/excluded. Its is pointless to include some fields while
 % excluding others, but the code deals with it correctly. If a field is
-% both included and excluded, the excludion takes preference.
+% both included and excluded, the exclusion takes preference.
 
 if nargin<4
     % apply on all non-scalar fields, we can use structfun

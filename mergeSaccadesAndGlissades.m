@@ -1,17 +1,18 @@
 function [data] = mergeSaccadesAndGlissades(data)
-% NB: You would need to rerun processSaccadesAndGlissades.m after this as
-% the saccades flags have just changed
+% NB: You would need to rerun processSaccadesAndGlissades.m after this, if
+% you are interested in its output, as the saccades flags have just changed
+%
+% Also, this function does not remove the glissade markers from the data
+% struct, you have to do that yourself if you no longer need them:
+% if isfield(data,'glissade')
+%     data = rmfield(data,'glissade');    % remove glissades, we fused them anyway
+% end
 
 % get saccade offset markers
 sacoff  = data.saccade.off;
 
 if isfield(data,'glissade')
     for p = 1:length(data.glissade.off)
-        % merge all glissades first before merging saccades, otherwise its
-        % difficult to handle complicated cases where two saccades, both
-        % followed with glissades, need to be fused (or even nastier).
-        % Splitting up is easier and robust.
-        
         % for each glissade, find corresponding saccade
         % easy, as glissade onset is equal to fixation offset per definition
         qsac = data.glissade.on(p) == sacoff;
