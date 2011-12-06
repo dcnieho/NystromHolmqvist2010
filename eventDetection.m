@@ -37,18 +37,18 @@ data = removeNoise(data,ETparams);
 %-------------------------------------
 data = detrendAndApplySaccadeTemplate(data,ETparams);
 
-% iteratively find the optimal noise threshold
+% Iteratively find the optimal noise threshold
 %-------------------------------------
 data = estimateSaccadeVelocityThresholds(data,ETparams);
 
 % Detect saccades and glissades
-% then, get information about them
 %-------------------------------------
 data = detectSaccadesAndGlissades(data,ETparams);
 
 % Detect and remove blinks
-% Do this before saccades are merged, or we might also
-% remove saccades that occured right after a blink
+% (Need to do this before saccades are merged, or
+% we might also remove saccades that occured right
+% after a blink)
 %-------------------------------------
 data = detectAndRemoveBlinks(data,ETparams);
 
