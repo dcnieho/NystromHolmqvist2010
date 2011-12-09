@@ -4,16 +4,16 @@ function data = replaceMissing(data,qInterpMissingPos)
 % need this for position or other traces.
 
 % process data
-data = interpolateMissing(data,'deg',qInterpMissingPos,true);
+data = replaceMissingImplementation(data,'deg',qInterpMissingPos,true);
 
 if isfield(data.pix,'vel')
-    data = interpolateMissing(data,'pix',qInterpMissingPos,false);
+    data = replaceMissingImplementation(data,'pix',qInterpMissingPos,false);
 end
 
 
 
 
-function data = interpolateMissing(data,datatype,qInterpMissingPos,qPrintInfo)
+function data = replaceMissingImplementation(data,datatype,qInterpMissingPos,qPrintInfo)
 
 % get eye velocities in pixels/degree
 vel     = data.(datatype).vel;

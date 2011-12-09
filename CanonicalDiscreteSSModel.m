@@ -10,7 +10,7 @@ datalen = length(in);
 nstate = size(phi,1);
 nout = size(cee,1);
 
-% run Barb's method, from her C and our C++ code.
+% run through state transition matrices
 state = zeros(nstate, datalen);
 out   = zeros(nout  , datalen);
 
