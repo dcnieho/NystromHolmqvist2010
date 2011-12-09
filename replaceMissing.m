@@ -4,36 +4,35 @@ function data = replaceMissing(data,qInterpMissingPos)
 % need this for position or other traces.
 
 % process data
-data = replaceMissingImplementation(data,'deg',qInterpMissingPos,true);
+[data.deg.Azi,...
+ data.deg.Ele,...
+ data.deg.vel,...
+ data.deg.velAzi,...
+ data.deg.velEle] = replaceMissingImplementation(data.deg.Azi,...
+                                                 data.deg.Ele,...
+                                                 data.deg.vel,...
+                                                 data.deg.velAzi,...
+                                                 data.deg.velEle,...
+                                                 qInterpMissingPos,true);
 
 if isfield(data.pix,'vel')
-    data = replaceMissingImplementation(data,'pix',qInterpMissingPos,false);
+    [data.pix.X,...
+     data.pix.Y,...
+     data.pix.vel,...
+     data.pix.velX,...
+     data.pix.velY] = replaceMissingImplementation(data.pix.X,...
+                                                   data.pix.Y,...
+                                                   data.pix.vel,...
+                                                   data.pix.velX,...
+                                                   data.pix.velY,...
+                                                   qInterpMissingPos,true);
 end
 
 
 
 
-function data = replaceMissingImplementation(data,datatype,qInterpMissingPos,qPrintInfo)
+function [X,Y,vel,velX,velY] = replaceMissingImplementation(X,Y,vel,velX,velY,qInterpMissingPos,qPrintInfo)
 
-% get eye velocities in pixels/degree
-vel     = data.(datatype).vel;
-if strcmp(datatype,'pix')
-    velX    = data.pix.velX;
-    velY    = data.pix.velY;
-    if qInterpMissingPos
-        X   = data.pix.X;
-        Y   = data.pix.Y;
-    end
-elseif strcmp(datatype,'deg')
-    velX    = data.deg.velAzi;
-    velY    = data.deg.velEle;
-    if qInterpMissingPos
-        X   = data.deg.Azi;
-        Y   = data.deg.Ele;
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % We want to deal with all the nan in the data.
 % This is getting rid of blinks and such...
 qNaN = isnan(vel);
@@ -54,40 +53,24 @@ if any(qNaN)
         nanoff(end) = [];
     end
     
+    % adjust indices, nanon(p) and nanoff(p) point to first and last NaN in
+    % a run
+    nanon  = nanon-1;
+    nanoff = nanoff+1;
+    nanlen = nanoff-nanon+1;
+    
     for p=1:length(nanon)
-        % pas indices aan, nanon(p) and nanoff(p) wijzen naar de eerste
-        % en laatste NaN in een serie
-        on  = nanon(p)-1;
-        off = nanoff(p)+1;
         % replace with interpolated velocity
-        [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,on,off);
+        [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,nanon(p),nanoff(p));
         
         if qInterpMissingPos
-            X(on:off) = linspace(X(on), X(off), off-on+1);
-            Y(on:off) = linspace(Y(on), Y(off), off-on+1);
+            X(nanon(p):nanoff(p)) = linspace(X(nanon(p)), X(nanoff(p)), nanlen(p));
+            Y(nanon(p):nanoff(p)) = linspace(Y(nanon(p)), Y(nanoff(p)), nanlen(p));
         end
     end
     
     if qPrintInfo
         % show how many NaN we have left now, those cannot be handled
         fprintf('   -> N NaN samples left: %d (%.2f%%)\n',sum(isnan(vel)),sum(isnan(vel))./length(vel)*100);
-    end
-    
-    % store data with nans removed
-    data.(datatype).vel = vel;
-    if strcmp(datatype,'pix')
-        data.pix.velX = velX;
-        data.pix.velY = velY;
-        if qInterpMissingPos
-            data.pix.X = X;
-            data.pix.Y = Y;
-        end
-    elseif strcmp(datatype,'deg')
-        data.deg.velAzi = velX;
-        data.deg.velEle = velY;
-        if qInterpMissingPos
-            data.deg.Azi = X;
-            data.deg.Ele = Y;
-        end
     end
 end
