@@ -52,6 +52,7 @@ else
 end
 
 if 0
+    % old code, new code below is vectorized version
     output = zeros(length(input),bin_width);
     
     % center the observations within the bin

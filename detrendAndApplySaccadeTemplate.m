@@ -52,7 +52,7 @@ if ETparams.data.qDetrendWithMedianFilter
 end
 
 if ETparams.data.qApplySaccadeTemplate
-    % convolute (do "pattern matching") and deal with the end effects
+    % convolute (do "pattern matching")
     
     % choose data
     if ETparams.data.qDetrendWithMedianFilter

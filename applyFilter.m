@@ -11,7 +11,7 @@ if 0
     output(1:length(filter_coeffs)) = output(length(filter_coeffs)+1);
     output(end-length(filter_coeffs):end) = output(end-length(filter_coeffs));
 else
-    % NB, note the same as the above! The above dealt with edge effects too
+    % NB, not the same as the above! The above dealt with edge effects too
     % rigorously, we don't have to add a whole filter's length, just
     % half
     ntap    = length(filter_coeffs);
