@@ -1,16 +1,17 @@
 function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsample)
 % iteratively establishes the best threshold for saccade detection for this
 % trial. This is done either based on the eye velocity trace or based on
-% the velocity after cross correlated with a saccade template.
+% the output of cross correlation with a saccade template.
 % Given a threshold T, we take all data of the trial where the eye velocity
-% as less than T and calculate its mean and std. We then establish a new
+% is less than T and calculate its mean and std. We then establish a new
 % threshold at V = mean + 6*std. We repeat this until the new threshold is
 % less than 1°/s lower than the old threshold. The procedure is the same
-% except that the procedure finished when the change in correlation
-% threshold is less than 1% (.01).
+% when using xcorr output, except that the procedure finishes when the
+% change in correlation threshold is less than .01.
 % The thus established velocity threshold is close to optimal in that it
 % allows us to detect as many saccades as possible given the noise in the
-% data but does not detect too many due to possibly high noise in the data.
+% data but does not generate many false alarms when there is high noise in
+% the data.
 %
 % !! Call this function with two parameters, unless you know what you are
 % doing.
@@ -19,7 +20,8 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 minFixSamples       = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
 centralFixSamples   = ceil(ETparams.saccade.minDur /3000 * ETparams.samplingFreq);
 
-% running (possibly partially) on xcorr output
+% saccade detection will run (possibly partially) on xcorr output, need
+% thresholds from this trace
 if ETparams.data.qApplySaccadeTemplate
     [data.saccade.peakXCorrThreshold, meanData, stdData] = ...
         doOptimize(data.deg.velXCorr,ETparams.saccade.peakXCorrThreshold,.01, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
@@ -29,8 +31,8 @@ if ETparams.data.qApplySaccadeTemplate
     end
 end
 
-% running on velocity trace, also if peaks are detected from the cross
-% correlation trace.
+% saccade detection will run on the velocity trace, possibly while peaks
+% are detected from the cross correlation trace.
 % ETparams.saccade.qSaccadeTemplateRefine determines whether saccade
 % onset/offset refinement is based on the velocity trace (false). If so,
 % these are needed.
@@ -44,19 +46,19 @@ end
 
 
 
-function [peakThreshold, meanData, stdData] = doOptimize(data,initialThreshold,exitCriterion,minFixSamples, centralFixSamples, qUseCentralSamples)
+function [peakThreshold, meanData, stdData] = doOptimize(data,initialThreshold,exitCriterion, minFixSamples, centralFixSamples, qUseCentralSamples)
 % assign initial thresholds
 peakThreshold = initialThreshold;
 previousPeakDetectionThreshold = inf;
 
-% iterate while we're gaining more than a 1° decrease in saccade peak
+% iterate while we're gaining more than a exitCriterion decrease in saccade peak
 % velocity threshold
 while previousPeakDetectionThreshold - peakThreshold > exitCriterion
     
     previousPeakDetectionThreshold = peakThreshold;
     
     % Find parts where the velocity is below the threshold, possible
-    % fixation time (though this is still crude)
+    % data during fixation (though this is still crude)
     qBelowThresh = data < peakThreshold;
     
     if qUseCentralSamples
@@ -68,7 +70,7 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
         % speed up convergence.
         % NB: although this does not match how the algorithm is described
         % in Nyström & Holmqvist, 2010, it does match the code they made
-        % available. As explained above, the more simple method they
+        % available. As mentioned above, the more simple method they
         % described in their paper does not converge to lower thresholds
         % (in the minimal testing I did at least), while this code-path
         % appears to be robust.

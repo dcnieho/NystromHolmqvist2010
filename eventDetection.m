@@ -13,12 +13,11 @@ function data = eventDetection(x,y,ETparams)
 % algorithm can handle data containing saccades during smooth pursuit as
 % well.
 %
-% This code only requires only requires the statistics toolbox for the
-% functions nanmean, nanmedian and nanstd. If you do not have access to
-% this toolbox, you can get a nanmean implementation from Peter Acklam's
-% website:
+% This code only requires the statistics toolbox for the functions nanmean,
+% nanmedian and nanstd. If you do not have access to this toolbox, you can
+% get a nanmean implementation from Peter Acklam's website:
 % http://home.online.no/~pjacklam/matlab/software/util/statutil/nanmean.m
-% you'll have to implement nanmedian and nanstd yourself following this
+% You'll have to implement nanmedian and nanstd yourself following this
 % nanmean as an example
 
 % Prepare data (move origin, things like that)

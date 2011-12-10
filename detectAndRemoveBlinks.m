@@ -13,8 +13,7 @@ function data = detectAndRemoveBlinks(data,ETparams)
 % All of this code is kind of a kludge that happens to work for our
 % dataset. Redo properly once.... If you don't care about accurate saccade
 % counts, you can just comment out the call to this function, blinks are
-% detected as saccades anyway, and removed cleaner than this is doing it
-% seems.....
+% detected as saccades anyway
 
 
 % prepare parameters
@@ -23,7 +22,7 @@ function data = detectAndRemoveBlinks(data,ETparams)
 blinkMergeWindowSamples = ceil(ETparams.blink.mergeWindow./1000 * ETparams.samplingFreq);
 
 
-% First a sanity data integrity check: check NaN positionss are in the same
+% First a sanity data integrity check: check NaN positions are in the same
 % places in all traces, if not I must have introduced some bug somewhere.
 % Not that its important for the correct functioning of this function by
 % the way...
@@ -42,16 +41,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Detect possible blinks, episodes where the eyes move too fast too be
 % physiologically possible
-qBlink =     data.deg.vel  > ETparams.blink.velocityThreshold |...
-         abs(data.deg.acc) > ETparams.blink.accThreshold;
+qBlink = data.deg.vel > ETparams.blink.velocityThreshold |...
+         data.deg.acc > ETparams.blink.accThreshold;
 
-% find bounds of blinks or noise as detected above
+% find bounds of blinks (or tracker noise) as detected above
 [blinkon,blinkoff]      = bool2bounds(qBlink);
 
 % Process one possible blink at a time, refine the bounds
 % These unphysiological movements should already have been detected as
-% saccades (they have very large velocity!). So use detected saccade on and
-% offsets as blink on- and offsets.
+% saccades (they have very large velocity!). So use detected saccade on-
+% and offsets as blink on- and offsets.
 sacon  = data.saccade.on;
 sacoff = data.saccade.off;
 qIsBlink = false(size(sacon));
@@ -119,7 +118,7 @@ assert(all(blinkoff>blinkon) && all(blinkoff(1:end-1)<blinkon(2:end)))
 % Method 2: downward peak-like structures in the vertical/elevation
 %           position trace
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% each saccade should be a roughly monotonic position shift. If instead teh
+% each saccade should be a roughly monotonic position shift. If instead the
 % eye ends up back where it started vertically (at least w.r.t. its maximum
 % downward position during the saccade, we're dealing with another class of
 % un-physiological movement that indicates a blink-like eye recording
@@ -150,20 +149,14 @@ for p = 1:length(sacon)
     % 3. final amplitude is less than 40% of max amplitude (the eye apparently turned around)
     % -> We're dealing with a blink. Yes, thats rather arbitrary, but it
     %    did a good job for the data I was analyzing. You might want to do
-    %    something else for another experiment (or another Eye tracker!).
+    %    something else for another experiment (or another eye tracker!).
     if nanmean(eye_pos)>0 && ...    % 1
             eye_max > 5 && ...      % 2
             eye_end < eye_max*.4    % 3
         
         % add info about blink
         blinkon  = [blinkon  sacon(p) ];
-        % take glissade into account when finding end time
-        if ETparams.glissade.qDetect && any(data.glissade.on==sacoff(p))
-            qgliss = data.glissade.on==sacoff(p);
-            blinkoff = [blinkoff data.glissade.off(qgliss)];
-        else
-            blinkoff = [blinkoff sacoff(p)];
-        end
+        blinkoff = [blinkoff sacoff(p)];
         % mark saccade as blink
         qIsBlink(p) = true;
         
@@ -186,6 +179,12 @@ data.blink.off  = blinkoff(idx);
 % first remove their corresponding glissades, if any
 if ETparams.glissade.qDetect
     qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
+    % ok, some glissades need to be taken into account when determining
+    % blink ends
+    qGlisBlinks     = ismember(data.blink.off,data.glissade.on(qRemoveGlissade));
+    % correct blink ends for glissade ends
+    data.blink.off(qGlisBlinks) = data.glissade.off(qRemoveGlissade);
+    % and now remove these glissades
     data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
 end
 

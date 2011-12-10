@@ -16,7 +16,7 @@ function data = prepareData(x,y,ETparams)
 % Res 35, 1727-1739, e.g. Figure 4
 % 
 % Furthermore, it should be noted that due to our lab conventions, the
-% positive X axis points righward and the positive Y axis points downward.
+% positive X axis points rightward and the positive Y axis points downward.
 % Furthermore, positive rotations around the Y axis are rightward, but
 % positive rotations around the X axis are downward too (frankly, this is
 % not a consistent right-handed or left-handed sytem, this rotation should

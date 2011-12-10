@@ -7,7 +7,7 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % obtained by returning the higher order coefficients of the fitted
 % polynomial. Note that for kth order derivatives (k>1) we'd need to
 % multiply the ouput by k! to obtain the derivative coefficient (see Taylor
-% series expansion). This already taken into account internally in the
+% series expansion). This is already taken into account internally in the
 % savitzkyGolay function (we use its B output, not its G output for which
 % such multiplication would be needed), so you don't need to worry about
 % it. We'll need to divide the outputted value by T^K (where T is the
@@ -23,7 +23,7 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % algorithm as they become positive peaks after the saccade when
 % calculating the 2D velocity magnitude. We therefore use a second order
 % polynomial only, which has LESS of this problem, but is still affected by
-% it. I am not sure about the extend to which this increases the number of
+% it. I am not sure about the extent to which this increases the number of
 % glissades found, i.e., how many of the detected glissades are just
 % artifacts of the filter. We might look at weighting the polynomial
 % regression filter coefficients, as supported by the savitzkyGolay()
@@ -46,7 +46,7 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % developed methods. I am not knowledgable on this subject matter though,
 % so I'll need to find a DSP guy to resolve this with once and for all
 % (hopefully).
-% In general, we'll need to asses how problematic this really is. When it
+% In general, we'll need to assess how problematic this really is. When it
 % comes to the filter, we need to simulate its performance (how much
 % widening, how much undershoot is there really?). Generate a function much
 % like the eye movement, but without any noise (Gaussian velocity profile,
@@ -206,6 +206,8 @@ end
 %%% helpers
 function varargout = sgFilt(x,difforder,ntaps)
 % wrapper for convenient syntax, fitting always using 2nd order polynomial
+
+varargout = cell(1,length(difforder));
 for p=1:length(difforder)
     varargout{p} = savitzkyGolayFilt(x,2,difforder(p),ntaps);
 end

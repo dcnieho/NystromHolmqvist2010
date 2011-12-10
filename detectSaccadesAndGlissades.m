@@ -7,11 +7,9 @@ minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ET
 maxGlissadeSamples      = ceil(ETparams.glissade.maxDur/1000                * ETparams.samplingFreq);
 glissadeWindowSamples   = ceil(ETparams.glissade.searchWindow/1000          * ETparams.samplingFreq);
 localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ETparams.samplingFreq);
-% If the peak consists of =< minPeakSamples consequtive samples, it it
-% probably noise (1/6 of the min saccade duration)
-minPeakSamples          = ceil(ETparams.saccade.minDur/6000                 * ETparams.samplingFreq);
 
-%%% select parameters and data to work with
+%%% select parameters and data to run saccade onset and offset refinement
+% on
 if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
     % run full detection algorithm from the cross correlation trace
     field_peak  = 'peakXCorrThreshold';
@@ -38,31 +36,19 @@ else
 end
 [sacon,sacoff]  = bool2bounds(qAboveThresh);
 
-%%% make vector that will contain true where saccades are detected
-% this is used as some part so the algorithm (e.g. offset velocity
-% threshold) needs to analyze data that is not during saccades or
-% glissades.
-qSacGlisOrNan   = isnan(vel);
 
-
-% If no saccades are detected, return
+%%% If no saccades are detected, return
 if isempty(sacon)
     fprintf('no saccades\n');
     return;
 end
 
-% % NASA style saccade detection
-% sacon   = sacon-10;
-% sacoff  = sacoff+10;
-% sacon(sacon<1)              = 1;
-% sacoff(sacoff>length(vel))  = length(vel);
-
-
-%%% Process one velocity peak at the time.
-% Keep a counter here of how many peaks from sacon we have processed
-% already. We need to use a while loop instead of a for-loop as the length
-% of the saccade vector will change as we delete from it
-kk = 1;
+%%% prepare algorithm variables
+% make vector that will contain true where saccades are detected
+% this is used in some parts of the algorithm (e.g. offset velocity
+% threshold calculation) when it needs to analyze data that is not during
+% saccades or glissades.
+qSacGlisOrNan   = isnan(vel);
 
 % for storing saccade end thresholds, which are adapted for each saccade
 % based on noise before the saccade (not actually needed here, just put it
@@ -74,15 +60,22 @@ glissadeon  = [];
 glissadeoff = [];
 glissadetype= [];   % 1 is low velocity, 2 is high velocity
 
+
+%%% Process one velocity peak at the time.
+% Keep a counter here of how many peaks from sacon we have processed
+% already. We need to use a while loop instead of a for-loop as the length
+% of the saccade vector will change as we delete from it
+kk = 1;
+
 while kk <= length(sacon)
     
     %----------------------------------------------------------------------  
     % Check the saccade peak samples to eliminate noise
     %----------------------------------------------------------------------
     
-    % If the peak consists of =< minPeakSamples consequtive samples, it it
-    % probably noise (1/6 of the min saccade duration), delete it
-    if sacoff(kk)-sacon(kk) <= minPeakSamples
+    % If the peak consists of <minPeakSamples consequtive samples, it it
+    % probably noise, delete it
+    if sacoff(kk)-sacon(kk) < ETparams.saccade.minPeakSamples
         sacon (kk) = [];
         sacoff(kk) = [];
         continue;
@@ -139,11 +132,11 @@ while kk <= length(sacon)
     sacoff(kk) = i;
     
     % now, delete all the next saccades that are enclosed by this potential
-    % saccade, i.e., delete any saccade whose unrefined end of is before
+    % saccade, i.e., delete any saccade whose unrefined end is before
     % the end of this saccade as they would converge to the same saccade
-    % interval. We do this now befor the final checks below as if the
-    % current saccade is deleted by this check, any later saccade that will
-    % converge to the same interval would be deleted as well.
+    % interval. We do this now before the final checks below because if the
+    % current saccade is deleted by the below checks, any later saccade
+    % that will converge to the same interval would be deleted as well.
     while kk+1<=length(sacoff) &&...                            % make sure we don't run out of the data
           sacoff(kk+1) <= sacoff(kk)
         sacon (kk+1) = [];
@@ -151,7 +144,7 @@ while kk <= length(sacon)
         continue;
     end
               
-    % If the saccade contains NaN samples, delete it
+    % If the saccade contains NaN samples, delete it if not allowed
     if ~ETparams.saccade.allowNaN && any(isnan(vel(sacon(kk):sacoff(kk))))
         sacon (kk) = [];
         sacoff(kk) = [];
@@ -179,7 +172,7 @@ while kk <= length(sacon)
     
     if ETparams.glissade.qDetect
         % store glissades found in this interval, marked for post processing
-        foundGlissadeOff            = [];
+        foundGlissadeOff = [];
 
         % Search only for glissade peaks in a window after the saccade end
         % (both low and high velocity)
@@ -192,21 +185,22 @@ while kk <= length(sacon)
 
         % Detect only 'complete' peaks (those with a beginning and an end)
         [~,potend] = bool2bounds(qGlissadePeak);
-        % delete end of data that if it is detected -> glissade doesn't end
-        % before end of window
+        % delete idx if it corresponds to end of window -> glissade doesn't
+        % end before end of window
         potend(potend==length(glissadeWindow)) = [];
 
         if ~isempty(potend)
             % found potential glissade, store it
-            foundGlissadeOff  = sacoff(kk)+potend(end);                     % glissade start is saccade end
+            foundGlissadeOff  = sacoff(kk)+potend(end);                     % implicit: glissade start is saccade end
         end    
 
-        % Detect glissade (high velocity criteria). These have already been
-        % picked up by saccade detection, see if any have been
-        % A high velocity glissade is detected only if glissade velocity goes
-        % below the saccadePeakVelocityThreshold within the search window
+        % Detect glissade (high velocity criteria). These would have
+        % already been picked up by saccade detection, see if there are any
+        % A high velocity glissade is detected only if glissade velocity
+        % goes below the saccadePeakVelocityThreshold within the search
+        % window
         if kk+1<=length(sacoff)                                             % make sure we don't run out of data
-            qHighGlisOff = sacoff(kk+1:end) <= glissadeWindow(end);         % see if any saccade offsets happens within our glissade detection window
+            qHighGlisOff = sacoff(kk+1:end) <= glissadeWindow(end);         % see if any saccade offsets happen within our glissade detection window
             if any(qHighGlisOff)
                 idx = find(qHighGlisOff,1,'last');
 
@@ -244,8 +238,9 @@ while kk <= length(sacon)
             end
 
             % See if glissade is valid according to our criteria
-            % do not allow glissade duration > 80 ms AND
-            % the glissade should not contain any NaN samples
+            % 1. do not allow glissade duration > 80 ms AND
+            % 2. the glissade should not contain any NaN samples if not
+            %    allowed
             if foundGlissadeOff-sacoff(kk)+1 <= maxGlissadeSamples &&...
                (~ETparams.glissade.allowNaN && ~any(isnan(vel(sacoff(kk):foundGlissadeOff))))
                 % store the glissade
@@ -261,7 +256,7 @@ while kk <= length(sacon)
                 end
                 % now, remove all next items in saccade vector that end before
                 % end of this glissade. This also deletes the next saccade if
-                % above we detected it to be a high velocity glissade
+                % above we decided it to be a high velocity glissade
                 while kk+1<=length(sacoff) &&...                            % make sure we don't run out of the data
                       sacoff(kk+1) <= glissadeoff(end)
                     sacon (kk+1) = [];
