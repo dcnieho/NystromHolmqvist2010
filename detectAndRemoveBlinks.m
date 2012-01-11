@@ -67,7 +67,7 @@ for p = 1:length(blinkon)
     else
         % all blinks should have been detected as saccades in the previous
         % steps
-        warning('There is unphysiological movement in this trial that was not detected as a saccade. This might not have been dealt with properly although I''ll attempt. See sample %d, time %.1f ms\n',blinkon(p),blinkon(p)*1000/ETparams.samplingFreq);
+        warning('There is unphysiological movement in this trial that was not detected as a saccade. This might not have been dealt with properly although I''ll attempt. See sample %d, time %.1f ms',blinkon(p),blinkon(p)*1000/ETparams.samplingFreq);
         
         % see if eye position somehow plateaud during blink and thats
         % causing this trouble

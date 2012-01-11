@@ -77,13 +77,15 @@ ETparams.fixation.qDetect               = false;        % if true, do fixation d
 ETparams.fixation.minDur                = 30;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
-% 2: ignore NaNs and calculate mean fixation position based on other data
-%    (not recommended in almost any situation, if you don't like 1,
-%    consider option 3)
-% 3: split fixation into multiple, providing each is at least minDur long
-%    (e.g. one 250 ms fixation with some data missing in the middle might
-%    be split up into a 100 ms and a 120 ms fixation)
+% 2: ignore NaNs and calculate mean fixation position based on available
+%    data. Checks that no significant eye position jumps occur during
+%    missing data
+% 3: split fixation into multiple as delimited by nan, providing each is at
+%    least fixation.minDur long (e.g. one 250 ms fixation with some data
+%    missing in the middle might be split up into a 100 ms and a 120 ms
+%    fixation)
 ETparams.fixation.treatNaN              = 1;
+ETparams.fixation.NaNMaxJump            = 1;            % maximum amplitude (degree) of eye fixation position change allowed during missing data (if ETparams.fixation.treatNaN==2)
 
 
 

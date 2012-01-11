@@ -5,11 +5,16 @@ function data = detectFixations(data,ETparams)
 % glissade and also fit some other criteria
 %--------------------------------------------------------------------------
 
-%%% find data that is not saccade or glissade
+%%% find data that is not saccade, glissade or blink
 [fixon,fixoff]  = bool2bounds(~(...
-    bounds2bool(data.saccade.on ,data.saccade.off ,length(data.deg.vel)) | ...
-    bounds2bool(data.glissade.on,data.glissade.off,length(data.deg.vel))   ...
+    bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel)) | ...
+    bounds2bool(data.glissade.on,data.glissade.off, length(data.deg.vel)) | ...
+    bounds2bool(data.blink   .on,data.blink   .off, length(data.deg.vel))   ...
     ));
+% correct so that fixation ends overlap with saccade starts (and etc)
+% instead of 1 sample offset
+fixon   = max(fixon -1, 1);
+fixoff  = min(fixoff+1, length(data.deg.vel));
 
 %%% prepare algorithm parameters
 minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
@@ -34,7 +39,14 @@ for kk = length(fixon):-1:1
     end
     
     % If the fixation contains NaN samples, handle it
-    if any(isnan(data.deg.vel(fixon(kk):fixoff(kk))))
+    qNaN = isnan(data.deg.vel(fixon(kk):fixoff(kk)));
+    if any(qNaN)
+        if all(qNaN)
+            % no fixation data, remove
+            fixon (kk) = [];
+            fixoff(kk) = [];
+            continue;
+        end
         switch ETparams.fixation.treatNaN
             
             case 1
@@ -43,21 +55,21 @@ for kk = length(fixon):-1:1
                 fixoff(kk) = [];
                 continue;
                 
-            case 2
-                % allow NaN, simply ignore when computing average
-                % fixation position (uses nanmean)
-                % do nothing
-                
-            case 3
-                % split fixation into multiple pieces, each without NaNs.
-                % Keep pieces if they meet the minimum duration criterion
-                % (we don't have to worry about the peak velocity
-                % criterion). NB: The data markers in this piece of code
-                % are local to the piece of data that is the current
-                % "fixation" begin processed.
+            case {2,3}
+                % 2: allow NaN, simply ignore when computing average
+                % fixation position (uses nanmean). However, make sure eye
+                % position doesn't jump significantly during the missing
+                % data.
+                % 3: split fixation into multiple pieces, each without
+                % NaNs. Keep pieces if they meet the minimum duration
+                % criterion (we don't have to worry about the peak velocity
+                % criterion).
+                % NB: The data markers in this piece of code are local to
+                % the piece of data that is the current "fixation" begin
+                % processed.
                 
                 % find non-NaN sections of data
-                [dataon,dataoff] = bool2bounds(~isnan(data.deg.vel(fixon(kk):fixoff(kk))));
+                [dataon,dataoff] = bool2bounds(~qNaN);
                 
                 % delete markers for the current fixation. we might
                 % generate some new ones to replace it below
@@ -66,7 +78,26 @@ for kk = length(fixon):-1:1
                 fixon (kk) = [];
                 fixoff(kk) = [];
                 
-                % calculate length of each non-NaN section
+                if ETparams.fixation.treatNaN==2
+                    startidxs   = beginfixmark+dataoff(1:end-1)-1;
+                    endidxs     = beginfixmark+dataon (2:end)  -1;
+                    
+                    % calculate eye position change between start and end
+                    % of nan sections.
+                    amps        = calcAmplitudeFick(...
+                                      data.deg.Azi(startidxs), data.deg.Ele(startidxs),...
+                                      data.deg.Azi(endidxs  ), data.deg.Ele(endidxs  )...
+                                  );
+                    
+                    okIdx       = find(amps<ETparams.fixation.NaNMaxJump);
+                    
+                    % remove jumps that are not over maximum amplitude from
+                    % processing queue of possible split points
+                    dataon (okIdx+1) = [];
+                    dataoff(okIdx  ) = [];
+                end
+                
+                % calculate length of each (non-NaN) section
                 datalens = dataoff-dataon+1;
                 
                 % see if any pieces of data are long enough

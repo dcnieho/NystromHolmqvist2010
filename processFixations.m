@@ -3,10 +3,10 @@ function data = processFixations(data,ETparams)
 
 %%% timing
 % start time (in milliseconds)
-data.fixation.start    = data.fixation.on / ETparams.samplingFreq;
+data.fixation.start    = data.fixation.on / ETparams.samplingFreq * 1000;
 
 % duration (in milliseconds)
-data.fixation.duration = (data.fixation.off-data.fixation.on+1) / ETparams.samplingFreq;
+data.fixation.duration = (data.fixation.off-data.fixation.on+1) / ETparams.samplingFreq * 1000;
 
 %%% drift during fixation (defined as position at end minus position at
 %%% begin)
