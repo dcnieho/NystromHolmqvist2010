@@ -48,6 +48,8 @@ ETparams.data.qApplySaccadeTemplate     = true;
 
 ETparams.samplingFreq                   = 500;
 
+% blink detection. Note that there are other ways to detect blinks in the
+% code, e.g., all saccades are checked for their level of blinkness
 ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it is noise or blinks
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks
 ETparams.blink.mergeWindow              = 50;           % merge blinks that are less than this apart. Set to 0 if you don't want any merging.
