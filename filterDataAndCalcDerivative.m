@@ -64,6 +64,7 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % calculate component velocities and accelerations
 %--------------------------------------------------------------------------
 if ETparams.data.qNumericallyDifferentiate
+    % TODO, instead of diff use conv(data,[1 0 -1],'same')/2 because it is centered correctly
     tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
     tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
     

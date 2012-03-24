@@ -109,8 +109,8 @@ switch bitand(cutPostrace,uint8(4+8+16))
                 eind2 = max(eind2,sac.on(p+1));
             end
             
-            X = interpSacIgnace(X,2,start1,eind1,start2,eind2,[sac.on(p) sac.off(p)]); % add ,true); fr debug plots
-            Y = interpSacIgnace(Y,2,start1,eind1,start2,eind2,[sac.on(p) sac.off(p)]);
+            X = interpSacIgnace(X,2,start1,eind1,start2,eind2,sac.on(p),sac.off(p)); % add ,true); fr debug plots
+            Y = interpSacIgnace(Y,2,start1,eind1,start2,eind2,sac.on(p),sac.off(p));
         
             
             % now, reconstruct velocity from desaccaded position, if wanted.

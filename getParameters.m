@@ -16,7 +16,8 @@ ETparams.data.qFlipX                    = false;
 % Savitzky-Golay differentiating filter (it basically fits a second order
 % polynomial in a moving window to the eye position data and takes the
 % derivatives analytically). Set the below to true to simply numerical
-% differentiate with matlab's diff()
+% differentiate with matlab's diff() (TODO, don't use diff but a
+% convolution with minimal smoothing but centered correctly.)
 ETparams.data.qNumericallyDifferentiate = false;
 ETparams.data.filterWindow              = 10;           % ms, if using Savitzky-Golay, filter window length. Make sure its narrower than smallest features you want to detect
 ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
