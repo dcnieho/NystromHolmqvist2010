@@ -64,22 +64,21 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % calculate component velocities and accelerations
 %--------------------------------------------------------------------------
 if ETparams.data.qNumericallyDifferentiate
-    % TODO, instead of diff use conv(data,[1 0 -1],'same')/2 because it is centered correctly
-    tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
-    tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
+    % instead of diff we use conv2(data,[1 0 -1].','valid')/2 because it is centered correctly
+    % NB diff() is equivalent to conv2(data,[1 -1].','valid')
+    tempV   = conv2([data.deg.Azi data.deg.Ele],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+    tempV   = [tempV(1,:); tempV; tempV(end,:)];    % deal with end effects
     
-    % make same length as position trace
-    tempV   = [tempV; tempV( end     ,:)] * ETparams.samplingFreq;
-    tempA   = [tempA; tempA([end end],:)] * ETparams.samplingFreq^2;
+    tempA   = conv2(tempV,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
+    tempA   = [tempA(1,:); tempA; tempA(end,:)];    % deal with end effects
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandDiffPixels
-        tempVpix    = diff([data.pix.X data.pix.Y],1,1);
-        tempApix    = diff([data.pix.X data.pix.Y],2,1);
-        
-        % make same length as position trace
-        tempVpix    = [tempVpix; tempVpix( end     ,:)] * ETparams.samplingFreq;
-        tempApix    = [tempApix; tempApix([end end],:)] * ETparams.samplingFreq^2;
+        tempVpix   = conv2([data.pix.X data.pix.Y],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+        tempVpix   = [tempVpix(1,:); tempVpix; tempVpix(end,:)];    % deal with end effects
+    
+        tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
+        tempApix   = [tempApix(1,:); tempApix; tempApix(end,:)];    % deal with end effects
     end
 else
     % prepare parameters
