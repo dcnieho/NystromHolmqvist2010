@@ -49,7 +49,9 @@ data = detectSaccadesAndGlissades(data,ETparams);
 % we might also remove saccades that occured right
 % after a blink)
 %-------------------------------------
-data = detectAndRemoveBlinks(data,ETparams);
+if ETparams.blink.qDetect
+    data = detectAndRemoveBlinks(data,ETparams);
+end
 
 % Now merge saccades with short intervals between them
 % and get information about them
