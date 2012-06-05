@@ -25,6 +25,10 @@ if ETparams.data.qDetrendWithMedianFilter
         % resample at ETparams.samplingFreq
         p = polyfit(-3:3,filter_coeffs_240,4);  % fourth order polynomial seems to interpolate this one very nicely!
         num_samples = round(ETparams.samplingFreq/240 * length(filter_coeffs_240));
+        if mod(num_samples,2)==0
+            % make sure uneven
+            num_samples = num_samples+1;
+        end
         filter_coeffs = polyval(p,linspace(-3,3,num_samples));
     else
         filter_coeffs = filter_coeffs_240;
@@ -77,6 +81,10 @@ if ETparams.data.qApplySaccadeTemplate
     else
         % calculate and use minimum snap velocity template
         num_samples = round(ETparams.samplingFreq/240 * 7); % Lee Stone's template is 7 taps at 240 Hz -> 29.2 ms. Stay as close to that as possible
+        if mod(num_samples,2)==0
+            % make sure uneven
+            num_samples = num_samples+1;
+        end
         sampInt     = 1/ETparams.samplingFreq*1000;
         saccade_template = saccadeTemplate(1,num_samples*sampInt,sampInt,1);
     end
