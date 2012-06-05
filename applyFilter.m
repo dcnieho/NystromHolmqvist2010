@@ -15,6 +15,7 @@ else
     % rigorously, we don't have to add a whole filter's length, just
     % half
     ntap    = length(filter_coeffs);
+    assert(mod(ntap,2)==1,'filter length must be uneven')
     window  = floor(ntap/2);
     % apply the 2-d FIR filter described by filter_coeffs
     output  = conv(input,filter_coeffs,'valid');
