@@ -78,7 +78,7 @@ ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in
 % trace end up unclassified as they don't qualify as saccade, glissade or
 % "fixation".
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 30;           % in milliseconds
+ETparams.fixation.minDur                = 1500;         % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on available
