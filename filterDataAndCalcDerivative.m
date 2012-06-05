@@ -64,13 +64,23 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % calculate component velocities and accelerations
 %--------------------------------------------------------------------------
 if ETparams.data.qNumericallyDifferentiate
-    % instead of diff we use conv2(data,[1 0 -1].','valid')/2 because it is centered correctly
-    % NB diff() is equivalent to conv2(data,[1 -1].','valid')
-    tempV   = conv2([data.deg.Azi data.deg.Ele],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
-    tempV   = [tempV(1,:); tempV; tempV(end,:)];    % deal with end effects
-    
-    tempA   = conv2(tempV,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
-    tempA   = [tempA(1,:); tempA; tempA(end,:)];    % deal with end effects
+    if 1
+        % instead of diff we use conv2(data,[1 0 -1].','valid')/2 because it is centered correctly
+        % NB diff() is equivalent to conv2(data,[1 -1].','valid')
+        tempV   = conv2([data.deg.Azi data.deg.Ele],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+        tempV   = [tempV(1,:); tempV; tempV(end,:)];    % deal with end effects
+        
+        tempA   = conv2(tempV,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
+        tempA   = [tempA(1,:); tempA; tempA(end,:)];    % deal with end effects
+    else
+        % simple diff
+        tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
+        tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
+        
+        % make same length as position trace
+        tempV   = [tempV; tempV( end     ,:)] * ETparams.samplingFreq;
+        tempA   = [tempA; tempA([end end],:)] * ETparams.samplingFreq^2;
+    end
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandDiffPixels
