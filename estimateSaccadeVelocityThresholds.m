@@ -17,7 +17,7 @@ function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsampl
 % doing.
 
 % prepare algorithm parameters
-minFixSamples       = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
+minFixSamples       = ceil(50                      /1000 * ETparams.samplingFreq);  % min duration of possible fixation (non-saccade actually) for it to be included in this estimation process
 centralFixSamples   = ceil(ETparams.saccade.minDur /3000 * ETparams.samplingFreq);
 
 % saccade detection will run (possibly partially) on xcorr output, need
