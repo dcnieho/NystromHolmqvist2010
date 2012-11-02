@@ -59,6 +59,7 @@ switch veltype
             vlbltype = 'Y';
         end
 end
+missing = data.deg.missing;
 if strcmp(datatype,'deg')
     unit = '°';
     xlbl = ['Azimuth (' unit ')'];
@@ -116,6 +117,12 @@ elseif strcmp(datatype,'deg')
 end
 
 % markers
+if ~isempty(missing.on)
+    missFlag = Interleave(arrayfun(@(on,off) on:off,missing.on,missing.off,'uni',false),repmat({{'-r'}},1,length(missing.on)));
+else
+    missFlag = {};
+end
+
 sacon   = data.saccade.on;
 sacoff  = data.saccade.off;
 if isfield(data,'blink')
@@ -126,20 +133,20 @@ else
 end
 if isfield(data,'glissade')
     qhighvelglissade = data.glissade.type==2;                                           % determine glissade type: 1 is low velocity, 2 is high velocity
-    glismarks = {data.glissade.off(qhighvelglissade) ,{'c*'},...                        % high velocity glissade off markers
+    glisMarks = {data.glissade.off(qhighvelglissade) ,{'c*'},...                        % high velocity glissade off markers
                  data.glissade.off(~qhighvelglissade),{'g*'}};                          % low  velocity glissade off markers
 else
-    glismarks = {};
+    glisMarks = {};
 end
 if isfield(data,'fixation')
     qHaveFixations = true;
     xfixpos = data.fixation.(['meanX_' datatype]);
     yfixpos = data.fixation.(['meanY_' datatype]);
-    fixmarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
+    fixMarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
                  data.fixation.off,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};     % fixation off markers
 else
     qHaveFixations = false;
-    fixmarks = {};
+    fixMarks = {};
 end
 % thresholds
 if isfield(data.saccade,'peakXCorrThreshold')
@@ -192,16 +199,15 @@ ax = subplot('position',xplotPos);
 hold on;
 if qReconstructPos
     plot(time,xdata,'g');
-    plotWithMark(time,xdatcut,...                                           % data (y,x)
-                 'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
-                 fixmarks{:} ...                                            % fixation markers (if any)
-                );
+    pdat = xdatcut;
 else
-    plotWithMark(time,xdata,...                                             % data (y,x)
-                 'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
-                 fixmarks{:} ...                                            % fixation markers (if any)
-                );
+    pdat = xdata;
 end
+plotWithMark(time,pdat,...                                                  % data (y,x)
+             'time (ms) - fixations',xlbl,titel,...                         % x-axis label, y-axis label, axis title
+             missFlag{:}, ...                                               % color part of trace that is missing
+             fixMarks{:} ...                                                % fixation markers (if any)
+            );
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
 axis ij
 
@@ -211,18 +217,16 @@ ay = subplot('position',yplotPos);
 hold on;
 if qReconstructPos
     plot(time,ydata,'g');
-    plotWithMark(time,ydatcut,...                                           % data (y,x)
-                 'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
-                 fixmarks{:}, ...                                           % fixation markers (if any)
-                 blinkMarks{:} ...                                          % blink markers (if any)
-                );
+    pdat = ydatcut;
 else
-    plotWithMark(time,ydata,...                                             % data (y,x)
-                 'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
-                 fixmarks{:}, ...                                           % fixation markers (if any)
-                 blinkMarks{:} ...                                          % blink markers (if any)
-                );
+    pdat = ydata;
 end
+plotWithMark(time,pdat,...                                              % data (y,x)
+             'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
+             missFlag{:}, ...                                           % color part of trace that is missing
+             fixMarks{:}, ...                                           % fixation markers (if any)
+             blinkMarks{:} ...                                          % blink markers (if any)
+            );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
 axis ij
 
@@ -235,9 +239,10 @@ hold on;
 plot(time,vel,'g');
 plotWithMark(time,velcut,...                                            % data (y,x)
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
+             missFlag{:}, ...                                           % color part of trace that is missing
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-             glismarks{:}, ...                                          % glissade markers (if any)
+             glisMarks{:}, ...                                          % glissade markers (if any)
              blinkMarks{:} ...                                          % blink markers (if any)
             );
 % add detection thresholds
@@ -272,7 +277,7 @@ if qSaccadeTemplate
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-                 glismarks{:}, ...                                          % glissade markers (if any)
+                 glisMarks{:}, ...                                          % glissade markers (if any)
                  blinkMarks{:} ...                                          % blink markers (if any)
                 );
     hold on;

@@ -53,6 +53,8 @@ if ETparams.blink.qDetect
     data = detectAndRemoveBlinks(data,ETparams);
 end
 
+data = flagMissing(data);
+
 % Now merge saccades with short intervals between them
 % and get information about them
 %-------------------------------------
