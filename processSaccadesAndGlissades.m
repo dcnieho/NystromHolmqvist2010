@@ -45,11 +45,18 @@ function data = processSaccadesAndGlissadesImplementation(data, fieldname, ETpar
 % duration (in milliseconds)
 data.(fieldname).duration = (data.(fieldname).off-data.(fieldname).on+1)/ETparams.samplingFreq;
 
-% amplitude & direction
+% start and end points
+nSamp= ETparams.saccade.seWindowSamp;
+sidx = bsxfun(@plus,-nSamp:0    ,data.(fieldname).on.' ); sidx(sidx<1) = 1;
+data.(fieldname).startPoint = [mean(data.deg.Azi(sidx),2) mean(data.deg.Ele(sidx),2)];
+eidx = bsxfun(@plus,     0:nSamp,data.(fieldname).off.'); eidx(eidx>length(data.deg.Azi)) = length(data.deg.Azi);
+data.(fieldname).endPoint   = [mean(data.deg.Azi(eidx),2) mean(data.deg.Ele(eidx),2)];
+
+% use start and end points to calculate amplitude & direction
 [data.(fieldname).amplitude, data.(fieldname).direction] = ...
     calcAmplitudeFick(...
-        data.deg.Azi(data.(fieldname).on ), data.deg.Ele(data.(fieldname).on ),...
-        data.deg.Azi(data.(fieldname).off), data.deg.Ele(data.(fieldname).off)...
+        data.(fieldname).startPoint(:,1), data.(fieldname).startPoint(:,2),...
+        data.(fieldname).endPoint(:,1)  , data.(fieldname).endPoint(:,2)...
     );
 
 % and now some that are best done in a for-loop

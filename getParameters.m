@@ -64,11 +64,13 @@ ETparams.saccade.localNoiseWindowLength = 50;           % in milliseconds, windo
 ETparams.saccade.minPeakSamples         = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
 ETparams.saccade.minDur                 = 10;           % in milliseconds
 ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
+ETparams.saccade.seWindowSamp           = 4;            % number of samples before onset and after offset to use for calculating saccade start and end points (onset and offset themselves are always used, this is the number of extra samples)
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals. If false, blink detection dies as its basic assumption is that blinks were already detected as saccades due to their large vertical velocity
 
 ETparams.glissade.qDetect               = true;         % if true, do glissade detection
 ETparams.glissade.searchWindow          = 40;           % window after saccade in which we search for glissades, in milliseconds
 ETparams.glissade.maxDur                = 80;           % in milliseconds
+ETparams.glissade.seWindowSamp          = 0;            % number of samples before onset and after offset to use for calculating glissade start and end points (onset and offset themselves are always used, this is the number of extra samples)
 ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in saccade intervals
 
 % fixation here is defined as 'not saccade or glissade', it could thus also
