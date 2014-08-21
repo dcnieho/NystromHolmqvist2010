@@ -47,16 +47,18 @@ data.(fieldname).duration = (data.(fieldname).off-data.(fieldname).on+1)/ETparam
 
 % start and end points
 nSamp= ETparams.saccade.seWindowSamp;
-sidx = bsxfun(@plus,-nSamp:0    ,data.(fieldname).on.' ); sidx(sidx<1) = 1;
-data.(fieldname).startPoint = [mean(data.deg.Azi(sidx),2) mean(data.deg.Ele(sidx),2)];
-eidx = bsxfun(@plus,     0:nSamp,data.(fieldname).off.'); eidx(eidx>length(data.deg.Azi)) = length(data.deg.Azi);
-data.(fieldname).endPoint   = [mean(data.deg.Azi(eidx),2) mean(data.deg.Ele(eidx),2)];
+sidx = bsxfun(@plus,[-nSamp:0    ].',data.(fieldname).on ); sidx(sidx<1) = 1;
+data.(fieldname).startPointAzi = mean(data.deg.Azi(sidx),1);
+data.(fieldname).startPointEle = mean(data.deg.Ele(sidx),1);
+eidx = bsxfun(@plus,[     0:nSamp].',data.(fieldname).off); eidx(eidx>length(data.deg.Azi)) = length(data.deg.Azi);
+data.(fieldname).endPointAzi   = mean(data.deg.Azi(eidx),1);
+data.(fieldname).endPointEle   = mean(data.deg.Ele(eidx),1);
 
 % use start and end points to calculate amplitude & direction
 [data.(fieldname).amplitude, data.(fieldname).direction] = ...
     calcAmplitudeFick(...
-        data.(fieldname).startPoint(:,1), data.(fieldname).startPoint(:,2),...
-        data.(fieldname).endPoint(:,1)  , data.(fieldname).endPoint(:,2)...
+        data.(fieldname).startPointAzi, data.(fieldname).startPointEle,...
+        data.(fieldname).endPointAzi  , data.(fieldname).endPointEle...
     );
 
 % and now some that are best done in a for-loop
