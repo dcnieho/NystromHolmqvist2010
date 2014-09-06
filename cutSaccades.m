@@ -62,8 +62,13 @@ end
 switch bitand(cutPostrace,uint8(4+8+16))
     case 8
         % integrate velocities using plant
-        X = CanonicalDiscreteSSModel(ETparams.sysdt,velX).' + X(1);
-        Y = CanonicalDiscreteSSModel(ETparams.sysdt,velY).' + Y(1);
+        if isnan(velX(1))
+            sIdx = find(~isnan(velX),1);
+        else
+            sIdx = 1;
+        end
+        X(sIdx:end) = CanonicalDiscreteSSModel(ETparams.sysdt,velX(sIdx:end)).' + X(sIdx);
+        Y(sIdx:end) = CanonicalDiscreteSSModel(ETparams.sysdt,velY(sIdx:end)).' + Y(sIdx);
     case 16
         % simply linearly interpolate position
         for p=1:length(sac.on)
@@ -125,4 +130,19 @@ switch bitand(cutPostrace,uint8(4+8+16))
                 vel(on:off)  = hypot(velX(on:off),velY(on:off));
             end
         end
+end
+
+if bitand(cutPostrace,uint8(4+8))
+    % as most Ss show a preference to make saccades in a certain direction,
+    % integrated position trace shows a trend. Remove trend by
+    % least-squares procedure. Expect this trend to be approximately
+    % opposite to trend of saccadic trace of course
+    % See Collewijn & Tamminga - 1984 - Human smooth and saccadic eye
+    % movements during voluntary pursuit of different target motions on
+    % different backgrounds. J Physiol. 351, pp. 217-250.
+    s = [1:length(X)].';
+    t = regstats(X,s,'linear',{'beta'});
+    X = X-s*t.beta(2);
+    t = regstats(Y,s,'linear',{'beta'});
+    Y = Y-s*t.beta(2);
 end
