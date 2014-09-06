@@ -1,4 +1,4 @@
-function data = prepareData(x,y,ETparams)
+function data = prepareData(x,y,pupilsize,ETparams)
 % prepares data for the rest of the algorithm. Moves origin, flip data,
 % converts to Fick angles in degree, things like that.
 %
@@ -58,6 +58,7 @@ function data = prepareData(x,y,ETparams)
 % ensure column vectors
 data.pix.X      = x(:);
 data.pix.Y      = y(:);
+data.pupilsize  = pupilsize;
 
 % flip X if specified
 if ETparams.data.qFlipX

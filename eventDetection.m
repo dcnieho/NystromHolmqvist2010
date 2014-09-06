@@ -1,4 +1,4 @@
-function data = eventDetection(x,y,ETparams)
+function data = eventDetection(x,y,pupilsize,ETparams)
 %--------------------------------------------------------------------------
 % README
 %
@@ -22,7 +22,7 @@ function data = eventDetection(x,y,ETparams)
 
 % Prepare data (move origin, things like that)
 %-------------------------------------
-data = prepareData(x,y,ETparams);
+data = prepareData(x,y,pupilsize,ETparams);
 
 % Calculate velocity and acceleration
 %-------------------------------------
