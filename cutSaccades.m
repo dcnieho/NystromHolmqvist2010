@@ -1,4 +1,4 @@
-function data = cutSaccades(data, ETparams,cutPostrace,skipFirstWindow)
+function data = cutSaccades(data, ETparams,cutPostrace,extraCut,skipFirstWindow)
 
 [data.deg.AziFilt,...
  data.deg.EleFilt,...
@@ -10,7 +10,7 @@ function data = cutSaccades(data, ETparams,cutPostrace,skipFirstWindow)
                                                   data.deg.velAzi,...
                                                   data.deg.velEle,...
                                                   data.saccade,...
-                                                  ETparams,cutPostrace,skipFirstWindow);
+                                                  ETparams,cutPostrace,extraCut,skipFirstWindow);
 
 if isfield(data.pix,'vel')
     [data.pix.XFilt,...
@@ -23,18 +23,36 @@ if isfield(data.pix,'vel')
                                                     data.pix.velX,...
                                                     data.pix.velY,...
                                                     data.saccade,...
-                                                    ETparams,cutPostrace,skipFirstWindow);
+                                                    ETparams,cutPostrace,extraCut,skipFirstWindow);
 end
 
 
 
-function [X,Y,vel,velX,velY] = cutSaccadesImplementation(X,Y,vel,velX,velY, sac,ETparams,cutPostrace,skipFirstWindow)
+function [X,Y,vel,velX,velY] = cutSaccadesImplementation(X,Y,vel,velX,velY, sac,ETparams,cutPostrace,extraCut,skipFirstWindow)
 
 % prepare parameters
 % Number of samples at beginning of trial where we leave saccades
 % untouched, if we reconstruct the position signal as well.
 % Window length is in seconds
 skipWindowSamples   = ceil(skipFirstWindow * ETparams.samplingFreq);
+
+% stretch up the part cut around saccade onsets and offsets, if wanted
+if nargin>2 && ~isempty(extraCut) && any(extraCut)
+    sac.on  = sac.on  + ceil(extraCut(1)/1000 * ETparams.samplingFreq);
+    sac.off = sac.off + ceil(extraCut(2)/1000 * ETparams.samplingFreq);
+    
+    % We could now have saccade starts before the end of the
+    % previous saccade. prune/merge them here.
+    sac = mergeIntervals(sac,[],0);
+    
+    % make sure first onset and last offset doesn't run out of the data
+    if sac.on(1) < 1
+        sac.on(1) = 1;
+    end
+    if sac.off(end) > length(X)
+        sac.off(end) = length(X);
+    end
+end
 
 sac.len= sac.off-sac.on+1;
 
