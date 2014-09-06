@@ -58,7 +58,7 @@ function data = prepareData(x,y,pupilsize,ETparams)
 % ensure column vectors
 data.pix.X      = x(:);
 data.pix.Y      = y(:);
-data.pupilsize  = pupilsize;
+data.pupil.size = pupilsize(:);
 
 % flip X if specified
 if ETparams.data.qFlipX

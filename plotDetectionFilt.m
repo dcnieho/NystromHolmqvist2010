@@ -1,7 +1,7 @@
 function plotDetectionFilt(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,titel,pic)
 
 % standard plot routine for monocular data
-% See also plotWithMark, plot2D and subplot
+% See also plotWithMark, plot2D and axes
 % call syntax:
 % plotDetection(data, datatype, sampleRate, glissadeSearchWindow, res, title)
 % - data: see below for the fields it needs to contain, they're all
@@ -38,6 +38,8 @@ assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
 %%% unpack the needed variables
 if nargin<7
     titel = '';
+else
+    titel = texlabel(titel,'literal');
 end
 
 rect = rect.(datatype);
@@ -70,6 +72,7 @@ else
     ylbl = ['Vertical (' unit ')'];
 end
 plbl = 'pupil size';
+pvlbl= '{\delta} pupil size';
 vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
@@ -198,13 +201,13 @@ glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
 %%% determine time axis limits
 mmt  = [min(time) max(time)];
 
-%%% determine subplot positions
+%%% determine axes positions
 if qSaccadeTemplate
-    if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
         xplotPos = [0.05 0.88 0.90 0.08];
         yplotPos = [0.05 0.76 0.90 0.08];
-        pplotPos = [0.05 0.66 0.90 0.08];
-        vplotPos = [0.05 0.50 0.90 0.12];
+        pplotPos = [0.05 0.64 0.90 0.08];
+        vplotPos = [0.05 0.50 0.90 0.10];
         cplotPos = [0.05 0.36 0.90 0.10];
         cutplotPos = [0.05 0.04 0.43 0.28];
         rawplotPos = [0.52 0.04 0.43 0.28];
@@ -217,7 +220,7 @@ if qSaccadeTemplate
         rawplotPos = [0.52 0.06 0.43 0.34];
     end
 else
-    if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
         xplotPos = [0.05 0.88 0.90 0.08];
         yplotPos = [0.05 0.76 0.90 0.08];
         pplotPos = [0.05 0.60 0.90 0.12];
@@ -236,7 +239,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% plot X trace with fixation markers
-ax = subplot('position',xplotPos);
+ax = axes('position',xplotPos);
 hold on;
 if qReconstructPos
     plot(time,xdata,'g');
@@ -258,7 +261,7 @@ axis ij
 
 
 %%% plot Y trace with fixation markers
-ay = subplot('position',yplotPos);
+ay = axes('position',yplotPos);
 hold on;
 if qReconstructPos
     plot(time,ydata,'g');
@@ -280,21 +283,41 @@ axis ij
 
 
 %%% plot pupil size trace with blink markers
-if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
-    ap = subplot('position',pplotPos);
-    plotWithMark(time,data.pupilsize,...                                    % data (y,x)
-                 'time (ms) - blinks',plbl,'',...                           % x-axis label, y-axis label, axis title
-                 missFlag{:}, ...                                           % color part of trace that is missing
-                 blinkMarks{:} ...                                          % blink markers (if any)
+if isfield(data,'pupil') && ~isempty(data.pupil.size)
+    % size
+    ap = axes('position',pplotPos);
+    plotWithMark(time,data.pupil.size,...                               % data (y,x)
+                 'time (ms) - blinks',plbl,'',...                       % x-axis label, y-axis label, axis title
+                 missFlag{:}, ...                                       % color part of trace that is missing
+                 blinkMarks{:} ...                                      % blink markers (if any)
                 );
-    axis([mmt(1) mmt(2) min(data.pupilsize) max(data.pupilsize)]);
+    axis([mmt(1) mmt(2) min(data.pupil.size) max(data.pupil.size)]);
+    % change of size
+    apv= axes('position',pplotPos);
+    plotWithMark(time,data.pupil.dsize,...                              % data (y,x)
+                 'time (ms) - blinks',pvlbl,'',...                      % x-axis label, y-axis label, axis title
+                 missFlag{:}, ...                                       % color part of trace that is missing
+                 blinkMarks{:} ...                                      % blink markers (if any)
+                );
+    axis([mmt(1) mmt(2) min(data.pupil.dsize) max(data.pupil.dsize)]);
+    % at start size, not dsize, is visible
+    set([apv; allchild(apv)],'visible','off');
+    % toggle button
+    uicontrol(...
+    'Style','togglebutton',...
+    'String','d',...
+    'FontName','symbol',...
+    'Units','Normalized',...
+    'Position',[sum(pplotPos([1 3]))+.01 sum(pplotPos([2 4]))-.04 .02 .03],...
+    'Callback',@Pupil_Callback);
 else
-    ap = [];
+    ap  = [];
+    apv = [];
 end
 
 
 %%% plot velocity trace with saccade and glissade markers
-av = subplot('position',vplotPos);
+av = axes('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
@@ -334,7 +357,7 @@ end
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
-    ac = subplot('position',cplotPos);
+    ac = axes('position',cplotPos);
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -361,12 +384,12 @@ else
 end
 
 % link x-axis (time) of the three/four timeseries for easy viewing
-linkaxes([ax ay ap av ac],'x');
+linkaxes([ax ay ap apv av ac],'x');
 
 
 %%% plot scanpath of raw data and of data with saccades cut out
 if qReconstructPos
-    asf = subplot('position',cutplotPos);
+    asf = axes('position',cutplotPos);
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
@@ -382,7 +405,7 @@ else
     asf = [];
 end
 
-asr = subplot('position',rawplotPos);
+asr = axes('position',rawplotPos);
 if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on
@@ -398,5 +421,21 @@ axis ij
 % link view of the two scanpath plots for easy viewing
 linkaxes([asr asf],'xy');
 
-
+% make sure we don't lose the standard toolbar
+set(gcf,'Toolbar','figure');
 zoom on;
+
+
+
+
+function Pupil_Callback(~,~,~)
+    if strcmp(get(ap,'visible'),'on')
+        set([ap;   allchild(ap)],'visible','off');
+        set([apv; allchild(apv)],'visible','on');
+    else
+        set([apv; allchild(apv)],'visible','off');
+        set([ap;   allchild(ap)],'visible','on');
+    end
+end
+
+end

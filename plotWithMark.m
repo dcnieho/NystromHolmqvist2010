@@ -13,20 +13,20 @@ function plotWithMark(xdata,ydata,xlbl,ylbl,titel,varargin)
 %
 % are thus all valid calls.
 
-error(nargchk(5, inf, nargin, 'struct'));
+narginchk(5, inf);
 % length of varargin must be even as marker inputs come in pairs
 assert(mod(length(varargin),2)==0,'Number of inputs related to markers must be even as they come in pairs, got %d inputs related to markers',nargin-5);
 
 % plot trace
 plot(xdata,ydata,'k-','LineWidth',1);
 if ~isempty(xlbl)
-    xlabel(texlabel(xlbl,'literal'));
+    xlabel(xlbl);
 end
 if ~isempty(ylbl)
-    ylabel(texlabel(ylbl,'literal'));
+    ylabel(ylbl);
 end
 if ~isempty(titel)
-    title(texlabel(titel,'literal'));
+    title(titel);
 end
 
 hold on;

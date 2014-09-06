@@ -90,6 +90,11 @@ if ETparams.data.qNumericallyDifferentiate
         tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
         tempApix   = [tempApix(1,:); tempApix; tempApix(end,:)];    % deal with end effects
     end
+    
+    % diff pupil size
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+        data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+    end
 else
     % prepare parameters
     %--------------------------------------------------------------------------
@@ -110,6 +115,11 @@ else
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
         tempVpix = -tempVpix * ETparams.samplingFreq;       % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
         tempApix =  tempApix * ETparams.samplingFreq^2;     % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
+    end
+    
+    % diff pupil size
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+        data.pupil.dsize = -sgFilt(data.pupil.size,1,ntaps) * ETparams.samplingFreq;
     end
 end
 
@@ -165,6 +175,8 @@ if ETparams.data.qPreciseCalcDeriv
         % for lack of information about torsion, we set those parts to 0
         % this means the instantaneous axis does not take changes in
         % torsion into account and might therefore be systematically off.
+        % NOTE, that's a crap idea. below in else block has correct way to
+        % do velocity in Fick system
         data.deg.omega = [...
                                                                - tempV(:,2).*sind(data.deg.Azi)                     , ...
             tempV(:,2).*cosd(data.deg.Azi)                                                                          , ...
@@ -176,14 +188,12 @@ else
     % Calculate eye velocity and acceleration straightforwardly by applying
     % Pythagoras' theorem. This gives us no information about the
     % instantaneous axis of the eye rotation, but eye velocity is
-    % calculated correctly, yielding the same result as the the "precise"
-    % formula above that calculates the eye velocity vector. When only 2D
-    % rotational information is available, it is easy to show
-    % algebraically that the two solutions are equivalent.
-    % This is no longer true when taking torsional velocity into account.
-    % I am not sure whether the same things are true for acceleration as I
-    % haven't found or deducted the precise formulae yet.
-    data.deg.vel    = hypot(tempV(:,1), tempV(:,2));
+    % calculated correctly. Apply scale for velocity, as a 10° azimuth
+    % rotation at 0° elevation does not cover same distance as it does at
+    % 45° elevation
+    % No idea what scaling to apply for acceleration, figure that out some
+    % time...
+    data.deg.vel    = sqrt(tempV(:,1).^2.*cosd(tempV(:,2)) + tempV(:,2).^2);
     data.deg.acc    = hypot(tempA(:,1), tempA(:,2));
 end
 
