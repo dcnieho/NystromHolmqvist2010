@@ -31,7 +31,7 @@ function plotDetectionFilt(data,datatype,veltype,sampleRate,glissadeSearchWindow
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
-error(nargchk(6,8,nargin,'struct'))
+narginchk(6,8)
 
 assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
 
@@ -69,6 +69,7 @@ else
     xlbl = ['Horizontal (' unit ')'];
     ylbl = ['Vertical (' unit ')'];
 end
+plbl = 'pupil size';
 vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
@@ -95,6 +96,19 @@ else
     qReconstructPos = false;
 end
 
+% see if also have saccadic traces
+if strcmp(datatype,'pix') && isfield(data.pix,'XSac')
+    xSac    = data.pix.XSac;
+    ySac    = data.pix.YSac;
+    qHaveSaccadic = true;
+elseif strcmp(datatype,'deg') && isfield(data.deg,'AziSac')
+    xSac    = data.deg.AziSac;
+    ySac    = data.deg.EleSac;
+    qHaveSaccadic = true;
+else
+    qHaveSaccadic = false;
+end
+
 % time
 time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 
@@ -102,17 +116,29 @@ time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 if strcmp(datatype,'pix')
     vel     = data.pix.(veltype);
     velcut  = data.pix.([veltype 'Filt']);
+    if qHaveSaccadic
+        velSac  = data.pix.velSac;
+    end
 elseif strcmp(datatype,'deg')
     switch veltype
         case 'vel'
             vel     = data.deg.vel;
             velcut  = data.deg.velFilt;
+            if qHaveSaccadic
+                velSac  = data.deg.velSac;
+            end
         case 'velX'
             vel     = data.deg.velAzi;
             velcut  = data.deg.velAziFilt;
+            if qHaveSaccadic
+                velSac  = data.deg.velAziSac;
+            end
         case 'velY'
             vel     = data.deg.velEle;
             velcut  = data.deg.velEleFilt;
+            if qHaveSaccadic
+                velSac  = data.deg.velEleSac;
+            end
     end
 end
 
@@ -139,14 +165,10 @@ else
     glisMarks = {};
 end
 if isfield(data,'fixation')
-    qHaveFixations = true;
-    xfixpos = data.fixation.(['meanX_' datatype]);
-    yfixpos = data.fixation.(['meanY_' datatype]);
     fixMarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
                  data.fixation.off,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};     % fixation off markers
 else
-    qHaveFixations = false;
-    fixMarks = {};
+    fixMarks  = {};
 end
 % thresholds
 if isfield(data.saccade,'peakXCorrThreshold')
@@ -178,18 +200,37 @@ mmt  = [min(time) max(time)];
 
 %%% determine subplot positions
 if qSaccadeTemplate
-    xplotPos = [0.05 0.88 0.90 0.08];
-    yplotPos = [0.05 0.76 0.90 0.08];
-    vplotPos = [0.05 0.60 0.90 0.12];
-    cplotPos = [0.05 0.44 0.90 0.12];
-    cutplotPos = [0.05 0.06 0.43 0.34];
-    rawplotPos = [0.52 0.06 0.43 0.34];
+    if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        pplotPos = [0.05 0.66 0.90 0.08];
+        vplotPos = [0.05 0.50 0.90 0.12];
+        cplotPos = [0.05 0.36 0.90 0.10];
+        cutplotPos = [0.05 0.04 0.43 0.28];
+        rawplotPos = [0.52 0.04 0.43 0.28];
+    else
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        vplotPos = [0.05 0.60 0.90 0.12];
+        cplotPos = [0.05 0.44 0.90 0.12];
+        cutplotPos = [0.05 0.06 0.43 0.34];
+        rawplotPos = [0.52 0.06 0.43 0.34];
+    end
 else
-    xplotPos = [0.05 0.84 0.90 0.12];
-    yplotPos = [0.05 0.68 0.90 0.12];
-    vplotPos = [0.05 0.52 0.90 0.12];
-    cutplotPos = [0.05 0.06 0.43 0.40];
-    rawplotPos = [0.52 0.06 0.43 0.40];
+    if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        pplotPos = [0.05 0.60 0.90 0.12];
+        vplotPos = [0.05 0.44 0.90 0.12];
+        cutplotPos = [0.05 0.06 0.43 0.34];
+        rawplotPos = [0.52 0.06 0.43 0.34];
+    else
+        xplotPos = [0.05 0.84 0.90 0.12];
+        yplotPos = [0.05 0.68 0.90 0.12];
+        vplotPos = [0.05 0.52 0.90 0.12];
+        cutplotPos = [0.05 0.06 0.43 0.40];
+        rawplotPos = [0.52 0.06 0.43 0.40];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,10 +244,14 @@ if qReconstructPos
 else
     pdat = xdata;
 end
-plotWithMark(time,pdat,...                                                  % data (y,x)
-             'time (ms) - fixations',xlbl,titel,...                         % x-axis label, y-axis label, axis title
-             missFlag{:}, ...                                               % color part of trace that is missing
-             fixMarks{:} ...                                                % fixation markers (if any)
+if qHaveSaccadic
+    plot(time,xSac,'c');
+end
+plotWithMark(time,pdat,...                                              % data (y,x)
+             'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
+             missFlag{:}, ...                                           % color part of trace that is missing
+             fixMarks{:}, ...                                           % fixation markers (if any)
+             blinkMarks{:} ...                                          % blink markers (if any)
             );
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
 axis ij
@@ -221,6 +266,9 @@ if qReconstructPos
 else
     pdat = ydata;
 end
+if qHaveSaccadic
+    plot(time,ySac,'c');
+end
 plotWithMark(time,pdat,...                                              % data (y,x)
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -231,12 +279,29 @@ axis([mmt(1) mmt(2) rect(2) rect(4)]);
 axis ij
 
 
+%%% plot pupil size trace with blink markers
+if isfield(data,'pupilsize') && ~isempty(data.pupilsize)
+    ap = subplot('position',pplotPos);
+    plotWithMark(time,data.pupilsize,...                                    % data (y,x)
+                 'time (ms) - blinks',plbl,'',...                           % x-axis label, y-axis label, axis title
+                 missFlag{:}, ...                                           % color part of trace that is missing
+                 blinkMarks{:} ...                                          % blink markers (if any)
+                );
+    axis([mmt(1) mmt(2) min(data.pupilsize) max(data.pupilsize)]);
+else
+    ap = [];
+end
+
+
 %%% plot velocity trace with saccade and glissade markers
 av = subplot('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
 plot(time,vel,'g');
+if qHaveSaccadic
+    plot(time,velSac,'c');
+end
 plotWithMark(time,velcut,...                                            % data (y,x)
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -296,7 +361,7 @@ else
 end
 
 % link x-axis (time) of the three/four timeseries for easy viewing
-linkaxes([ax ay av ac],'x');
+linkaxes([ax ay ap av ac],'x');
 
 
 %%% plot scanpath of raw data and of data with saccades cut out
