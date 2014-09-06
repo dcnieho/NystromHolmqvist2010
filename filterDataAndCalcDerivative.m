@@ -103,13 +103,13 @@ else
     % calculate derivatives
     [tempV,tempA] = sgFilt([data.deg.Azi data.deg.Ele],[1 2],ntaps);
     tempV = -tempV * ETparams.samplingFreq;                 % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
-    tempA =  tempA * ETparams.samplingFreq^2;
+    tempA =  tempA * ETparams.samplingFreq^2;               % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
     
     % also calculate derivatives for eye position in pixels
     if ETparams.data.qAlsoStoreandDiffPixels
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
         tempVpix = -tempVpix * ETparams.samplingFreq;       % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
-        tempApix =  tempApix * ETparams.samplingFreq^2;
+        tempApix =  tempApix * ETparams.samplingFreq^2;     % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
     end
 end
 
