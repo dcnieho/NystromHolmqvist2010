@@ -25,7 +25,7 @@ ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X
 % (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
 % some usage cases. The eventDetection however always runs on eye
 % pos/vel/acc in degrees.
-ETparams.data.qAlsoStoreandDiffPixels   = true;
+ETparams.data.qAlsoStoreandDiffPixels   = false;
 
 % Option to use median filter for detrending velocity data (e.g. removing
 % pursuit baseline speed). This is only useful if saccade templates are
