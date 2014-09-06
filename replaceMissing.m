@@ -30,6 +30,16 @@ if isfield(data.pix,'vel')
                                                    data.pix.velY,...
                                                    data.pix.missing,...
                                                    qInterpMissingPos,false);
+elseif qInterpMissingPos
+     [data.pix.missing,...
+     data.pix.X,...
+     data.pix.Y]    = replaceMissingImplementation(data.pix.X,...
+                                                   data.pix.Y,...
+                                                   [],...
+                                                   [],...
+                                                   [],...
+                                                   data.pix.missing,...
+                                                   qInterpMissingPos,false);
 end
 
 
@@ -39,7 +49,11 @@ function [missing,X,Y,vel,velX,velY] = replaceMissingImplementation(X,Y,vel,velX
 
 % We want to deal with all the nan in the data.
 % This is getting rid of blinks and such...
-qNaN = isnan(vel);
+if ~isempty(vel)
+    qNaN = isnan(vel);
+else
+    qNaN = isnan(X);
+end
 if any(qNaN)
     [nanon,nanoff] = bool2bounds(qNaN);
     assert(all(missing.on==nanon) && all(missing.off==nanoff))
@@ -49,7 +63,7 @@ if any(qNaN)
         nanon(1)    = [];
         nanoff(1)   = [];
     end
-    if ~isempty(nanoff) && nanoff(end)==length(vel)     % might be empty by now...
+    if ~isempty(nanoff) && nanoff(end)==length(X)       % might be empty by now...
         nanon(end)  = [];
         nanoff(end) = [];
     end
@@ -62,7 +76,9 @@ if any(qNaN)
     
     for p=1:length(nanon)
         % replace with interpolated velocity
-        [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,nanon(p),nanoff(p));
+        if ~isempty(vel)
+            [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,nanon(p),nanoff(p));
+        end
         
         if qInterpMissingPos
             X(nanon(p):nanoff(p)) = linspace(X(nanon(p)), X(nanoff(p)), nanlen(p));
@@ -71,7 +87,7 @@ if any(qNaN)
     end
     
     % get info about how much still missing
-    qNaN = isnan(vel);
+    qNaN = isnan(X);
     [nanon,nanoff] = bool2bounds(qNaN);
     missing.leftover.on  = nanon;
     missing.leftover.off = nanoff;
@@ -79,6 +95,6 @@ if any(qNaN)
     if qPrintInfo
         % show how many NaN we have left now, those cannot be handled
         % (first message of how many missing is issued in flagMissing.m)
-        fprintf('   -> N NaN samples left: %d (%.2f%%)\n',sum(qNaN),sum(qNaN)./length(vel)*100);
+        fprintf('   -> N NaN samples left: %d (%.2f%%)\n',sum(qNaN),sum(qNaN)./length(X)*100);
     end
 end
