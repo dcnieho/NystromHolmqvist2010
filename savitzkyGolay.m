@@ -15,6 +15,11 @@ function [fc, df] = savitzkyGolay(x,n,dn,x0,W,flag)
 %       end point can be obtained too. In addition, either numerical
 %       results or symbolical results can be obtained. Lastly, this
 %       function is faster than MATLAB's sgolay.
+%       Another difference with the matlab implementation is that to
+%       retrieve estimates of the P-th order derivative, one does need to
+%       multiply the filter output by P!. The filter coefficients returned
+%       in the fc output include this scaling already. Note that the
+%       differentiation filters returned in df do need such scaling.
 %
 % Usage:
 %       [fc,df] = savitzkyGolay(x,n,dn,x0,flag)
