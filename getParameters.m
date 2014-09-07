@@ -47,6 +47,8 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % See also ETparams.saccade.xCorrPeakThreshold
 ETparams.data.qApplySaccadeTemplate     = true;
 
+ETparams.data.minDur                    = 500;          % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
+
 ETparams.samplingFreq                   = 500;
 
 % blink detection. Note that there are other ways to detect blinks in the

@@ -28,7 +28,7 @@ data = prepareData(x,y,pupilsize,ETparams);
 %-------------------------------------
 data = filterDataAndCalcDerivative(data,ETparams);
 
-% Detect blinks and noise
+% Detect noise
 %-------------------------------------
 data = removeNoise(data,ETparams);
 

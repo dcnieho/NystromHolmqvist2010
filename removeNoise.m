@@ -1,16 +1,16 @@
 function data = removeNoise(data,ETparams)
 % find those sections of data enclosed in nans that are too short to be
-% meaningful (less than minimum fixation duration) and delete them
+% meaningful (less than minimum duration provided by user) and delete them
 
 % prepare algorithm parameters
-minFixSamples   = ceil(ETparams.fixation.minDur/1000 * ETparams.samplingFreq);
+minSamples   = ceil(ETparams.data.minDur/1000 * ETparams.samplingFreq);
 
 % process
 [dataon,dataoff] = bool2bounds(~isnan(data.deg.vel));
 for p=length(dataon):-1:1
-    % Check that the section of data is longer than the minimum fixation
-    % duration. Keep the indices if not so we can delete it later
-    if dataoff(p)-dataon(p) >= minFixSamples
+    % Check that the section of data is longer than the minimum duration.
+    % Keep the indices if not so we can delete it later
+    if dataoff(p)-dataon(p)+1 >= minSamples
         dataon (p) = [];
         dataoff(p) = [];
         continue;
