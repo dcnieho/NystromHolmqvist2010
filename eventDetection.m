@@ -38,7 +38,7 @@ data = detrendAndApplySaccadeTemplate(data,ETparams);
 
 % Iteratively find the optimal noise threshold
 %-------------------------------------
-data = estimateSaccadeVelocityThresholds(data,ETparams);
+data = estimateThresholds(data,ETparams);
 
 % Detect saccades and glissades
 %-------------------------------------

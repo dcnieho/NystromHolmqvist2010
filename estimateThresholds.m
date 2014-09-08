@@ -1,4 +1,4 @@
-function data = estimateSaccadeVelocityThresholds(data,ETparams,qusecentralsample)
+function data = estimateThresholds(data,ETparams,qusecentralsample)
 % iteratively establishes the best threshold for saccade detection for this
 % trial. This is done either based on the eye velocity trace or based on
 % the output of cross correlation with a saccade template.
