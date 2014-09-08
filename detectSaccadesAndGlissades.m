@@ -104,21 +104,21 @@ while kk <= length(sacon)
     % This assumes the saccade is preceded the same eye velocity and noise
     % level as after the saccade - its the best we can do.
     % starting from the already refined saccade beginning we get
-    % minFixSamples samples before the saccade, or as many as we can get,
-    % that are not nan and not during saccade.
+    % localNoiseWindowSamples samples before the saccade, or as many as we
+    % can get, that are not nan and not during saccade.
     idx = find(~qSacGlisOrNan(1:sacon(kk)-1),localNoiseWindowSamples,'last');
     localVelNoise = vel(idx);
-    localVelNoise = mean(localVelNoise) + 3*std(localVelNoise);
+    localVelThresh= mean(localVelNoise) + 3*std(localVelNoise);
         
-    % Check whether the local velocity noise exceeds the peak velocity
+    % Check whether the local velocity threshold exceeds the peak velocity
     % threshold
-    if ~isnan(localVelNoise) && localVelNoise < data.saccade.(field_peak)
-        saccadeOffsetTreshold(kk) = localVelNoise*0.3 + data.saccade.(field_onset)*0.7; % 30% local + 70% global
+    if ~isnan(localVelThresh) && localVelThresh < data.saccade.(field_peak)
+        saccadeOffsetTreshold(kk) = localVelThresh*0.3 + data.saccade.(field_onset)*0.7; % 30% local + 70% global
     else
         saccadeOffsetTreshold(kk) = data.saccade.(field_onset);
     end
     
-    % Detect saccade end. Walk forward from detected saccade start to find
+    % Detect saccade end. Walk forward from detected saccade end to find
     % where the velocity is below the saccadeOffsetTreshold and
     % where the acceleration is positive (which indicates a local minimum
     % in the velocity function)
