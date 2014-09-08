@@ -24,7 +24,7 @@ centralFixSamples   = ceil(ETparams.saccade.minDur /3000 * ETparams.samplingFreq
 % thresholds from this trace
 if ETparams.data.qApplySaccadeTemplate
     [data.saccade.peakXCorrThreshold, meanData, stdData] = ...
-        doOptimize(data.deg.velXCorr,ETparams.saccade.peakXCorrThreshold,.01, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+        doOptimize(data.deg.velXCorr,ETparams.saccade.peakXCorrThreshold,.01, 6, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
     
     if ETparams.saccade.qSaccadeTemplateRefine
         data.saccade.onsetXCorrThreshold = meanData + 3*stdData;
@@ -38,15 +38,20 @@ end
 % these are needed.
 if ~ETparams.data.qApplySaccadeTemplate || ~ETparams.saccade.qSaccadeTemplateRefine
     [data.saccade.peakVelocityThreshold, meanData, stdData] = ...
-        doOptimize(data.deg.vel,ETparams.saccade.peakVelocityThreshold,1, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+        doOptimize(data.deg.vel,ETparams.saccade.peakVelocityThreshold,1, 6, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
     
     data.saccade.onsetVelocityThreshold = meanData + 3*stdData;
 end
 
+% also do change of pupil size for blink detection
+[data.blink.peakDSizeThreshold, meanData, stdData] = ...
+    doOptimize(abs(data.pupil.dsize),ETparams.blink.dSizeThreshold,5, 8, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+
+data.blink.onsetDSizeThreshold = meanData + 3*stdData;
 
 
 
-function [peakThreshold, meanData, stdData] = doOptimize(data,initialThreshold,exitCriterion, minFixSamples, centralFixSamples, qUseCentralSamples)
+function [peakThreshold, meanData, stdData] = doOptimize(data,initialThreshold,exitCriterion, nStd, minFixSamples, centralFixSamples, qUseCentralSamples)
 % assign initial thresholds
 peakThreshold = initialThreshold;
 previousPeakDetectionThreshold = inf;
@@ -101,5 +106,5 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
     end
     
     % calculate new threshold
-    peakThreshold   = meanData + 6*stdData;
+    peakThreshold   = meanData + nStd*stdData;
 end

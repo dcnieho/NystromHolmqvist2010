@@ -300,6 +300,14 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
                  blinkMarks{:} ...                                      % blink markers (if any)
                 );
     axis([mmt(1) mmt(2) min(data.pupil.dsize) max(data.pupil.dsize)]);
+    if isfield(data.blink,'peakDSizeThreshold')
+        % plot pupil size change thresholds for blink detection
+        hold on;
+        plot(mmt, [1 1]*data.blink.peakDSizeThreshold,'r--')
+        plot(mmt,-[1 1]*data.blink.peakDSizeThreshold,'r--')
+        plot(mmt, [1 1]*data.blink.onsetDSizeThreshold,'r:')
+        plot(mmt,-[1 1]*data.blink.onsetDSizeThreshold,'r:')
+    end
     % at start size, not dsize, is visible
     set([apv; allchild(apv)],'visible','off');
     % toggle button
