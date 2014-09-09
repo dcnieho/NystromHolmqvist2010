@@ -44,10 +44,12 @@ if ~ETparams.data.qApplySaccadeTemplate || ~ETparams.saccade.qSaccadeTemplateRef
 end
 
 % also do change of pupil size for blink detection
-[data.blink.peakDSizeThreshold, meanData, stdData] = ...
-    doOptimize(abs(data.pupil.dsize),ETparams.blink.dSizeThreshold,5, 9, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+if bitand(ETparams.blink.detectMode,uint8(1)) && isfield(data,'pupil') && isfield(data.pupil,'dsize')
+    [data.blink.peakDSizeThreshold, meanData, stdData] = ...
+        doOptimize(abs(data.pupil.dsize),ETparams.blink.dSizeThreshold,5, 9, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
 
-data.blink.onsetDSizeThreshold = meanData + 3*stdData;
+    data.blink.onsetDSizeThreshold = meanData + 3*stdData;
+end
 
 
 

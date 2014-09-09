@@ -22,10 +22,10 @@ localNoiseWindowSamples = ceil(ETparams.blink.localNoiseWindowLength./1000 * ETp
 % places in all traces, if not I must have introduced some bug somewhere.
 % Not that its important for the correct functioning of this function by
 % the way...
-checkNansSameForAllFields(data,'deg');
+velFieldsDeg = checkNansSameForAllFields(data,'deg');
 
 % check eye position in pixels as well (might only be position)
-checkNansSameForAllFields(data,'pix');
+velFieldsPix = checkNansSameForAllFields(data,'pix');
 % and check correspondence between degrees and pixels
 assert(~any(xor(isnan(data.deg.Azi),isnan(data.pix.X))),'NaNs not same in data.deg.Azi and data.pix.X');
 
@@ -50,116 +50,119 @@ if bitget(uint8(ETparams.blink.detectMode),uint8(2))
 end
 
 % find bounds of blinks (or tracker noise) as detected above, merge very
-% close ones for easier processing
+% close ones for easier processing, they'll merge anyway
 [blink.on,blink.off]    = bool2bounds(qBlink);
 blink                   = mergeIntervals(blink,[],blinkMergeWindowSamples);
 
-% Process one possible blink at a time, refine the bounds
-% first, do refine like we do for saccades, if we're using peaks in the
-% pupil size change trace.
-dPSize  = abs(data.pupil.dsize);
+% if we have pupil size data, use it to refine blink onsets and offsets
+if isfield(data.pupil,'dsize')
+    % Process one possible blink at a time, refine the bounds
+    % first, do refine like we do for saccades, if we're using peaks in the
+    % pupil size change trace.
+    dPSize  = abs(data.pupil.dsize);
 
-% make vector that will contain true where blinks are detected
-% this is used in some parts of the algorithm (e.g. offset velocity
-% threshold calculation) when it needs to analyze data that is not during
-% blinks or missing data.
-qBlinkOrNan   = isnan(dPSize);
+    % make vector that will contain true where blinks are detected
+    % this is used in some parts of the algorithm (e.g. offset velocity
+    % threshold calculation) when it needs to analyze data that is not during
+    % blinks or missing data.
+    qBlinkOrNan   = isnan(dPSize);
 
-%%% Process one peak at the time.
-% Keep a counter here of how many peaks we have processed already. We need
-% to use a while loop instead of a for-loop as the length of the saccade
-% vector will change as we delete from it
-kk = 1;
+    %%% Process one peak at the time.
+    % Keep a counter here of how many peaks we have processed already. We need
+    % to use a while loop instead of a for-loop as the length of the saccade
+    % vector will change as we delete from it
+    kk = 1;
 
-while kk <= length(blink.on)
-    
-    %----------------------------------------------------------------------  
-    % Check the saccade peak samples to eliminate noise
-    %----------------------------------------------------------------------
-    
-    % If the peak consists of <minPeakSamples consequtive samples, it it
-    % probably noise, delete it
-    if blink.off(kk)-blink.on(kk) < ETparams.blink.minPeakSamples
-        blink.on (kk) = [];
-        blink.off(kk) = [];
-        continue;
+    while kk <= length(blink.on)
+
+        %----------------------------------------------------------------------  
+        % Check the saccade peak samples to eliminate noise
+        %----------------------------------------------------------------------
+
+        % If the peak consists of <minPeakSamples consequtive samples, it it
+        % probably noise, delete it
+        if blink.off(kk)-blink.on(kk) < ETparams.blink.minPeakSamples
+            blink.on (kk) = [];
+            blink.off(kk) = [];
+            continue;
+        end
+
+        % Detect blink start. Walk back from detected blink start to find
+        % where the signal is below the onsetDSizeThreshold (mean+3*std)
+        % and where the signal change is negative (which indicates a local
+        % minimum in the signal).
+        i = blink.on(kk);
+        while i > 1 && ...                                          % make sure we don't run out of the data
+              (isnan(dPSize(i)) || ...                              % and that we ignore nan data
+               dPSize(i) > data.blink.onsetDSizeThreshold || ...    % keep searching until below onsetDSizeThreshold
+               diff(dPSize(i-[0:1])) < 0)                           % and signal change is negative
+            i = i-1;
+        end
+        blink.on(kk) = i;                                           % velocity minimum is last sample before "acceleration" sign change
+
+        % Calculate local noise during period before the blink start (the
+        % adaptive part), excluding data that is during known blink time or
+        % missing.
+        % This assumes the blink is preceded the same change in pupil size and
+        % noise level as after the blink - its the best we can do.
+        % starting from the already refined blink beginning we get
+        % localNoiseWindowSamples samples before the blink, or as many as we
+        % can get, that are not nan and not during blink.
+        idx = find(~qBlinkOrNan(1:blink.on(kk)-1),localNoiseWindowSamples,'last');
+        localVelNoise = dPSize(idx);
+        localVelThresh= mean(localVelNoise) + 3*std(localVelNoise);
+
+        % Check whether the local velocity threshold exceeds the peak velocity
+        % threshold
+        if ~isnan(localVelThresh) && localVelThresh < data.blink.peakDSizeThreshold
+            data.blink.offsetDSizeThreshold(kk) = localVelThresh*0.3 + data.blink.onsetDSizeThreshold*0.7; % 30% local + 70% global
+        else
+            data.blink.offsetDSizeThreshold(kk) = data.blink.onsetDSizeThreshold;
+        end
+
+        % Detect blink end. Walk forward from detected blink end to find
+        % where the signal is below the data.blink.offsetDSizeThreshold and
+        % where the signal change is positive (which indicates a local minimum
+        % in the signal)
+        i = blink.off(kk);
+        while i < length(dPSize) && ...                                 % make sure we don't run out of the data
+              (isnan(dPSize(i)) || ...                                  % and that we ignore nan data
+               dPSize(i) > data.blink.offsetDSizeThreshold(kk) || ...   % keep searching until below saccadeOffsetTreshold
+               diff(dPSize(i+[0:1])) < 0)                               % and signal change is positive
+            i = i+1;
+        end
+        blink.off(kk) = i;
+
+        % now, delete all the next blinks that are enclosed by this potential
+        % blink, i.e., delete any blink whose unrefined end is before
+        % the end of this blink as they would converge to the same blink
+        % interval. We do this now before the final checks below because if the
+        % current blink is deleted by the below checks, any later blink
+        % that will converge to the same interval would be deleted as well.
+        while kk+1<=length(blink.off) &&...                            % make sure we don't run out of the data
+              blink.off(kk+1) <= blink.off(kk)
+            blink.on (kk+1) = [];
+            blink.off(kk+1) = [];
+            continue;
+        end
+
+        % Make sure the blink duration exceeds the minimum duration or delete
+        % it
+        if blink.off(kk)-blink.on(kk)+1 < minBlinkSamples
+            blink.on (kk) = [];
+            blink.off(kk) = [];
+            continue;
+        end
+
+        %%%%
+        % Done. All the above criteria are fulfilled, we've got a blink.
+        %%%%
+        % flag it in the trace
+        qBlinkOrNan(blink.on(kk):blink.off(kk)) = true;
+
+        % increase counter, process next peak
+        kk = kk+1;
     end
-    
-    % Detect blink start. Walk back from detected blink start to find
-    % where the signal is below the onsetDSizeThreshold (mean+3*std)
-    % and where the signal change is negative (which indicates a local
-    % minimum in the signal).
-    i = blink.on(kk);
-    while i > 1 && ...                                          % make sure we don't run out of the data
-          (isnan(dPSize(i)) || ...                              % and that we ignore nan data
-           dPSize(i) > data.blink.onsetDSizeThreshold || ...    % keep searching until below onsetDSizeThreshold
-           diff(dPSize(i-[0:1])) < 0)                           % and signal change is negative
-        i = i-1;
-    end
-    blink.on(kk) = i;                                           % velocity minimum is last sample before "acceleration" sign change
-    
-    % Calculate local noise during period before the blink start (the
-    % adaptive part), excluding data that is during known blink time or
-    % missing.
-    % This assumes the blink is preceded the same change in pupil size and
-    % noise level as after the blink - its the best we can do.
-    % starting from the already refined blink beginning we get
-    % localNoiseWindowSamples samples before the blink, or as many as we
-    % can get, that are not nan and not during blink.
-    idx = find(~qBlinkOrNan(1:blink.on(kk)-1),localNoiseWindowSamples,'last');
-    localVelNoise = dPSize(idx);
-    localVelThresh= mean(localVelNoise) + 3*std(localVelNoise);
-        
-    % Check whether the local velocity threshold exceeds the peak velocity
-    % threshold
-    if ~isnan(localVelThresh) && localVelThresh < data.blink.peakDSizeThreshold
-        data.blink.offsetDSizeThreshold(kk) = localVelThresh*0.3 + data.blink.onsetDSizeThreshold*0.7; % 30% local + 70% global
-    else
-        data.blink.offsetDSizeThreshold(kk) = data.blink.onsetDSizeThreshold;
-    end
-    
-    % Detect blink end. Walk forward from detected blink end to find
-    % where the signal is below the data.blink.offsetDSizeThreshold and
-    % where the signal change is positive (which indicates a local minimum
-    % in the signal)
-    i = blink.off(kk);
-    while i < length(dPSize) && ...                                 % make sure we don't run out of the data
-          (isnan(dPSize(i)) || ...                                  % and that we ignore nan data
-           dPSize(i) > data.blink.offsetDSizeThreshold(kk) || ...   % keep searching until below saccadeOffsetTreshold
-           diff(dPSize(i+[0:1])) < 0)                               % and signal change is positive
-        i = i+1;
-    end
-    blink.off(kk) = i;
-    
-    % now, delete all the next blinks that are enclosed by this potential
-    % blink, i.e., delete any blink whose unrefined end is before
-    % the end of this blink as they would converge to the same blink
-    % interval. We do this now before the final checks below because if the
-    % current blink is deleted by the below checks, any later blink
-    % that will converge to the same interval would be deleted as well.
-    while kk+1<=length(blink.off) &&...                            % make sure we don't run out of the data
-          blink.off(kk+1) <= blink.off(kk)
-        blink.on (kk+1) = [];
-        blink.off(kk+1) = [];
-        continue;
-    end
-        
-    % Make sure the blink duration exceeds the minimum duration or delete
-    % it
-    if blink.off(kk)-blink.on(kk)+1 < minBlinkSamples
-        blink.on (kk) = [];
-        blink.off(kk) = [];
-        continue;
-    end
-    
-    %%%%
-    % Done. All the above criteria are fulfilled, we've got a blink.
-    %%%%
-    % flag it in the trace
-    qBlinkOrNan(blink.on(kk):blink.off(kk)) = true;
-    
-    % increase counter, process next peak
-    kk = kk+1;
 end
 
 % Then, attempt to further refine blinks by noting that many of these
@@ -197,12 +200,14 @@ blink       = mergeIntervals(blink, [], blinkMergeWindowSamples);
 % proportion of positive change in pupil size as a function of total
 % non-zero changes in pupil size. if close to 0 or close to 1, skip
 % this
-for p = length(blink.on):-1:1
-    propPos = sum(data.pupil.dsize(blink.on(p):blink.off(p))>0) / sum(data.pupil.dsize(blink.on(p):blink.off(p))~=0);
-    if propPos<.05 || propPos>.95
-        blink.on (p) = [];
-        blink.off(p) = [];
-        continue;
+if isfield(data.pupil,'dsize')
+    for p = length(blink.on):-1:1
+        propPos = sum(data.pupil.dsize(blink.on(p):blink.off(p))>0) / sum(data.pupil.dsize(blink.on(p):blink.off(p))~=0);
+        if propPos<.05 || propPos>.95
+            blink.on (p) = [];
+            blink.off(p) = [];
+            continue;
+        end
     end
 end
 
@@ -232,6 +237,7 @@ end
 data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 
 % replace by linear interpolation or with nan if wanted
+nNaN = sum(isnan(data.deg.vel));
 if ETparams.blink.qReplaceWithInterp
     % adjust indices, blink.on(p) and blink.off(p) point to first and last
     % samples of a blink
@@ -274,6 +280,7 @@ if ETparams.blink.qReplaceWithInterp
     % lastly, notify how much blinks
     nBlink = sum(bllen)-2*length(blon); % don't forget to remove those two extra samples we added above
     fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
+    
 elseif ETparams.blink.qReplaceVelWithNan
     % create boolean matrix given blink bounds
     qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
@@ -289,13 +296,15 @@ elseif ETparams.blink.qReplaceVelWithNan
         data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
     end
     
-    % lastly, notify if more than 20% nan
-    if sum(isnan(data.deg.vel))/length(data.deg.vel) > 0.20
-        fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',sum(isnan(data.deg.vel))/length(data.deg.vel)*100);
-        data.qNoiseTrial = true;
-    else
-        data.qNoiseTrial = false;
-    end
+    nBlink = sum(blink.off-blink.on);
+end
+    
+% lastly, notify if more than 20% nan
+if (nBlink+nNaN)/length(data.deg.vel) > 0.20
+    fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',(nBlink+nNaN)/length(data.deg.vel)*100);
+    data.qNoiseTrial = true;
+else
+    data.qNoiseTrial = false;
 end
 
 

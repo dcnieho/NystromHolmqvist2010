@@ -1,4 +1,4 @@
-function data = prepareData(x,y,pupilsize,ETparams)
+function [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams)
 % prepares data for the rest of the algorithm. Moves origin, flip data,
 % converts to Fick angles in degree, things like that.
 %
@@ -75,3 +75,10 @@ data.pix.Y      = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 % finally, convert gaze position in pixels to Fick angles in degree
 [data.deg.Azi, data.deg.Ele] = pix2fick(data.pix.X,data.pix.Y,ETparams);
+
+%%%% params
+if isempty(data.pupil.size)
+    % make sure detecting blinks by pupil size is not requested if we don't
+    % have pupil size data
+    ETparams.blink.detectMode = ETparams.blink.detectMode - bitand(ETparams.blink.detectMode,uint8(1));
+end

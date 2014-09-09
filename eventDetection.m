@@ -1,4 +1,4 @@
-function data = eventDetection(x,y,pupilsize,ETparams)
+function [data,ETparams] = eventDetection(x,y,pupilsize,ETparams)
 %--------------------------------------------------------------------------
 % README
 %
@@ -20,9 +20,9 @@ function data = eventDetection(x,y,pupilsize,ETparams)
 % You'll have to implement nanmedian and nanstd yourself following this
 % nanmean as an example
 
-% Prepare data (move origin, things like that)
+% Prepare data and params (move origin, things like that)
 %-------------------------------------
-data = prepareData(x,y,pupilsize,ETparams);
+[data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams);
 
 % Calculate velocity and acceleration
 %-------------------------------------
