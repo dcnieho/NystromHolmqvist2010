@@ -193,7 +193,7 @@ else
     % 45° elevation
     % No idea what scaling to apply for acceleration, figure that out some
     % time...
-    data.deg.vel    = sqrt(tempV(:,1).^2.*cosd(tempV(:,2)) + tempV(:,2).^2);
+    data.deg.vel    = sqrt(tempV(:,1).^2.*cosd(data.deg.Ele) + tempV(:,2).^2);
     data.deg.acc    = hypot(tempA(:,1), tempA(:,2));
 end
 
