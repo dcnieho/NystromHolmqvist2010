@@ -144,7 +144,7 @@ switch bitand(cutPostrace,uint8(4+8+16))
                 on  = sac.on (p);
                 off = sac.off(p);
                 
-                velX(on:off) = diff(X(on:off+1)) * ETparams.samplingFreq;
+                velX(on:off) = diff(X(on:off+1)) * ETparams.samplingFreq;   % TODO: change to using conv with [1 0 -1]
                 velY(on:off) = diff(Y(on:off+1)) * ETparams.samplingFreq;
                 
                 vel(on:off)  = hypot(velX(on:off),velY(on:off));
