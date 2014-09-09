@@ -45,7 +45,7 @@ end
 
 % also do change of pupil size for blink detection
 [data.blink.peakDSizeThreshold, meanData, stdData] = ...
-    doOptimize(abs(data.pupil.dsize),ETparams.blink.dSizeThreshold,5, 8, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
+    doOptimize(abs(data.pupil.dsize),ETparams.blink.dSizeThreshold,5, 9, minFixSamples, centralFixSamples, nargin==2||qusecentralsample);
 
 data.blink.onsetDSizeThreshold = meanData + 3*stdData;
 

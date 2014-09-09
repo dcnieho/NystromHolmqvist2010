@@ -19,183 +19,268 @@ function data = detectAndRemoveBlinks(data,ETparams)
 % prepare parameters
 % if blink is followed by another blink by less than mergeWindow (in ms),
 % they'll be merged
-blinkMergeWindowSamples = ceil(ETparams.blink.mergeWindow./1000 * ETparams.samplingFreq);
+blinkMergeWindowSamples = ceil(ETparams.blink.mergeWindow           ./1000 * ETparams.samplingFreq);
+minBlinkSamples         = ceil(ETparams.blink.minDur                ./1000 * ETparams.samplingFreq);
+localNoiseWindowSamples = ceil(ETparams.blink.localNoiseWindowLength./1000 * ETparams.samplingFreq);
 
 
 % First a sanity data integrity check: check NaN positions are in the same
 % places in all traces, if not I must have introduced some bug somewhere.
 % Not that its important for the correct functioning of this function by
 % the way...
-velFieldsDeg = checkNansSameForAllFields(data,'deg');
+checkNansSameForAllFields(data,'deg');
 
-% if we have smoothed eye position in pixels and its derivatives, check as
-% well
-if ETparams.data.qAlsoStoreandDiffPixels
-    velFieldsPix = checkNansSameForAllFields(data,'pix');
-    % and check correspondence between degrees and pixels
-    assert(~any(xor(isnan(data.deg.vel),isnan(data.pix.vel))),'NaNs not same in data.deg.vel and data.pix.vel');
+% check eye position in pixels as well (might only be position)
+checkNansSameForAllFields(data,'pix');
+% and check correspondence between degrees and pixels
+assert(~any(xor(isnan(data.deg.Azi),isnan(data.pix.X))),'NaNs not same in data.deg.Azi and data.pix.X');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% first get potential blinks, by samples above threshold and/or by
+% detecting unphysiological eye movements
+
+qBlink = false(size(data.deg.vel));
+
+% detect episodes above threshold in pupil size change trace
+if bitget(uint8(ETparams.blink.detectMode),uint8(1))
+    qBlink = qBlink | ...
+             abs(data.pupil.dsize) > data.blink.peakDSizeThreshold;
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Method 1: unphysiological eye movements
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Detect possible blinks, episodes where the eyes move too fast too be
 % physiologically possible
-qBlink = data.deg.vel > ETparams.blink.velocityThreshold |...
-         data.deg.acc > ETparams.blink.accThreshold;
-
-% find bounds of blinks (or tracker noise) as detected above
-[blinkon,blinkoff]      = bool2bounds(qBlink);
-
-% Process one possible blink at a time, refine the bounds
-% These unphysiological movements should already have been detected as
-% saccades (they have very large velocity!). So use detected saccade on-
-% and offsets as blink on- and offsets.
-sacon  = data.saccade.on;
-sacoff = data.saccade.off;
-qIsBlink = false(size(sacon));
-for p = 1:length(blinkon)
-    qEnclosed = sacon<=blinkon(p) & sacoff>=blinkoff(p);
-    
-    if any(qEnclosed)
-        assert(sum(qEnclosed)==1)  % anything else would be ridiculous at this stage as no overlapping saccades should exist!
-        blinkon (p) = sacon (qEnclosed);
-        blinkoff(p) = sacoff(qEnclosed);
-        
-        % mark saccade as blink
-        qIsBlink(qEnclosed) = true;
-    else
-        % all blinks should have been detected as saccades in the previous
-        % steps
-        warning('There is unphysiological movement in this trial that was not detected as a saccade. This might not have been dealt with properly although I''ll attempt. See sample %d, time %.1f ms',blinkon(p),blinkon(p)*1000/ETparams.samplingFreq);
-        
-        % see if eye position somehow plateaud during blink and thats
-        % causing this trouble
-        if nanmean(data.deg.Ele(blinkon(p):blinkoff(p)))> 10    % eye position more than 10 degrees off where it should be (again this is just for our horizontal tracking expt!!)
-            % take previous and next saccade and take that as blink
-            % interval
-            previousSaccade = sacoff-blinkon(p);
-            previousSaccadeidx = sum(previousSaccade<0);
-            nextSaccade     = sacon-blinkoff(p);
-            nextSaccadeidx  = sum(nextSaccade<0)+1;
-            
-            assert(previousSaccadeidx+1==nextSaccadeidx,'Couldn''t deal with potential blink...');
-            
-            blinkon (p) = sacon (previousSaccadeidx);
-            blinkoff(p) = sacoff(    nextSaccadeidx);
-            
-            % mark saccades as blink
-            qIsBlink([previousSaccadeidx nextSaccadeidx]) = true;
-        else
-            error('Couldn''t deal with potential blink...')
-        end
-    end
-    
-    if 0
-        % debug, plot interval detected as blink
-        figure(200),clf
-        plot(data.deg.Ele(blinkon(p):blinkoff(p)))
-        title(sprintf('blink %d',p))
-        pause
-    end
+if bitget(uint8(ETparams.blink.detectMode),uint8(2))
+    qBlink = qBlink | ...
+             data.deg.vel > ETparams.blink.velocityThreshold |...
+             data.deg.acc > ETparams.blink.accThreshold;
 end
 
-% multiple unphysiological segments might be enclosed by same saccade, in
-% which case the same blink is detected multiple times. Remove duplicated
-[~,idx]     = unique(blinkon);
-blinkon     = blinkon (idx);
-blinkoff    = blinkoff(idx);
-% merge overlapping, this only happens when we dealt with trouble above....
-% hack hacks need to be cleaned up
-blink       = mergeIntervals(struct('on',blinkon,'off',blinkoff),[],0);
-blinkon     = blink.on;
-blinkoff    = blink.off;
-% sanity checks
-assert(all(blinkoff>blinkon) && all(blinkoff(1:end-1)<blinkon(2:end)))
+% find bounds of blinks (or tracker noise) as detected above, merge very
+% close ones for easier processing
+[blink.on,blink.off]    = bool2bounds(qBlink);
+blink                   = mergeIntervals(blink,[],blinkMergeWindowSamples);
 
+% Process one possible blink at a time, refine the bounds
+% first, do refine like we do for saccades, if we're using peaks in the
+% pupil size change trace.
+dPSize  = abs(data.pupil.dsize);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Method 2: downward peak-like structures in the vertical/elevation
-%           position trace
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% each saccade should be a roughly monotonic position shift. If instead the
-% eye ends up back where it started vertically (at least w.r.t. its maximum
-% downward position during the saccade, we're dealing with another class of
-% un-physiological movement that indicates a blink-like eye recording
-% wobble (apparently during blink-like eye movements the Eyelink doesn't
-% always emit missing samples!)
-for p = 1:length(sacon)
-    if qIsBlink(p)
-        % already flagged as blink, skip
+% make vector that will contain true where blinks are detected
+% this is used in some parts of the algorithm (e.g. offset velocity
+% threshold calculation) when it needs to analyze data that is not during
+% blinks or missing data.
+qBlinkOrNan   = isnan(dPSize);
+
+%%% Process one peak at the time.
+% Keep a counter here of how many peaks we have processed already. We need
+% to use a while loop instead of a for-loop as the length of the saccade
+% vector will change as we delete from it
+kk = 1;
+
+while kk <= length(blink.on)
+    
+    %----------------------------------------------------------------------  
+    % Check the saccade peak samples to eliminate noise
+    %----------------------------------------------------------------------
+    
+    % If the peak consists of <minPeakSamples consequtive samples, it it
+    % probably noise, delete it
+    if blink.off(kk)-blink.on(kk) < ETparams.blink.minPeakSamples
+        blink.on (kk) = [];
+        blink.off(kk) = [];
         continue;
     end
     
-    % get vertical eye position during saccade
-    eye_pos = data.deg.Ele(sacon(p):sacoff(p));
+    % Detect blink start. Walk back from detected blink start to find
+    % where the signal is below the onsetDSizeThreshold (mean+3*std)
+    % and where the signal change is negative (which indicates a local
+    % minimum in the signal).
+    i = blink.on(kk);
+    while i > 1 && ...                                          % make sure we don't run out of the data
+          (isnan(dPSize(i)) || ...                              % and that we ignore nan data
+           dPSize(i) > data.blink.onsetDSizeThreshold || ...    % keep searching until below onsetDSizeThreshold
+           diff(dPSize(i-[0:1])) < 0)                           % and signal change is negative
+        i = i-1;
+    end
+    blink.on(kk) = i;                                           % velocity minimum is last sample before "acceleration" sign change
     
-    % subtract position at begin so we have relative positions during
-    % saccade
-    eye_pos = eye_pos - eye_pos(1);
+    % Calculate local noise during period before the blink start (the
+    % adaptive part), excluding data that is during known blink time or
+    % missing.
+    % This assumes the blink is preceded the same change in pupil size and
+    % noise level as after the blink - its the best we can do.
+    % starting from the already refined blink beginning we get
+    % localNoiseWindowSamples samples before the blink, or as many as we
+    % can get, that are not nan and not during blink.
+    idx = find(~qBlinkOrNan(1:blink.on(kk)-1),localNoiseWindowSamples,'last');
+    localVelNoise = dPSize(idx);
+    localVelThresh= mean(localVelNoise) + 3*std(localVelNoise);
+        
+    % Check whether the local velocity threshold exceeds the peak velocity
+    % threshold
+    if ~isnan(localVelThresh) && localVelThresh < data.blink.peakDSizeThreshold
+        data.blink.offsetDSizeThreshold(kk) = localVelThresh*0.3 + data.blink.onsetDSizeThreshold*0.7; % 30% local + 70% global
+    else
+        data.blink.offsetDSizeThreshold(kk) = data.blink.onsetDSizeThreshold;
+    end
+    
+    % Detect blink end. Walk forward from detected blink end to find
+    % where the signal is below the data.blink.offsetDSizeThreshold and
+    % where the signal change is positive (which indicates a local minimum
+    % in the signal)
+    i = blink.off(kk);
+    while i < length(dPSize) && ...                                 % make sure we don't run out of the data
+          (isnan(dPSize(i)) || ...                                  % and that we ignore nan data
+           dPSize(i) > data.blink.offsetDSizeThreshold(kk) || ...   % keep searching until below saccadeOffsetTreshold
+           diff(dPSize(i+[0:1])) < 0)                               % and signal change is positive
+        i = i+1;
+    end
+    blink.off(kk) = i;
+    
+    % now, delete all the next blinks that are enclosed by this potential
+    % blink, i.e., delete any blink whose unrefined end is before
+    % the end of this blink as they would converge to the same blink
+    % interval. We do this now before the final checks below because if the
+    % current blink is deleted by the below checks, any later blink
+    % that will converge to the same interval would be deleted as well.
+    while kk+1<=length(blink.off) &&...                            % make sure we don't run out of the data
+          blink.off(kk+1) <= blink.off(kk)
+        blink.on (kk+1) = [];
+        blink.off(kk+1) = [];
+        continue;
+    end
+        
+    % Make sure the blink duration exceeds the minimum duration or delete
+    % it
+    if blink.off(kk)-blink.on(kk)+1 < minBlinkSamples
+        blink.on (kk) = [];
+        blink.off(kk) = [];
+        continue;
+    end
+    
+    %%%%
+    % Done. All the above criteria are fulfilled, we've got a blink.
+    %%%%
+    % flag it in the trace
+    qBlinkOrNan(blink.on(kk):blink.off(kk)) = true;
+    
+    % increase counter, process next peak
+    kk = kk+1;
+end
 
-    % get max amplitude downward vertical position (downward is positive)
-    eye_max = max(eye_pos);
+% Then, attempt to further refine blinks by noting that many of these
+% unphysiological eye movements have already been detected as saccades
+% (they usually have very large velocity!). So use detected saccade on- and
+% offsets as blink on- and offsets if the first saccade onset is earlier or
+% the last offset later (crap in velocity trace is sometimes a bit more
+% spread out)
+sacon  = data.saccade.on;
+sacoff = data.saccade.off;
+for p = 1:length(blink.on)
+    % any saccade on/off during blink interval, or is blink interval enclosed by saccade on off?
+    qSac = (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
     
-    % get amplitude at end
-    eye_end = mean(eye_pos(find(~isnan(eye_pos),10,'last')));
-    
-    % if:
-    % 1. saccade is downward
-    % 2. it is downward by at least 5 degrees
-    % 3. final amplitude is less than 40% of max amplitude (the eye apparently turned around)
-    % -> We're dealing with a blink. Yes, thats rather arbitrary, but it
-    %    did a good job for the data I was analyzing. You might want to do
-    %    something else for another experiment (or another eye tracker!).
-    if nanmean(eye_pos)>0 && ...    % 1
-            eye_max > 5 && ...      % 2
-            eye_end < eye_max*.4    % 3
-        
-        % add info about blink
-        blinkon  = [blinkon  sacon(p) ];
-        blinkoff = [blinkoff sacoff(p)];
-        % mark saccade as blink
-        qIsBlink(p) = true;
-        
-        if 0
-            % debug, plot interval detected as blink
-            figure(200),clf
-            plot(eye_pos)
-            title(sprintf('saccade %d',p))
-            pause
-        end
+    blink.on (p) = min(blink.on(p) , minOrInf(sacon (qSac)));
+    % for offsets, see if saccades have any glissades attached
+    qGliss       = ismember(data.glissade.on,data.saccade.off(qSac));
+    offs         = [sacoff(qSac) data.glissade.off(qGliss)];
+    blink.off(p) = max(blink.off(p), maxOrNInf(offs));
+end
+
+% multiple unphysiological segments might be enclosed by same saccade, or
+% otherwise get refined to same onsets/offsets, in which case the same
+% blink is detected multiple times. Remove duplicated
+[~,idx]     = unique(blink.on);
+blink.on    = blink.on (idx);
+blink.off   = blink.off(idx);
+
+% merge very close blinks.
+blink       = mergeIntervals(blink, [], blinkMergeWindowSamples);
+
+% Make sure pupil size trace shows a peak. If fast unidirectional
+% change, we caught something else accidentally, such as a temporarily
+% drooping eyelid, or an actual sudden change in pupil size. Check
+% proportion of positive change in pupil size as a function of total
+% non-zero changes in pupil size. if close to 0 or close to 1, skip
+% this
+for p = length(blink.on):-1:1
+    propPos = sum(data.pupil.dsize(blink.on(p):blink.off(p))>0) / sum(data.pupil.dsize(blink.on(p):blink.off(p))~=0);
+    if propPos<.05 || propPos>.95
+        blink.on (p) = [];
+        blink.off(p) = [];
+        continue;
     end
 end
 
+% sanity check
+assert(all(blink.off>blink.on) && all(blink.off(1:end-1)<blink.on(2:end)))
+
 % build information about blinks
-[blinkon,idx]   = sort(blinkon);
-data.blink.on   = blinkon;
-data.blink.off  = blinkoff(idx);
+[blink.on,idx]  = sort(blink.on);
+data.blink.on   = blink.on;
+data.blink.off  = blink.off(idx);
 
 % now remove saccades that were flagged as blink
+% any saccade on/off during blink interval, or is blink interval enclosed
+% by saccade on off?
+qIsBlink = false(size(sacon));
+for p=1:length(blink.on)
+    qIsBlink = qIsBlink | (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
+end
+
 % first remove their corresponding glissades, if any
 if ETparams.glissade.qDetect
     qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
-    % ok, some glissades need to be taken into account when determining
-    % blink ends
-    qGlisBlinks     = ismember(data.blink.off,data.glissade.on(qRemoveGlissade));
-    % correct blink ends for glissade ends
-    data.blink.off(qGlisBlinks) = data.glissade.off(qRemoveGlissade);
-    % and now remove these glissades
     data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
 end
 
 % then deal with the saccades
 data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 
-% merge very close blinks.
-data.blink      = mergeIntervals(data.blink, [], blinkMergeWindowSamples);
+% replace by linear interpolation or with nan if wanted
+if ETparams.blink.qReplaceWithInterp
+    % adjust indices, blink.on(p) and blink.off(p) point to first and last
+    % samples of a blink
+    blon  = blink.on-1;  blon (blon <1                   ) = 1;
+    bloff = blink.off+1; bloff(bloff>length(data.deg.Azi)) = length(data.deg.Azi);
+    bllen = bloff-blon+1;
+    
+    for p=1:length(blon)
+        % position
+        data.deg.Azi(blon(p):bloff(p)) = linspace(data.deg.Azi(blon(p)), data.deg.Azi(bloff(p)), bllen(p));
+        data.deg.Ele(blon(p):bloff(p)) = linspace(data.deg.Ele(blon(p)), data.deg.Ele(bloff(p)), bllen(p));
+        data.pix.X  (blon(p):bloff(p)) = linspace(data.pix.X  (blon(p)), data.pix.X  (bloff(p)), bllen(p));
+        data.pix.Y  (blon(p):bloff(p)) = linspace(data.pix.Y  (blon(p)), data.pix.Y  (bloff(p)), bllen(p));
+    
+        % velocity
+        [data.deg.vel,data.deg.velAzi,data.deg.velEle] = ...
+            replaceIntervalVelocity(data.deg.vel,data.deg.velAzi,data.deg.velEle,data.deg.Ele,...
+                                    true,blon(p),bloff(p));
+        if isfield(data.pix,'velX')
+            [data.pix.vel,data.pix.velX,data.pix.velY] = ...
+                replaceIntervalVelocity(data.pix.vel,data.pix.velX,data.pix.velY,[],...
+                                        false,blon(p),bloff(p));
+        elseif isfield(data.pix,'vel')
+            data.pix.vel(blon(p):bloff(p)) = linspace(data.pix.vel(blon(p)), data.pix.vel(bloff(p)), bllen(p));
+        end
 
-% replace with nan if wanted
-if ETparams.blink.qReplaceVelWithNan
+        % acceleration (abuse replaceintervalVel, keep qDeg input always fals so simple hypot() is used for 2D acc)
+        [data.deg.acc,data.deg.accAzi,data.deg.accEle] = ...
+            replaceIntervalVelocity(data.deg.acc,data.deg.accAzi,data.deg.accEle,[],...
+                                    false,blon(p),bloff(p));
+        if isfield(data.pix,'accX')
+            [data.pix.acc,data.pix.accX,data.pix.accY] = ...
+                replaceIntervalVelocity(data.pix.acc,data.pix.accX,data.pix.accY,[],...
+                                        false,blon(p),bloff(p));
+        elseif isfield(data.pix,'acc')
+            data.pix.acc(blon(p):bloff(p)) = linspace(data.pix.acc(blon(p)), data.pix.acc(bloff(p)), bllen(p));
+        end
+    end
+    
+    % lastly, notify how much blinks
+    nBlink = sum(bllen)-2*length(blon); % don't forget to remove those two extra samples we added above
+    fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
+elseif ETparams.blink.qReplaceVelWithNan
     % create boolean matrix given blink bounds
     qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
     
@@ -242,4 +327,18 @@ end
 posFields  = fn(~(qVelFields | qAccFields));
 for p=1:length(posFields)-1
     assert(~any(xor(isnan(data.(datatype).(posFields{p})),isnan(data.(datatype).(posFields{p+1})))),'NaNs not same in data.%1$s.%2$s and data.%1$s.%3$s',datatype,posFields{p},posFields{p+1});
+end
+
+function out = minOrInf(in)
+if isempty(in)
+    out = inf;
+else
+    out = min(in(:));
+end
+
+function out = maxOrNInf(in)
+if isempty(in)
+    out = -inf;
+else
+    out = max(in(:));
 end

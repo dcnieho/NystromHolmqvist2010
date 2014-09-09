@@ -49,7 +49,7 @@ data = detectSaccadesAndGlissades(data,ETparams);
 % we might also remove saccades that occured right
 % after a blink)
 %-------------------------------------
-if ETparams.blink.qDetect
+if ETparams.blink.detectMode
     data = detectAndRemoveBlinks(data,ETparams);
 end
 
