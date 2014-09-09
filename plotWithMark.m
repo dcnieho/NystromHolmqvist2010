@@ -1,4 +1,4 @@
-function plotWithMark(xdata,ydata,xlbl,ylbl,titel,varargin)
+function plotWithMark(xdata,ydata,addInps,xlbl,ylbl,titel,varargin)
 
 % makes and x-y plot with specified axis lalbels and title in the current
 % axes. Optionally plots markers, specified by the varargin plot
@@ -13,12 +13,15 @@ function plotWithMark(xdata,ydata,xlbl,ylbl,titel,varargin)
 %
 % are thus all valid calls.
 
-narginchk(5, inf);
+narginchk(6, inf);
 % length of varargin must be even as marker inputs come in pairs
 assert(mod(length(varargin),2)==0,'Number of inputs related to markers must be even as they come in pairs, got %d inputs related to markers',nargin-5);
+if isempty(addInps)
+    addInps = {'k-'};
+end
 
 % plot trace
-plot(xdata,ydata,'k-','LineWidth',1);
+plot(xdata,ydata,addInps{:},'LineWidth',1);
 if ~isempty(xlbl)
     xlabel(xlbl);
 end

@@ -72,7 +72,7 @@ else
     ylbl = ['Vertical (' unit ')'];
 end
 plbl = 'pupil size';
-pvlbl= '{\delta} pupil size';
+pvlbl= 'abs({\delta} pupil size)';
 vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
@@ -242,15 +242,17 @@ end
 ax = axes('position',xplotPos);
 hold on;
 if qReconstructPos
-    plot(time,xdata,'g');
+    plot(time,xdata,'k');
     pdat = xdatcut;
+    style = {'g-'};
 else
     pdat = xdata;
+    style = {'k-'};
 end
 if qHaveSaccadic
     plot(time,xSac,'c');
 end
-plotWithMark(time,pdat,...                                              % data (y,x)
+plotWithMark(time,pdat,style,...                                        % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              fixMarks{:}, ...                                           % fixation markers (if any)
@@ -264,15 +266,17 @@ axis ij
 ay = axes('position',yplotPos);
 hold on;
 if qReconstructPos
-    plot(time,ydata,'g');
+    plot(time,ydata,'k');
     pdat = ydatcut;
+    style = {'g-'};
 else
     pdat = ydata;
+    style = {'k-'};
 end
 if qHaveSaccadic
     plot(time,ySac,'c');
 end
-plotWithMark(time,pdat,...                                              % data (y,x)
+plotWithMark(time,pdat,style,...                                        % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              fixMarks{:}, ...                                           % fixation markers (if any)
@@ -286,27 +290,33 @@ axis ij
 if isfield(data,'pupil') && ~isempty(data.pupil.size)
     % size
     ap = axes('position',pplotPos);
-    plotWithMark(time,data.pupil.size,...                               % data (y,x)
+    plotWithMark(time,data.pupil.size,{'k-'},...                        % data (y,x), style
                  'time (ms) - blinks',plbl,'',...                       % x-axis label, y-axis label, axis title
                  missFlag{:}, ...                                       % color part of trace that is missing
                  blinkMarks{:} ...                                      % blink markers (if any)
                 );
     axis([mmt(1) mmt(2) min(data.pupil.size) max(data.pupil.size)]);
     % change of size
+    pvdat = abs(data.pupil.dsize);
     apv= axes('position',pplotPos);
-    plotWithMark(time,data.pupil.dsize,...                              % data (y,x)
+    % line at 0
+    plot([time(1) time(end)],[0 0],'b');
+    hold on;
+    plotWithMark(time,pvdat,{'k-'},...                                  % data (y,x), style
                  'time (ms) - blinks',pvlbl,'',...                      % x-axis label, y-axis label, axis title
                  missFlag{:}, ...                                       % color part of trace that is missing
                  blinkMarks{:} ...                                      % blink markers (if any)
                 );
-    axis([mmt(1) mmt(2) min(data.pupil.dsize) max(data.pupil.dsize)]);
+    axis([mmt(1) mmt(2) 0 max(pvdat)]);
     if isfield(data.blink,'peakDSizeThreshold')
         % plot pupil size change thresholds for blink detection
         hold on;
         plot(mmt, [1 1]*data.blink.peakDSizeThreshold,'r--')
-        plot(mmt,-[1 1]*data.blink.peakDSizeThreshold,'r--')
         plot(mmt, [1 1]*data.blink.onsetDSizeThreshold,'r:')
-        plot(mmt,-[1 1]*data.blink.onsetDSizeThreshold,'r:')
+        for p=1:length(data.blink.off)
+            plot(time([data.blink.off(p) min(glissadeSearchSamples+data.blink.off(p),end)]), [1 1]*data.blink.offsetDSizeThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+        end
+        hold off;
     end
     % at start size, not dsize, is visible
     set([apv; allchild(apv)],'visible','off');
@@ -329,11 +339,11 @@ av = axes('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
-plot(time,vel,'g');
+plot(time,vel,'k');
 if qHaveSaccadic
     plot(time,velSac,'c');
 end
-plotWithMark(time,velcut,...                                            % data (y,x)
+plotWithMark(time,velcut,{'g-'},...                                     % data (y,x), style
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
@@ -369,7 +379,7 @@ if qSaccadeTemplate
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,data.deg.velXCorr,...                                 % data (y,x)
+    plotWithMark(time,data.deg.velXCorr,{'k-'},...                          % data (y,x), style
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -398,11 +408,15 @@ linkaxes([ax ay ap apv av ac],'x');
 %%% plot scanpath of raw data and of data with saccades cut out
 if qReconstructPos
     asf = axes('position',cutplotPos);
+    if qHaveSaccadic
+        plot(xSac,ySac,'c');
+        hold on;
+    end
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
     end
-    plotWithMark(xdatcut,ydatcut,...                                                    % data (y,x)
+    plotWithMark(xdatcut,ydatcut,{'g-'},...                                             % data (y,x), style
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
                  length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
@@ -418,7 +432,7 @@ if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on
 end
-plotWithMark(xdata,ydata,...                                                        % data (y,x)
+plotWithMark(xdata,ydata,{'k-'},...                                                 %  data (y,x), style
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
              length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint

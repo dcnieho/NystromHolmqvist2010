@@ -170,7 +170,7 @@ end
 
 %%% plot X trace with fixation markers
 ax = subplot('position',xplotPos);
-plotWithMark(time,xdata,...                                             % data (y,x)
+plotWithMark(time,xdata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              fixmarks{:} ...                                            % fixation markers (if any)
             );
@@ -180,7 +180,7 @@ axis ij
 
 %%% plot Y trace with fixation markers
 ay = subplot('position',yplotPos);
-plotWithMark(time,ydata,...                                             % data (y,x)
+plotWithMark(time,ydata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              fixmarks{:}, ...                                           % fixation markers (if any)
              blinkMarks{:} ...                                          % blink markers (if any)
@@ -194,7 +194,7 @@ av = subplot('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
-plotWithMark(time,vel,...                                               % data (y,x)
+plotWithMark(time,vel,{'k-'},...                                        % data (y,x), style
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
              sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -229,7 +229,7 @@ if qSaccadeTemplate
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,data.deg.velXCorr,...                                 % data (y,x)
+    plotWithMark(time,data.deg.velXCorr,{'k-'},...                          % data (y,x), style
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -262,7 +262,7 @@ if qHaveFixations
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
     end
-    plotWithMark(xfixpos,yfixpos,...                                                    % data (y,x)
+    plotWithMark(xfixpos,yfixpos,{'k-'},...                                             % data (y,x), style
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  [1:length(xfixpos)],{'go','MarkerFaceColor','g'   ,'MarkerSize',4},... % mark each fixation (that is marker on each datapoint we feed it
                  1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % make first fixation marker blue
@@ -279,7 +279,7 @@ if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     hold on
 end
-plotWithMark(xdata,ydata,...                                                        % data (y,x)
+plotWithMark(xdata,ydata,{'k-'},...                                                 % data (y,x), style
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'bo','MarkerFaceColor','blue','MarkerSize',4},... % use blue marker for first datapoint
              length(xdata),      {'ro','MarkerFaceColor','red' ,'MarkerSize',4} ... % use red  marker for last  datapoint
