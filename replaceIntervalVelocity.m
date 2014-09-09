@@ -1,4 +1,4 @@
-function [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,on,off,val)
+function [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,Y,qDeg,on,off,val)
 % Linearly interpolate velocity between on and off
 % on and off are sample numbers (data indices) of beginning and end of
 % interval to be replaced by linear interpolation between begin and end, or
@@ -6,7 +6,7 @@ function [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,on,off,val)
 
 npoint = off-on+1;
 
-if nargin>5
+if nargin>7
     % components: replace with constant velocity
     velX(on:off) = val;
     velY(on:off) = val;
@@ -20,5 +20,9 @@ else
     % with a bicubic spline. Thats fine, good even as no edges are introduced
     % into the data, as we care most about the component velocities in the
     % situations I can think of.
-    vel(on:off)  = hypot(velX(on:off),velY(on:off));
+    if qDeg
+        vel(on:off)  = sqrt(velX(on:off).^2.*cosd(Y(on:off)) + velY(on:off).^2);
+    else
+        vel(on:off)  = hypot(velX(on:off),velY(on:off));
+    end
 end
