@@ -1,19 +1,13 @@
 function data = detectAndRemoveBlinks(data,ETparams)
 % Detects blinks and other un-physiological eye movements. They are
-% replaced with nan
+% replaced with nan or linear interpolation. Also detects some wobbly data
+% as evidenced by noise in the pupil size data (almost always associated
+% with noise in eye position, and especially velocity, data
 % 
-% Blinks are detect in one of two ways.
-% 1. Velocity or acceleration trace shows speeds above what is
+% Possible blinks are detect in one of two ways.
+% 1. Based on peaks in change of pupil size velocity trace.
+% 2. Velocity or acceleration trace shows speeds above what is
 %    physiologically possible.
-% 2. With the Eyelink, blinks are usually evident as high-amplitude
-%    downward excursions of recorded gaze position, usually accompanied
-%    with outlier speeds. Furthermore, these have an impossible downward
-%    peak-like shape in the position trace.
-%
-% All of this code is kind of a kludge that happens to work for our
-% dataset. Redo properly once.... If you don't care about accurate saccade
-% counts, you can just comment out the call to this function, blinks are
-% detected as saccades anyway
 
 
 % prepare parameters

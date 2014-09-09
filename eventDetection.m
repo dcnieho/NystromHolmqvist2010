@@ -45,6 +45,10 @@ data = estimateThresholds(data,ETparams);
 data = detectSaccadesAndGlissades(data,ETparams);
 
 % Detect and remove blinks
+% Also detects some noisy bits of data as evidenced
+% by wobbly pupil size trace. Thats ok, err on save
+% side here, make sure we don't miss any even small
+% eyelid droops, and some noise removal is nice too...
 % (Need to do this before saccades are merged, or
 % we might also remove saccades that occured right
 % after a blink)
