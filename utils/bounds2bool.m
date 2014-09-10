@@ -16,17 +16,7 @@ function out = bounds2bool(lo, hi, maxlen)
 %   URL:         http://home.online.no/~pjacklam
 
 % check number of input arguments
-error(nargchk(2, 3, nargin));
-
-% return empty or all false when bounds are empty
-if isempty(lo)
-    if nargin==3
-        out = false(1, maxlen);
-    else
-        out = [];
-    end
-    return;
-end
+narginchk(2, 3);
 
 % keep only runs of positive length.
 i = lo <= hi;
@@ -38,9 +28,19 @@ if nargin==3
     i = lo <= maxlen;
     lo = lo(i);
     hi = hi(i);
-    if hi(end) > maxlen
+    if ~isempty(hi) && hi(end) > maxlen
         hi(end) = maxlen;
     end
+end
+
+% return empty or all false when bounds are empty
+if isempty(lo)
+    if nargin==3
+        out = false(1, maxlen);
+    else
+        out = [];
+    end
+    return;
 end
 
 m   = length(lo);           % length of input vectors
