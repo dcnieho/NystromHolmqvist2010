@@ -19,7 +19,12 @@ if nargin>7
     % components: replace with constant velocity
     velX(on:off) = val;
     velY(on:off) = val;
-    vel(on:off)  = hypot(val,val);
+    if qDeg
+        vel(on:off)  = sqrt(val.^2.*cosd(Y(on:off)) + val.^2);
+    else
+        vel(on:off)  = hypot(val,val);
+    end
+    
 else
     % components: replace with linearly interpolated velocity
     velX(on:off) = linspace(velX(on),velX(off),npoint);
