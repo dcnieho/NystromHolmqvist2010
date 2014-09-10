@@ -13,7 +13,7 @@ if ETparams.saccade.mergeWindow>0
     % ms), they'll be merged
     SacMergeWindowSamples = ceil(ETparams.saccade.mergeWindow./1000 * ETparams.samplingFreq);
     
-    if ETparams.glissade.qDetect
+    if isfield(data,'glissade')
         [data.saccade,data.glissade] = mergeIntervals(data.saccade,data.glissade,SacMergeWindowSamples);
     else
         data.saccade                 = mergeIntervals(data.saccade,     []      ,SacMergeWindowSamples);
