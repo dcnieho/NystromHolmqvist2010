@@ -34,6 +34,7 @@ assert(~any(xor(isnan(data.deg.Azi),isnan(data.pix.X))),'NaNs not same in data.d
 % detecting unphysiological eye movements
 
 qBlink = false(size(data.deg.vel));
+qNaN   = isnan(data.deg.vel);
 
 % detect episodes above threshold in pupil size change trace
 if bitget(uint8(ETparams.blink.detectMode),uint8(1))
@@ -52,7 +53,7 @@ end
 % find bounds of blinks (or tracker noise) as detected above, merge very
 % close ones for easier processing, they'll merge anyway
 [blink.on,blink.off]    = bool2bounds(qBlink);
-blink                   = mergeIntervals(blink,[],blinkMergeWindowSamples);
+blink                   = mergeIntervals(blink,[],blinkMergeWindowSamples,qNaN);
 
 % if we have pupil size data, use it to refine blink onsets and offsets
 if isfield(data.pupil,'dsize')
@@ -65,7 +66,7 @@ if isfield(data.pupil,'dsize')
     % this is used in some parts of the algorithm (e.g. offset velocity
     % threshold calculation) when it needs to analyze data that is not during
     % blinks or missing data.
-    qBlinkOrNan   = isnan(dPSize);
+    qBlinkOrNan   = qNaN;
 
     %%% Process one peak at the time.
     % Keep a counter here of how many peaks we have processed already. We need
@@ -173,15 +174,18 @@ end
 % spread out)
 sacon  = data.saccade.on;
 sacoff = data.saccade.off;
+% correct sacoff to glissade end time, if any. we wnat the blink to extend
+% all the way t glissade offset
+if ETparams.glissade.qDetect
+    qHaveGliss = ismember(data.saccade.off,data.glissade.on);
+    sacoff(qHaveGliss) = data.glissade.off;
+end
 for p = 1:length(blink.on)
     % any saccade on/off during blink interval, or is blink interval enclosed by saccade on off?
     qSac = (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
     
-    blink.on (p) = min(blink.on(p) , minOrInf(sacon (qSac)));
-    % for offsets, see if saccades have any glissades attached
-    qGliss       = ismember(data.glissade.on,data.saccade.off(qSac));
-    offs         = [sacoff(qSac) data.glissade.off(qGliss)];
-    blink.off(p) = max(blink.off(p), maxOrNInf(offs));
+    blink.on (p) = min(blink.on(p) , minOrInf (sacon (qSac)));
+    blink.off(p) = max(blink.off(p), maxOrNInf(sacoff(qSac)));
 end
 
 % multiple unphysiological segments might be enclosed by same saccade, or
@@ -192,7 +196,7 @@ blink.on    = blink.on (idx);
 blink.off   = blink.off(idx);
 
 % merge very close blinks.
-blink       = mergeIntervals(blink, [], blinkMergeWindowSamples);
+blink       = mergeIntervals(blink, [], blinkMergeWindowSamples,qNaN);
 
 % Make sure pupil size trace shows a peak. If fast unidirectional
 % change, we caught something else accidentally, such as a temporarily
@@ -221,7 +225,8 @@ data.blink.off  = blink.off(idx);
 
 % now remove saccades that were flagged as blink
 % any saccade on/off during blink interval, or is blink interval enclosed
-% by saccade on off?
+% by saccade on/off? Off is glissade off if the saccade is followed by a
+% glissade, see above. This is what we want.
 qIsBlink = false(size(sacon));
 for p=1:length(blink.on)
     qIsBlink = qIsBlink | (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
@@ -238,6 +243,7 @@ data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 
 % replace by linear interpolation or with nan if wanted
 nNaN = sum(isnan(data.deg.vel));
+nBlink = sum(blink.off-blink.on+1);
 if ETparams.blink.qReplaceWithInterp
     % adjust indices, blink.on(p) and blink.off(p) point to first and last
     % samples of a blink
@@ -278,7 +284,6 @@ if ETparams.blink.qReplaceWithInterp
     end
     
     % lastly, notify how much blinks
-    nBlink = sum(bllen)-2*length(blon); % don't forget to remove those two extra samples we added above
     fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
     
 elseif ETparams.blink.qReplaceVelWithNan
@@ -295,8 +300,6 @@ elseif ETparams.blink.qReplaceVelWithNan
     if ETparams.data.qAlsoStoreandDiffPixels
         data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
     end
-    
-    nBlink = sum(blink.off-blink.on);
 end
     
 % lastly, notify if more than 20% nan

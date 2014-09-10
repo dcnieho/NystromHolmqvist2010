@@ -1,4 +1,4 @@
-function [mainSet,extraSet] = mergeIntervals(mainSet,extraSet,windowSamples)
+function [mainSet,extraSet] = mergeIntervals(mainSet,extraSet,windowSamples,qNaN)
 % Merges intervals whose offset is closer than windowSamples to the next
 % interval's onset (e.g. two saccades that are very close).
 % If the second input is non-empty, it is checked if any onset in the extra
@@ -11,6 +11,12 @@ function [mainSet,extraSet] = mergeIntervals(mainSet,extraSet,windowSamples)
 % the code below is not commented in general words, but for the case of
 % merging saccades, which might be followed by glissades as that's easier
 % to follow.
+
+if nargin<4
+    qDontCountNan = false;
+else
+    qDontCountNan = true;
+end
 
 kk=1;
 while kk < length(mainSet.on)      % NB: doesn't process last interval (useless anyway of course!)
@@ -32,7 +38,8 @@ while kk < length(mainSet.on)      % NB: doesn't process last interval (useless 
     end
     
     % check if start of next saccade occurs within the window
-    if mainSet.on(kk+1)-thisoff <= windowSamples
+    if (  qDontCountNan && sum(~qNaN(thisoff:mainSet.on(kk+1))) <= windowSamples) || ...    % check less than windowSamples non-nan intervening samples
+        (~qDontCountNan && mainSet.on(kk+1)-thisoff <= windowSamples)                       % or just check number of  intervening samples
         % if yes, merge
         mainSet.off(kk) = mainSet.off(kk+1);
         
