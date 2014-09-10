@@ -1,4 +1,4 @@
-function [data] = mergeSaccadesAndGlissades(data, ETparams)
+function [data] = mergeSaccadesAndGlissades(data)
 % NB: You would need to rerun processSaccadesAndGlissades.m after this, if
 % you are interested in its output, as the saccades flags have just changed
 %
