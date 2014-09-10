@@ -11,6 +11,11 @@ function [data] = mergeSaccadesAndGlissades(data, ETparams)
 % get saccade offset markers
 sacoff  = data.saccade.off;
 
+if isempty(sacoff)
+    % nothing to do
+    return
+end
+
 if isfield(data,'glissade')
     for p = 1:length(data.glissade.off)
         % for each glissade, find corresponding saccade
