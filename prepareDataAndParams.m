@@ -1,4 +1,4 @@
-function [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams)
+function [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams,time)
 % prepares data for the rest of the algorithm. Moves origin, flip data,
 % converts to Fick angles in degree, things like that.
 %
@@ -59,6 +59,10 @@ function [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams)
 data.pix.X      = x(:);
 data.pix.Y      = y(:);
 data.pupil.size = pupilsize(:);
+
+if nargin>4
+    data.time       = time(:);
+end
 
 % flip X if specified
 if ETparams.data.qFlipX

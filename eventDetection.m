@@ -1,4 +1,4 @@
-function [data,ETparams] = eventDetection(x,y,pupilsize,ETparams)
+function [data,ETparams] = eventDetection(x,y,pupilsize,ETparams,varargin)
 %--------------------------------------------------------------------------
 % README
 %
@@ -22,7 +22,7 @@ function [data,ETparams] = eventDetection(x,y,pupilsize,ETparams)
 
 % Prepare data and params (move origin, things like that)
 %-------------------------------------
-[data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams);
+[data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams,varargin{:});
 if all(isnan(data.pix.X))
     return;
 end
