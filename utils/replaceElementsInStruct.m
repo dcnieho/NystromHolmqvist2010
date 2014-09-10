@@ -13,9 +13,11 @@ function str = replaceElementsInStruct(str,idxOrBool,elem,fieldFilter)
 % excluding others, but the code deals with it correctly. If a field is
 % both included and excluded, the exclusion takes preference.
 
+qAllScalar = all(structfun(@isscalar,str));
+
 if nargin<4
     % apply on all non-scalar fields, we can use structfun
-    str = structfun(@(x) replaceTheElements(x,idxOrBool,elem),str, 'uni',false);
+    str = structfun(@(x) replaceTheElements(x,idxOrBool,elem,qAllScalar),str, 'uni',false);
 else
     % need to for-loop this by hand
     % get names of fields in struct
@@ -39,14 +41,14 @@ else
     fn( ismember(fn,excluded)) = [];
     
     for p=1:length(fn)
-        str.(fn{p}) = replaceTheElements(str.(fn{p}),idxOrBool,elem);
+        str.(fn{p}) = replaceTheElements(str.(fn{p}),idxOrBool,elem,qAllScalar);
     end
 end
 
 
 % helper func
-function field = replaceTheElements(field,idxOrBool,elem)
+function field = replaceTheElements(field,idxOrBool,elem,allowScalar)
 
-if ~isscalar(field)
+if allowScalar || ~isscalar(field)
     field(idxOrBool) = elem;
 end
