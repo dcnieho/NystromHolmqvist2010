@@ -284,7 +284,9 @@ if ETparams.blink.qReplaceWithInterp
     end
     
     % lastly, notify how much blinks
-    fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
+    if nBlink>0
+        fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
+    end
     
 elseif ETparams.blink.qReplaceVelWithNan
     % create boolean matrix given blink bounds
