@@ -35,13 +35,9 @@ else
     qAboveThresh    = data.deg.vel      > data.saccade.peakVelocityThreshold;
 end
 [sacon,sacoff]  = bool2bounds(qAboveThresh);
-
-
-%%% If no saccades are detected, return
-if isempty(sacon)
-    fprintf('no saccades\n');
-    return;
-end
+% no quick exit here if no candidate saccades. The bulk of this function
+% will be skipped anyway, but we do need the end bit of it to properly set
+% the output
 
 %%% prepare algorithm variables
 % make vector that will contain true where saccades are detected
@@ -302,8 +298,13 @@ glissade.type           = glissadetype;
 %--------------------------------------------------------------------------
 % OUTPUT
 %--------------------------------------------------------------------------
+%%% Notify if no saccades are detected
+if isempty(saccade.on)
+    fprintf('no saccades\n');
+end
+
 % need to concat structs...
 data.saccade    = cell2struct([struct2cell(data.saccade); struct2cell(saccade)],[fieldnames(data.saccade); fieldnames(saccade)]);
-if ETparams.glissade.qDetect
+if ETparams.glissade.qDetect && ~isempty(glissade.on)
     data.glissade   = glissade;
 end
