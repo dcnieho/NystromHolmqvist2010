@@ -175,8 +175,8 @@ end
 sacon  = data.saccade.on;
 sacoff = data.saccade.off;
 % correct sacoff to glissade end time, if any. we wnat the blink to extend
-% all the way t glissade offset
-if ETparams.glissade.qDetect
+% all the way to glissade offset
+if isfield(data,'glissade')
     qHaveGliss = ismember(data.saccade.off,data.glissade.on);
     sacoff(qHaveGliss) = data.glissade.off;
 end
@@ -233,7 +233,7 @@ for p=1:length(blink.on)
 end
 
 % first remove their corresponding glissades, if any
-if ETparams.glissade.qDetect
+if isfield(data,'glissade')
     qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
     data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
 end
