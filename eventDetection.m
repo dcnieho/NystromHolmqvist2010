@@ -23,6 +23,9 @@ function [data,ETparams] = eventDetection(x,y,pupilsize,ETparams)
 % Prepare data and params (move origin, things like that)
 %-------------------------------------
 [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams);
+if all(isnan(data.pix.X))
+    return;
+end
 
 % Calculate velocity and acceleration
 %-------------------------------------
