@@ -3,6 +3,15 @@ function [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,Y,qDeg,on,off,v
 % on and off are sample numbers (data indices) of beginning and end of
 % interval to be replaced by linear interpolation between begin and end, or
 % by constant value if input val is set
+% if interval to replace ends at end, we can't do anything, unless fixed
+% value requested
+if off==length(vel) && nargin<8
+    velX(on:off) = nan;
+    velY(on:off) = nan;
+     vel(on:off) = nan;
+    return;
+end
+
 
 npoint = off-on+1;
 
