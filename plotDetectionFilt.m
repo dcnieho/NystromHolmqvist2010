@@ -45,22 +45,6 @@ end
 rect = rect.(datatype);
 
 % prepare labels
-switch veltype
-    case 'vel'
-        vlbltype = '2D';
-    case 'velX'
-        if strcmp(datatype,'deg')
-            vlbltype = 'Azi';
-        else
-            vlbltype = 'X';
-        end
-    case 'velY'
-        if strcmp(datatype,'deg')
-            vlbltype = 'Ele';
-        else
-            vlbltype = 'Y';
-        end
-end
 missing = data.deg.missing;
 if strcmp(datatype,'deg')
     unit = '°';
@@ -73,7 +57,16 @@ else
 end
 plbl = 'pupil size';
 pvlbl= 'abs({\delta} pupil size)';
-vlbl = ['Velocity ' vlbltype ' (' unit '/s)'];
+
+if strcmp(datatype,'deg')
+    vxlbl = 'Azi';
+    vylbl = 'Ele';
+else
+    vxlbl = 'X';
+    vylbl = 'Y';
+end
+vlbl = {['Velocity ' '2D'  ' (' unit '/s)'],['Velocity ' vxlbl ' (' unit '/s)'], ['Velocity ' vylbl ' (' unit '/s)']};
+vidx = find(ismember({'vel','velX','velY'},veltype));
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
 % time series
@@ -117,31 +110,20 @@ time    = ([1:length(xdata)]-1)/sampleRate * 1000;
 
 % velocity
 if strcmp(datatype,'pix')
-    vel     = data.pix.(veltype);
-    velcut  = data.pix.([veltype 'Filt']);
+    vel     = {data.pix.vel,data.pix.velX,data.pix.velY};
+    velcut  = {data.pix.velFilt,data.pix.velXFilt,data.pix.velYFilt};
     if qHaveSaccadic
-        velSac  = data.pix.velSac;
+        velSac  = {data.pix.velSac,data.pix.velXSac,data.pix.velYSac};
+    else
+        velSac  = {[],[],[]};
     end
 elseif strcmp(datatype,'deg')
-    switch veltype
-        case 'vel'
-            vel     = data.deg.vel;
-            velcut  = data.deg.velFilt;
-            if qHaveSaccadic
-                velSac  = data.deg.velSac;
-            end
-        case 'velX'
-            vel     = data.deg.velAzi;
-            velcut  = data.deg.velAziFilt;
-            if qHaveSaccadic
-                velSac  = data.deg.velAziSac;
-            end
-        case 'velY'
-            vel     = data.deg.velEle;
-            velcut  = data.deg.velEleFilt;
-            if qHaveSaccadic
-                velSac  = data.deg.velEleSac;
-            end
+    vel     = {data.deg.vel,data.deg.velAzi,data.deg.velEle};
+    velcut  = {data.deg.velFilt,data.deg.velAziFilt,data.deg.velEleFilt};
+    if qHaveSaccadic
+        velSac  = {data.deg.velSac,data.deg.velAziSac,data.deg.velEleSac};
+    else
+        velSac  = {[],[],[]};
     end
 end
 
@@ -320,6 +302,12 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     end
     % at start size, not dsize, is visible
     set([apv; allchild(apv)],'visible','off');
+    % need to set visible axis to current and topmost axis for zooming to
+    % operate on rigth axis. (If we don't do this, x zoom still works as
+    % all axes are linked on x, by looking at y range reveals last drawn in
+    % a given position is always target of zoom, even if it isn't
+    % visible...)
+    axes(ap);
     % toggle button
     uicontrol(...
     'Style','togglebutton',...
@@ -335,43 +323,40 @@ end
 
 
 %%% plot velocity trace with saccade and glissade markers
-av = axes('position',vplotPos);
-% line at 0
-plot([time(1) time(end)],[0 0],'b');
-hold on;
-plot(time,vel,'k');
-if qHaveSaccadic
-    plot(time,velSac,'c');
+av2 = axes('position',vplotPos);
+plotVel(time,vel{1},velcut{1},velSac{1},vlbl{1},'vel',datatype,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
+avx = axes('position',vplotPos);
+plotVel(time,vel{2},velcut{2},velSac{2},vlbl{2},'velX',datatype,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
+avy = axes('position',vplotPos);
+plotVel(time,vel{3},velcut{3},velSac{3},vlbl{3},'velY',datatype,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
+vaxs = [av2 avx avy];
+% show desired vel at start
+toHide = [1:3]; toHide(toHide==vidx) = [];
+for p=toHide
+    set([vaxs(p); allchild(vaxs(p))],'visible','off');
 end
-plotWithMark(time,velcut,{'g-'},...                                     % data (y,x), style
-             'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
-             missFlag{:}, ...                                           % color part of trace that is missing
-             sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
-             sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-             glisMarks{:}, ...                                          % glissade markers (if any)
-             blinkMarks{:} ...                                          % blink markers (if any)
-            );
-% add detection thresholds
-if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
-    % dont plot if:
-    % 1. if plotting pixels, as thresholds are in °/s
-    % 2. if refinement was done with the saccade template responses as no
-    %    velocity thresholds are then used; it would be misleading to plot
-    %    them here
-    % 3. if we're plotting a component velocity, as thresholds are for 2D
-    %    velocity
-    hold on;
-    plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
-    plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
-    for p=1:length(sacoff)
-        plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
-    end
-    hold off;
-end
-axis([mmt(1) mmt(2) min(0,min(vel)) max(vel)]);
-if ~strcmp(veltype,'vel')
-    axis ij
-end
+axes(vaxs(vidx));   % set visible axis to current and topmost axis
+% toggle button
+strs = {'v2','vx','vy'};
+strs2= strs(toHide);
+vt1 = uicontrol(...
+    'Style','pushbutton',...
+    'String',strs2{1},...
+    'Units','Normalized',...
+    'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.04 .02 .03],...
+    'Callback',@Velocity_Callback);
+vt2 = uicontrol(...
+    'Style','pushbutton',...
+    'String',strs2{2},...
+    'Units','Normalized',...
+    'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.08 .02 .03],...
+    'Callback',@Velocity_Callback);
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
@@ -402,7 +387,7 @@ else
 end
 
 % link x-axis (time) of the three/four timeseries for easy viewing
-linkaxes([ax ay ap apv av ac],'x');
+linkaxes([ax ay ap apv av2 avx avy ac],'x');
 
 
 %%% plot scanpath of raw data and of data with saccades cut out
@@ -450,14 +435,75 @@ zoom on;
 
 
 
-function Pupil_Callback(~,~,~)
-    if strcmp(get(ap,'visible'),'on')
-        set([ap;   allchild(ap)],'visible','off');
-        set([apv; allchild(apv)],'visible','on');
-    else
-        set([apv; allchild(apv)],'visible','off');
-        set([ap;   allchild(ap)],'visible','on');
+    function Pupil_Callback(~,~,~)
+        if strcmp(get(ap,'visible'),'on')
+            set([ap;   allchild(ap)],'visible','off');
+            set([apv; allchild(apv)],'visible','on');
+            axes(apv);  % set visible axis to current and topmost axis
+        else
+            set([apv; allchild(apv)],'visible','off');
+            set([ap;   allchild(ap)],'visible','on');
+            axes(ap);   % set visible axis to current and topmost axis
+        end
     end
+
+    function Velocity_Callback(obj,~,~)
+        % find which pressed, and therefore which to show and hide
+        but = get(obj,'String');
+        qShow  = strcmp(but,strs);
+        toHidev = find(~qShow);
+        toShow = find( qShow);
+        % do show and hide
+        for q=toHidev
+            set([vaxs(q); allchild(vaxs(q))],'visible','off');
+        end
+        set([vaxs(toShow); allchild(vaxs(toShow))],'visible','on');
+        axes(vaxs(toShow));     % set visible axis to current and topmost axis
+        % adjust labels on buttons
+        strs2v  = strs(toHidev);
+        set(vt1,'String',strs2v{1});
+        set(vt2,'String',strs2v{2});
+    end
+
 end
 
+function plotVel(time,vel,velcut,velSac,vlbl,veltype,datatype,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold)
+% line at 0
+plot([time(1) time(end)],[0 0],'b');
+hold on;
+plot(time,vel,'k');
+if ~isempty(velSac)
+    plot(time,velSac,'c');
+end
+plotWithMark(time,velcut,{'g-'},...                                     % data (y,x), style
+             'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
+             missFlag{:}, ...                                           % color part of trace that is missing
+             sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
+             sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
+             glisMarks{:}, ...                                          % glissade markers (if any)
+             blinkMarks{:} ...                                          % blink markers (if any)
+    );
+% add detection thresholds
+if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
+    % dont plot if:
+    % 1. if plotting pixels, as thresholds are in °/s
+    % 2. if refinement was done with the saccade template responses as no
+    %    velocity thresholds are then used; it would be misleading to plot
+    %    them here
+    % 3. if we're plotting a component velocity, as thresholds are for 2D
+    %    velocity
+    hold on;
+    plot(mmt,[1 1]*saccadePeakVelocityThreshold,'r--')
+    plot(mmt,[1 1]*saccadeOnsetVelocityThreshold,'r:')
+    for p=1:length(sacoff)
+        plot(time([sacoff(p) min(glissadeSearchSamples+sacoff(p),end)]),[1 1]*saccadeOffsetVelocityThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+    end
+    hold off;
+end
+axis([mmt(1) mmt(2) min(0,min(vel)) max(vel)]);
+if ~strcmp(veltype,'vel')
+    axis ij
+end
 end
