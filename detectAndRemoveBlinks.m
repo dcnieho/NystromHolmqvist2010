@@ -81,8 +81,10 @@ if isfield(data.pupil,'dsize')
         %----------------------------------------------------------------------
 
         % If the peak consists of <minPeakSamples consequtive samples, it it
-        % probably noise, delete it
-        if blink.off(kk)-blink.on(kk) < ETparams.blink.minPeakSamples
+        % probably noise, delete it. Except when pupil size reaches zero in
+        % this short time, then its something we want to catch here
+        if blink.off(kk)-blink.on(kk) < ETparams.blink.minPeakSamples && ...
+           all(data.pupil.size(blink.on(kk):blink.off(kk))>0)
             blink.on (kk) = [];
             blink.off(kk) = [];
             continue;
@@ -147,9 +149,11 @@ if isfield(data.pupil,'dsize')
             continue;
         end
 
-        % Make sure the blink duration exceeds the minimum duration or delete
-        % it
-        if blink.off(kk)-blink.on(kk)+1 < minBlinkSamples
+        % Make sure the blink duration exceeds the minimum duration or
+        % delete it. Except when pupil size reaches zero in this short
+        % time, then its something we want to catch here
+        if blink.off(kk)-blink.on(kk)+1 < minBlinkSamples&& ...
+           all(data.pupil.size(blink.on(kk):blink.off(kk))>0)
             blink.on (kk) = [];
             blink.off(kk) = [];
             continue;
