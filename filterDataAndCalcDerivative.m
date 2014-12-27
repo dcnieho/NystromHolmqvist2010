@@ -190,10 +190,10 @@ else
     % instantaneous axis of the eye rotation, but eye velocity is
     % calculated correctly. Apply scale for velocity, as a 10° azimuth
     % rotation at 0° elevation does not cover same distance as it does at
-    % 45° elevation
+    % 45° elevation: sqrt(theta_dot^2*cos^2 phi + phi_dot^2)
     % No idea what scaling to apply for acceleration, figure that out some
     % time...
-    data.deg.vel    = sqrt(tempV(:,1).^2.*cosd(data.deg.Ele) + tempV(:,2).^2);
+    data.deg.vel    = hypot(tempV(:,1).*cosd(data.deg.Ele), tempV(:,2));
     data.deg.acc    = hypot(tempA(:,1), tempA(:,2));
 end
 
