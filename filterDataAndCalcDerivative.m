@@ -59,6 +59,13 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % first order moment of the time series itself. It is thus a problem that
 % the width of the velocity peak (3rd moment) is not present by a second
 % order polynomial fit.
+%
+% Also look at:
+% filtering / digital differentiation for the eye data, look at Pavel
+% Holoborodko's stuff: http://www.holoborodko.com/pavel/numerical-methods/.
+% Not published I think, but it might be worth it, and it seems possible to
+% contact the guy, though he might not respond quickly...
+% http://nl.wikipedia.org/wiki/Savitsky-Golay_filter
 
 
 % calculate component velocities and accelerations
