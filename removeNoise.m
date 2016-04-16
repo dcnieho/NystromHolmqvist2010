@@ -5,7 +5,7 @@ function data = removeNoise(data,ETparams)
 % prepare algorithm parameters
 minSamples   = ceil(ETparams.data.minDur/1000 * ETparams.samplingFreq);
 
-% process
+% process to look for short islands of data in the sea of missingness
 [dataon,dataoff] = bool2bounds(~isnan(data.deg.vel));
 for p=length(dataon):-1:1
     % Check that the section of data is longer than the minimum duration.
