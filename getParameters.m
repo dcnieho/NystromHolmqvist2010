@@ -26,13 +26,13 @@ ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X
 % (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
 % some usage cases. The eventDetection however always runs on eye
 % pos/vel/acc in degrees.
-ETparams.data.qAlsoStoreandDiffPixels   = false;
+ETparams.data.qAlsoStoreandDiffPixels   = true;
 
 % Option to use median filter for detrending velocity data (e.g. removing
 % pursuit baseline speed). This is only useful if saccade templates are
 % used. Detrended velocity, if available, is then used as input to xcorr
 % with the saccade template.
-ETparams.data.qDetrendWithMedianFilter  = true;
+ETparams.data.qDetrendWithMedianFilter  = false;
 ETparams.data.qDetrendAll               = false;        % if true, all velocity traces (also pixels and also components, if available) will be detrended. If false, only 2D eye velocity in degrees will be done. Only set this to true if you want this data, the code doesn't use it
 ETparams.data.medianWindowLength        = 40;           % ms
 
@@ -46,12 +46,12 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % false as the profiles of the saccades is distorted after convolution with
 % the template.
 % See also ETparams.saccade.xCorrPeakThreshold
-ETparams.data.qApplySaccadeTemplate     = true;
+ETparams.data.qApplySaccadeTemplate     = false;
 
 ETparams.data.minDur                    = 1000/60;      % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
 ETparams.data.missCoords                = [0 0];        % if empty, not used, else if tracking indicates missing by sending specific coordinates, put them here
 
-ETparams.samplingFreq                   = 500;
+ETparams.samplingFreq                   = 120;
 
 % blink detection. Note that there are other ways to detect blinks in the
 % code, e.g., all saccades are checked for their level of blinkness
@@ -74,9 +74,9 @@ ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the p
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template (true), not from the velocity trace (false). Leave this to false to avoid distortion of saccade beginning and end due to low-pass filtering of template. Must be false if saccade template isn't used
 ETparams.saccade.localNoiseWindowLength = 50;           % in milliseconds, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
-ETparams.saccade.minPeakSamples         = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
+ETparams.saccade.minPeakSamples         = 1;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
 ETparams.saccade.minDur                 = 10;           % in milliseconds
-ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
+ETparams.saccade.mergeWindow            = -1;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
 ETparams.saccade.seWindowSamp           = 4;            % number of samples before onset and after offset to use for calculating saccade start and end points (onset and offset themselves are always used, this is the number of extra samples)
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals. If false, blink detection dies as its basic assumption is that blinks were already detected as saccades due to their large vertical velocity
 
@@ -93,7 +93,7 @@ ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in
 % trace end up unclassified as they don't qualify as saccade, glissade or
 % "fixation".
 ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 1500;         % in milliseconds
+ETparams.fixation.minDur                = 70;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on available
