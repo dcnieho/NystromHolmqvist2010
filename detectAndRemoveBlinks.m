@@ -36,6 +36,11 @@ assert(~any(xor(isnan(data.deg.Azi),isnan(data.pix.X))),'NaNs not same in data.d
 qBlink = false(size(data.deg.vel));
 qNaN   = isnan(data.deg.vel);
 
+% if pupil size is available, flag a blink when eye is closed/pupil lost
+if isfield(data.pupil,'size')
+    qBlink = qBlink | data.pupil.size==0;
+end
+
 % detect episodes above threshold in pupil size change trace
 if bitget(uint8(ETparams.blink.detectMode),uint8(1))
     qBlink = qBlink | ...
@@ -98,7 +103,8 @@ if isfield(data.pupil,'dsize')
         while i > 1 && ...                                          % make sure we don't run out of the data
               (isnan(dPSize(i)) || ...                              % and that we ignore nan data
                dPSize(i) > data.blink.onsetDSizeThreshold || ...    % keep searching until below onsetDSizeThreshold
-               diff(dPSize(i-[0:1])) < 0)                           % and signal change is negative
+               diff(dPSize(i-[0:1])) < 0 || ...                     % and signal change is negative
+               any(data.pupil.size(i-[0 1])==0))                    % or pupil size is currently zero
             i = i-1;
         end
         blink.on(kk) = i;                                           % velocity minimum is last sample before "acceleration" sign change
@@ -131,7 +137,8 @@ if isfield(data.pupil,'dsize')
         while i < length(dPSize) && ...                                 % make sure we don't run out of the data
               (isnan(dPSize(i)) || ...                                  % and that we ignore nan data
                dPSize(i) > data.blink.offsetDSizeThreshold(kk) || ...   % keep searching until below saccadeOffsetTreshold
-               diff(dPSize(i+[0:1])) < 0)                               % and signal change is positive
+               diff(dPSize(i+[0:1])) < 0 || ...                         % and signal change is positive
+               any(data.pupil.size(i+[0 1])==0))                        % or pupil size is currently zero
             i = i+1;
         end
         blink.off(kk) = i;
