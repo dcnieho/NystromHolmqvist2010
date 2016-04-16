@@ -109,4 +109,8 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
     
     % calculate new threshold
     peakThreshold   = meanData + nStd*stdData;
+    
+    if isempty(idx)
+        fprintf('couldn''t determine threshold\n');
+    end
 end
