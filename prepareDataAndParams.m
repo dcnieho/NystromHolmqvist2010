@@ -1,6 +1,8 @@
 function [data,ETparams] = prepareDataAndParams(x,y,pupilsize,ETparams,time)
 % prepares data for the rest of the algorithm. Moves origin, flip data,
 % converts to Fick angles in degree, things like that.
+% also deals with tracker's particular method of indicating missing data
+% (e.g. outputting (0,0) and replacing that with nan)
 %
 % Eye position data is stored in Fick (1854) angles. Given a
 % head-referenced frame in which the Y axis points upwards (dorso-ventral),
@@ -63,6 +65,20 @@ data.pupil.size = pupilsize(:);
 if nargin>4
     data.time       = time(:);
 end
+
+% first flag missing data for this tracker
+if ~isempty(ETparams.data.missCoords)
+    qMissing = data.pix.X==ETparams.data.missCoords(1) & data.pix.Y==ETparams.data.missCoords(2);
+    
+    if any(qMissing)
+        % now remove data from all eye position fields that we have
+        data.pix    = replaceElementsInStruct(data.pix,qMissing,nan);
+    end
+end
+
+% translate tracker output into screen coordinates
+data.pix.X      = data.pix.X + ETparams.screen.resolution(1)/2 - ETparams.screen.dataCenter(1);
+data.pix.Y      = data.pix.Y + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 
 % flip X if specified
 if ETparams.data.qFlipX

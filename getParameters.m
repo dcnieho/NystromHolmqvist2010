@@ -1,16 +1,17 @@
 function ETparams = getParameters
 
 % user settings
-ETparams.screen.resolution              = [1280 1024];
-ETparams.screen.size                    = [0.40 0.30];
-ETparams.screen.viewingDist             = 0.58;
-ETparams.screen.subjectStraightAhead    = [640 381.5];  % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
+ETparams.screen.resolution              = [1680 1050];
+ETparams.screen.size                    = [0.473 0.296];
+ETparams.screen.viewingDist             = 0.60;
+ETparams.screen.dataCenter              = [840 525];    % center of screen has these coordinates in data
+ETparams.screen.subjectStraightAhead    = [840 525];    % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % flip the Y coordinate of the data? All the routines assume the origin of
 % the screen (0,0) is at the top left corner. You'll have to flip if the
 % your data's origin is the lower left corner. Do a flip X if your origin
 % is on the right side of the screen (sic).
-ETparams.data.qFlipY                    = false;
+ETparams.data.qFlipY                    = true;
 ETparams.data.qFlipX                    = false;
 % By default, eye velocity and acceleration are computed with a
 % Savitzky-Golay differentiating filter (it basically fits a second order
@@ -47,7 +48,8 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % See also ETparams.saccade.xCorrPeakThreshold
 ETparams.data.qApplySaccadeTemplate     = true;
 
-ETparams.data.minDur                    = 500;          % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
+ETparams.data.minDur                    = 1000/60;      % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
+ETparams.data.missCoords                = [0 0];        % if empty, not used, else if tracking indicates missing by sending specific coordinates, put them here
 
 ETparams.samplingFreq                   = 500;
 
