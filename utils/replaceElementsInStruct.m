@@ -50,5 +50,9 @@ end
 function field = replaceTheElements(field,idxOrBool,elem,allowScalar)
 
 if allowScalar || ~isscalar(field)
-    field(idxOrBool) = elem;
+    if isempty(elem)
+        field(idxOrBool) = [];
+    else
+        field(idxOrBool) = elem;
+    end
 end
