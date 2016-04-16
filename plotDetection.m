@@ -97,6 +97,14 @@ elseif strcmp(datatype,'deg')
 end
 
 % markers
+% for missing flags, also include blinks. we'd want to color original or
+% interpolated data during a blink as well
+if isfield(data,'blink')
+    qMissOrBlink =                bounds2bool(missing.on   ,missing.off   ,length(vel{1}));
+    qMissOrBlink = qMissOrBlink | bounds2bool(data.blink.on,data.blink.off,length(vel{1}));
+    [missing.on,missing.off] = bool2bounds(qMissOrBlink);
+end
+
 sacon   = data.saccade.on;
 sacoff  = data.saccade.off;
 if isfield(data,'blink')

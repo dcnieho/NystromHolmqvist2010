@@ -6,11 +6,15 @@ function data = detectFixations(data,ETparams)
 %--------------------------------------------------------------------------
 
 %%% find data that is not saccade, glissade or blink
-[fixon,fixoff]  = bool2bounds(~(...
-    bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel)) | ...
-    bounds2bool(data.glissade.on,data.glissade.off, length(data.deg.vel)) | ...
-    bounds2bool(data.blink   .on,data.blink   .off, length(data.deg.vel))   ...
-    ));
+qNotFix = bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel));
+if isfield(data,'glissade')
+    qNotFix = qNotFix | bounds2bool(data.glissade.on,data.glissade.off, length(data.deg.vel));
+end
+if isfield(data,'blink')
+    qNotFix = qNotFix | bounds2bool(data.blink.on   ,data.blink.off   , length(data.deg.vel));
+end
+[fixon,fixoff] = bool2bounds(~qNotFix);
+    
 % correct so that fixation ends overlap with saccade starts (and etc)
 % instead of 1 sample offset
 fixon   = max(fixon -1, 1);

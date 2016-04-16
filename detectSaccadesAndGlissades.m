@@ -305,6 +305,6 @@ end
 
 % need to concat structs...
 data.saccade    = cell2struct([struct2cell(data.saccade); struct2cell(saccade)],[fieldnames(data.saccade); fieldnames(saccade)]);
-if ETparams.glissade.qDetect && ~isempty(glissade.on)
+if ETparams.glissade.qDetect
     data.glissade   = glissade;
 end
