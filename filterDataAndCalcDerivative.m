@@ -52,7 +52,7 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % like the eye movement, but without any noise (Gaussian velocity profile,
 % very low std for sharp peak? Or more directly cut a part from some
 % eyemovement data and smooth it by hand) and see what happens to it when
-% filtering by polynomial fit... Also, remember the Luo 2005 filter on
+% filtering by polynomial fit... Also, remember the Luo 2005 paper on
 % properties of Savitzky-Golay differentiation filters. By the way, i
 % indeed think my logic above was correct: the zeroth order moment of the
 % first derivative of a time series should correspond/be relatable to the
@@ -71,36 +71,74 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 % calculate component velocities and accelerations
 %--------------------------------------------------------------------------
 if ETparams.data.qNumericallyDifferentiate
-    if 1
+    if ETparams.data.qNumericallyDifferentiate==1
         % instead of diff we use conv2(data,[1 0 -1].','valid')/2 because it is centered correctly
         % NB diff() is equivalent to conv2(data,[1 -1].','valid')
         tempV   = conv2([data.deg.Azi data.deg.Ele],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
-        tempV   = [tempV(1,:); tempV; tempV(end,:)];    % deal with end effects
+        tempV   = tempV([1 1:end end],:);    % deal with end effects
+        % diff always leads to one extra sample of missing at both sides,
+        % compensate for this in the same way as we deal with other data
+        % end effects
+        [on,off] = bool2bounds(isnan(tempV(:,1)));
+        for p=1:length(on)
+            if on(p)>1
+                tempV(on (p),:) = tempV(on (p)-1,:);
+            end
+            if off(p)<size(tempV,1)
+                tempV(off(p),:) = tempV(off(p)+1,:);
+            end
+        end
         
         tempA   = conv2(tempV,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
-        tempA   = [tempA(1,:); tempA; tempA(end,:)];    % deal with end effects
-    else
+        tempA   = tempA([1 1:end end],:);    % deal with end effects
+        [on,off] = bool2bounds(isnan(tempA(:,1)));  % deal with end effects due to missing
+        for p=1:length(on)
+            if on(p)>1
+                tempA(on (p),:) = tempA(on (p)-1,:);
+            end
+            if off(p)<size(tempA,1)
+                tempA(off(p),:) = tempA(off(p)+1,:);
+            end
+        end
+        
+        % also calculate derivatives for eye position in pixels
+        if ETparams.data.qAlsoStoreandDiffPixels
+            tempVpix   = conv2([data.pix.X data.pix.Y],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+            tempVpix   = tempVpix([1 1:end end],:);    % deal with end effects
+            
+            tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
+            tempApix   = tempApix([1 1:end end],:);    % deal with end effects
+        end
+        
+        % diff pupil size
+        if isfield(data,'pupil') && ~isempty(data.pupil.size)
+            data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+            data.pupil.dsize = data.pupil.dsize([1 1:end end],:);    % deal with end effects
+        end
+    elseif ETparams.data.qNumericallyDifferentiate==2
         % simple diff
         tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
         tempA   = diff([data.deg.Azi data.deg.Ele],2,1);
         
-        % make same length as position trace
-        tempV   = [tempV; tempV( end     ,:)] * ETparams.samplingFreq;
-        tempA   = [tempA; tempA([end end],:)] * ETparams.samplingFreq^2;
-    end
-    
-    % also calculate derivatives for eye position in pixels
-    if ETparams.data.qAlsoStoreandDiffPixels
-        tempVpix   = conv2([data.pix.X data.pix.Y],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
-        tempVpix   = [tempVpix(1,:); tempVpix; tempVpix(end,:)];    % deal with end effects
-    
-        tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
-        tempApix   = [tempApix(1,:); tempApix; tempApix(end,:)];    % deal with end effects
-    end
-    
-    % diff pupil size
-    if isfield(data,'pupil') && ~isempty(data.pupil.size)
-        data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+        % make same length as position trace by repeating last sample
+        tempV   = tempV([1:end end    ],:) * ETparams.samplingFreq;
+        tempA   = tempA([1:end end end],:) * ETparams.samplingFreq^2;
+        
+        % also calculate derivatives for eye position in pixels
+        if ETparams.data.qAlsoStoreandDiffPixels
+            tempVpix   = diff([data.pix.X data.pix.Y],1,1);
+            tempApix   = diff([data.pix.X data.pix.Y],2,1);
+            
+            % make same length as position trace by repeating last sample
+            tempVpix   = tempVpix([1:end end    ],:) * ETparams.samplingFreq;
+            tempApix   = tempApix([1:end end end],:) * ETparams.samplingFreq^2;
+        end
+        
+        % diff pupil size
+        if isfield(data,'pupil') && ~isempty(data.pupil.size)
+            data.pupil.dsize = diff(data.pupil.size,1,1) * ETparams.samplingFreq;
+            data.pupil.dsize = data.pupil.dsize([1:end end],:);    % deal with end effects
+        end
     end
 else
     % prepare parameters
