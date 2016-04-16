@@ -55,7 +55,7 @@ ETparams.samplingFreq                   = 500;
 
 % blink detection. Note that there are other ways to detect blinks in the
 % code, e.g., all saccades are checked for their level of blinkness
-ETparams.blink.detectMode               = 3;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
+ETparams.blink.detectMode               = 1;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
 ETparams.blink.dSizeThreshold           = 25000;        % Initial threshold for blink detection from pupil size change data
 ETparams.blink.nStd                     = 5;            % threshold is set at mean pupil size change + nStd*std of pupil size change by optimization algorithm
 ETparams.blink.localNoiseWindowLength   = 50;           % in milliseconds, window before a blink in which to calculate noise and mean pupil size change, used to calculate blink offset thresholds
@@ -66,9 +66,9 @@ ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it 
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks
 ETparams.blink.mergeWindow              = 75;           % merge blinks that are less than this many non-NaN samples apart. Set to 0 if you don't want any merging.
 ETparams.blink.qGrowToOverlapSaccade    = true;         % if blink detected, see if detected on and offsets overlap with saccades. If so, take on-/offsets of these saccades as the blink on-/offsets
-ETparams.blink.qGrowToOverlapGlissade   = false;        % if blink detected, see if detected on and offsets overlap with glissades. If so, take on-/offsets of these glissades as the blink on-/offsets
-ETparams.blink.qReplaceWithInterp       = true;         % replace position, velocity, acceleration with linear interpolation between bounds. overrides ETparams.blink.qReplaceVelWithNan
-ETparams.blink.qReplaceVelWithNan       = true;         % if true, blinks in all the velocity traces are replaced with NaN
+ETparams.blink.qGrowToOverlapGlissade   = false;        % if blink detected, if blink.qGrowToOverlapSaccade is true, see if overlapping saccade has a glissade, and if so grow to end of glissade. If blink.qGrowToOverlapSaccade is false, see if detected on and offsets overlap with glissades. If so, take on-/offsets of these glissades as the blink on-/offsets
+ETparams.blink.qReplaceWithInterp       = false;        % replace position, velocity, acceleration with linear interpolation between bounds. overrides ETparams.blink.qReplaceVelWithNan
+ETparams.blink.qReplaceVelWithNan       = false;        % if true, blinks in all the velocity traces are replaced with NaN
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
