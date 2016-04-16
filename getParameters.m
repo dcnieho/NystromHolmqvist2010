@@ -57,6 +57,7 @@ ETparams.blink.detectMode               = 3;            % if >0, do blink detect
 ETparams.blink.dSizeThreshold           = 25000;        % Initial threshold for blink detection from pupil size change data
 ETparams.blink.localNoiseWindowLength   = 50;           % in milliseconds, window before a blink in which to calculate noise and mean pupil size change, used to calculate blink offset thresholds
 ETparams.blink.minPeakSamples           = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential blink. Very short peaks are likely to be noise.
+ETparams.blink.qExcludeOneSampleBlinks  = true;         % Based on pupil size (instead of change of size): don't consider single sample eye closed as a blink (might be multiple single asmaple occurences)
 ETparams.blink.minDur                   = 80;           % in milliseconds
 ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it is noise or blinks
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks

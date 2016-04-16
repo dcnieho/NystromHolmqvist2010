@@ -166,6 +166,21 @@ if isfield(data.pupil,'dsize')
             continue;
         end
 
+        % exclude blink in which the eye is only closed (pupil size 0) for
+        % one sample (possibly multiple times). likely noise (can lead to
+        % multiple samples detected above based on size velocity
+        % thresholding...)
+        if ETparams.blink.qExcludeOneSampleBlinks
+            % get strechtes of data where pupil size is 0 (if any)
+            [bon,boff] = bool2bounds(data.pupil.size(blink.on(kk):blink.off(kk))==0);
+            if ~isempty(bon) && all(boff-bon+1==1)
+                % also remove this "blink"
+                blink.on (kk) = [];
+                blink.off(kk) = [];
+                continue;
+            end
+        end
+
         %%%%
         % Done. All the above criteria are fulfilled, we've got a blink.
         %%%%
