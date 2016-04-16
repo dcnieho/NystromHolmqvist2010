@@ -288,7 +288,6 @@ if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
 end
 
 % replace by linear interpolation or with nan if wanted
-nBlink = sum(blink.off-blink.on+1);
 if ETparams.blink.qReplaceWithInterp
     % adjust indices, blink.on(p) and blink.off(p) point to first and last
     % samples of a blink
@@ -328,10 +327,6 @@ if ETparams.blink.qReplaceWithInterp
         end
     end
     
-    % lastly, notify how much blinks
-    if nBlink>0
-        fprintf('  N blink samples: %d (%.2f%%)\n',nBlink,nBlink/length(data.deg.vel)*100);
-    end
     
 elseif ETparams.blink.qReplaceVelWithNan
     % create boolean matrix given blink bounds
@@ -349,9 +344,14 @@ elseif ETparams.blink.qReplaceVelWithNan
     end
 end
     
-% lastly, notify if more than 20% nan
-if (nBlink+nNaN)/length(data.deg.vel) > 0.20
-    fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',(nBlink+nNaN)/length(data.deg.vel)*100);
+% lastly, notify how many blink samples and if more than 20% nan
+qBlink          = bounds2bool(data.blink.on,data.blink.off,length(data.deg.vel)).';
+qMissingOrBlink = qBlink | isnan(data.deg.vel);
+if any(qBlink)
+    fprintf('  N blink samples: %d (%.2f%%)\n',sum(qBlink),sum(qBlink)/length(data.deg.vel)*100);
+end
+if sum(qMissingOrBlink)/length(data.deg.vel) > 0.20
+    fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',sum(qMissingOrBlink)/length(data.deg.vel)*100);
     data.qNoiseTrial = true;
 else
     data.qNoiseTrial = false;
