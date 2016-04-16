@@ -62,6 +62,8 @@ ETparams.blink.minDur                   = 80;           % in milliseconds
 ETparams.blink.velocityThreshold        = 1000;         % if vel > 1000 °/s, it is noise or blinks
 ETparams.blink.accThreshold             = 100000;       % if acc > 100000 °/s², it is noise or blinks
 ETparams.blink.mergeWindow              = 75;           % merge blinks that are less than this many non-NaN samples apart. Set to 0 if you don't want any merging.
+ETparams.blink.qGrowToOverlapSaccade    = true;         % if blink detected, see if detected on and offsets overlap with saccades. If so, take on-/offsets of these saccades as the blink on-/offsets
+ETparams.blink.qGrowToOverlapGlissade   = false;        % if blink detected, see if detected on and offsets overlap with glissades. If so, take on-/offsets of these glissades as the blink on-/offsets
 ETparams.blink.qReplaceWithInterp       = true;         % replace position, velocity, acceleration with linear interpolation between bounds. overrides ETparams.blink.qReplaceVelWithNan
 ETparams.blink.qReplaceVelWithNan       = true;         % if true, blinks in all the velocity traces are replaced with NaN
 

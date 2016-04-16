@@ -198,20 +198,31 @@ end
 % offsets as blink on- and offsets if the first saccade onset is earlier or
 % the last offset later (crap in velocity trace is sometimes a bit more
 % spread out)
-sacon  = data.saccade.on;
-sacoff = data.saccade.off;
-% correct sacoff to glissade end time, if any. we wnat the blink to extend
-% all the way to glissade offset
-if isfield(data,'glissade')
-    qHaveGliss = ismember(data.saccade.off,data.glissade.on);
-    sacoff(qHaveGliss) = data.glissade.off;
+if ETparams.blink.qGrowToOverlapSaccade
+    sacon  = data.saccade.on;
+    sacoff = data.saccade.off;
 end
-for p = 1:length(blink.on)
-    % any saccade on/off during blink interval, or is blink interval enclosed by saccade on off?
-    qSac = (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
-    
-    blink.on (p) = min(blink.on(p) , minOrInf (sacon (qSac)));
-    blink.off(p) = max(blink.off(p), maxOrNInf(sacoff(qSac)));
+if ETparams.blink.qGrowToOverlapGlissade
+    if ETparams.blink.qGrowToOverlapSaccade
+        % correct sacoff to glissade end time, if any. we want the blink to
+        % extend all the way to glissade offset
+        if isfield(data,'glissade')
+            qHaveGliss = ismember(data.saccade.off,data.glissade.on);
+            sacoff(qHaveGliss) = data.glissade.off;
+        end
+    else
+        sacon  = data.glissade.on;
+        sacoff = data.glissade.off;
+    end
+end
+if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
+    for p = length(blink.on):-1:1
+        % any saccade on/off during blink interval, or is blink interval enclosed by saccade on off?
+        qSac = (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
+        
+        blink.on (p) = min(blink.on(p) , minOrInf (sacon (qSac)));
+        blink.off(p) = max(blink.off(p), maxOrNInf(sacoff(qSac)));
+    end
 end
 
 % multiple unphysiological segments might be enclosed by same saccade, or
@@ -253,22 +264,30 @@ data.blink.off  = blink.off(idx);
 % any saccade on/off during blink interval, or is blink interval enclosed
 % by saccade on/off? Off is glissade off if the saccade is followed by a
 % glissade, see above. This is what we want.
-qIsBlink = false(size(sacon));
-for p=1:length(blink.on)
-    qIsBlink = qIsBlink | (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
-end
+if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
+    qIsBlink = false(size(sacon));
+    for p=1:length(blink.on)
+        qIsBlink = qIsBlink | sacon==blink.on(p) | sacoff==blink.off(p);
+    end
 
-% first remove their corresponding glissades, if any
-if isfield(data,'glissade')
-    qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
-    data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
+    if ETparams.blink.qGrowToOverlapSaccade
+        % first remove their corresponding glissades, if any (we always
+        % want to remove glissades even if we didn't grow into them,
+        % because there can't be glissades without corresponding saccades
+        if isfield(data,'glissade')
+            qRemoveGlissade = ismember(data.glissade.on,data.saccade.off(qIsBlink));
+            data.glissade   = replaceElementsInStruct(data.glissade,qRemoveGlissade,[]);
+        end
+        
+        % then deal with the saccades
+        data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[],{'!peakVelocityThreshold','!onsetVelocityThreshold'});
+    elseif ETparams.blink.qGrowToOverlapGlissade
+        % remove glissades
+        data.glissade   = replaceElementsInStruct(data.glissade,qIsBlink,[]);
+    end
 end
-
-% then deal with the saccades
-data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[]);
 
 % replace by linear interpolation or with nan if wanted
-nNaN = sum(isnan(data.deg.vel));
 nBlink = sum(blink.off-blink.on+1);
 if ETparams.blink.qReplaceWithInterp
     % adjust indices, blink.on(p) and blink.off(p) point to first and last
