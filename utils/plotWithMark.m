@@ -32,6 +32,11 @@ if ~isempty(titel)
     title(titel);
 end
 
+if isempty(xdata)
+    % nothing will be plotted anyway and indexing below will crash
+    return;
+end
+
 hold on;
 for p=1:2:length(varargin)
     plot(xdata(varargin{p}),ydata(varargin{p}),varargin{p+1}{:});
