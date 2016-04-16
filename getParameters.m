@@ -55,6 +55,7 @@ ETparams.samplingFreq                   = 500;
 % code, e.g., all saccades are checked for their level of blinkness
 ETparams.blink.detectMode               = 3;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
 ETparams.blink.dSizeThreshold           = 25000;        % Initial threshold for blink detection from pupil size change data
+ETparams.blink.nStd                     = 5;            % threshold is set at mean pupil size change + nStd*std of pupil size change by optimization algorithm
 ETparams.blink.localNoiseWindowLength   = 50;           % in milliseconds, window before a blink in which to calculate noise and mean pupil size change, used to calculate blink offset thresholds
 ETparams.blink.minPeakSamples           = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential blink. Very short peaks are likely to be noise.
 ETparams.blink.qExcludeOneSampleBlinks  = true;         % Based on pupil size (instead of change of size): don't consider single sample eye closed as a blink (might be multiple single asmaple occurences)
