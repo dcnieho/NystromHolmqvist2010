@@ -42,7 +42,7 @@ function y=savitzkyGolayFilt(x,N,DN,F,W,DIM)
 %       Copyright 1988-2004 The MathWorks, Inc.
 %       $Revision: 1.11.4.4 $  $Date: 2009/08/11 15:47:54 $
 
-error(nargchk(2,6,nargin,'struct'));
+narginchk(2,6);
 if ismember(nargin,[2 3]) && ~isscalar(N)
     if length(unique(size(N)))~=1, error(generatemsgid('MustBeSquare'),'Projection matrix B must be square.'), end
     B = N;

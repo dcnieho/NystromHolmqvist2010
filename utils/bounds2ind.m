@@ -10,7 +10,7 @@ function idx = bounds2ind(lo, hi)
 %   URL:         http://home.online.no/~pjacklam
 
    % check number of input arguments
-   error(nargchk(2, 2, nargin));
+   narginchk(2, 2);
    
    if isempty(lo)
        idx = [];
