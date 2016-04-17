@@ -182,7 +182,7 @@ else
     saccadeOnsetVelocityThreshold   = data.saccade.onsetVelocityThreshold;
     saccadeOffsetVelocityThreshold  = data.saccade.offsetVelocityThreshold;
 end
-glissadeSearchSamples           = ceil(glissadeSearchWindow/sampleRate * 1000);
+glissadeSearchSamples   = ceil(glissadeSearchWindow./1000 * sampleRate);
 
 
 %%% determine time axis limits
