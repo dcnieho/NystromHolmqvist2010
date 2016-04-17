@@ -188,26 +188,62 @@ glissadeSearchSamples   = ceil(glissadeSearchWindow./1000 * sampleRate);
 %%% determine time axis limits
 mmt  = [min(time) max(time)];
 
-%%% determine subplot positions
+%%% determine axes positions
 if qSaccadeTemplate
-    xplotPos = [0.05 0.88 0.90 0.08];
-    yplotPos = [0.05 0.76 0.90 0.08];
-    vplotPos = [0.05 0.60 0.90 0.12];
-    cplotPos = [0.05 0.44 0.90 0.12];
-    fixplotPos = [0.05 0.06 0.43 0.34];
-    rawplotPos = [0.52 0.06 0.43 0.34];
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        pplotPos = [0.05 0.64 0.90 0.08];
+        vplotPos = [0.05 0.50 0.90 0.10];
+        cplotPos = [0.05 0.36 0.90 0.10];
+        fixplotPos = [0.05 0.04 0.43 0.28];
+        rawplotPos = [0.52 0.04 0.43 0.28];
+    else
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        vplotPos = [0.05 0.60 0.90 0.12];
+        cplotPos = [0.05 0.44 0.90 0.12];
+        fixplotPos = [0.05 0.06 0.43 0.34];
+        rawplotPos = [0.52 0.06 0.43 0.34];
+    end
+elseif qHaveAcceleration
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        pplotPos = [0.05 0.64 0.90 0.08];
+        vplotPos = [0.05 0.50 0.90 0.10];
+        aplotPos = [0.05 0.36 0.90 0.10];
+        fixplotPos = [0.05 0.04 0.43 0.28];
+        rawplotPos = [0.52 0.04 0.43 0.28];
+    else
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        vplotPos = [0.05 0.60 0.90 0.12];
+        aplotPos = [0.05 0.44 0.90 0.12];
+        fixplotPos = [0.05 0.06 0.43 0.34];
+        rawplotPos = [0.52 0.06 0.43 0.34];
+    end
 else
-    xplotPos = [0.05 0.84 0.90 0.12];
-    yplotPos = [0.05 0.68 0.90 0.12];
-    vplotPos = [0.05 0.52 0.90 0.12];
-    fixplotPos = [0.05 0.06 0.43 0.40];
-    rawplotPos = [0.52 0.06 0.43 0.40];
+    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+        xplotPos = [0.05 0.88 0.90 0.08];
+        yplotPos = [0.05 0.76 0.90 0.08];
+        pplotPos = [0.05 0.60 0.90 0.12];
+        vplotPos = [0.05 0.44 0.90 0.12];
+        fixplotPos = [0.05 0.06 0.43 0.34];
+        rawplotPos = [0.52 0.06 0.43 0.34];
+    else
+        xplotPos = [0.05 0.84 0.90 0.12];
+        yplotPos = [0.05 0.68 0.90 0.12];
+        vplotPos = [0.05 0.52 0.90 0.12];
+        fixplotPos = [0.05 0.06 0.43 0.40];
+        rawplotPos = [0.52 0.06 0.43 0.40];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% plot X trace with fixation markers
-ax = subplot('position',xplotPos);
+ax = axes('position',xplotPos);
 plotWithMark(time,xdata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              fixmarks{:} ...                                            % fixation markers (if any)
@@ -217,18 +253,17 @@ axis ij
 
 
 %%% plot Y trace with fixation markers
-ay = subplot('position',yplotPos);
+ay = axes('position',yplotPos);
 plotWithMark(time,ydata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              fixmarks{:}, ...                                           % fixation markers (if any)
              blinkMarks{:} ...                                          % blink markers (if any)
             );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
-axis ij
 
 
 %%% plot velocity trace with saccade and glissade markers
-av = subplot('position',vplotPos);
+av = axes('position',vplotPos);
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 hold on;
@@ -263,7 +298,7 @@ end
 
 %%% plot cross correlation output with saccade and glissade markers
 if qSaccadeTemplate
-    ac = subplot('position',cplotPos);
+    ac = axes('position',cplotPos);
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -295,7 +330,7 @@ linkaxes([ax ay av ac],'x');
 
 %%% plot scanpath of raw data and of fixations
 if qHaveFixations
-    asf = subplot('position',fixplotPos);
+    asf = axes('position',fixplotPos);
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
         hold on
@@ -312,10 +347,10 @@ else
     asf = [];
 end
 
-asr = subplot('position',rawplotPos);
+asr = axes('position',rawplotPos);
+hold on
 if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
-    hold on
 end
 plotWithMark(xdata,ydata,{'k-'},...                                                 % data (y,x), style
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
@@ -328,5 +363,7 @@ axis ij
 % link view of the two scanpath plots for easy viewing
 linkaxes([asr asf],'xy');
 
-
+% make sure we don't lose the standard toolbar
+set(gcf,'Toolbar','figure');
+set(gcf,'DockControls','off');
 zoom on;
