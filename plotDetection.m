@@ -1,7 +1,7 @@
-function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,titel,pic)
+function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,varargin)
 
 % standard plot routine for monocular data
-% See also plotWithMark, plot2D and subplot
+% See also plotWithMark, plot2D and axes
 % call syntax:
 % plotDetection(data, datatype, sampleRate, glissadeSearchWindow, res, title)
 % - data: see below for the fields it needs to contain, they're all
@@ -13,10 +13,11 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 % - glissadeSearchWindow: in milliseconds
 % - rect: struct with extends of screen window, [upper left (x,y) lower
 %   right (x,y)]. rect will be read from rect.(datatype)
-% - title: can be empty
-% - pic: optional. struct with two fields, imdata with the image and offset
-%       to encode the offset between the top left of the screen and of the
-%       picture.
+% the rest is optional key-value parameters:
+% - 'title': plot title
+% - 'pic': struct with two fields, imdata with the image and offset to
+%   encode the offset between the top left of the screen and of the
+%   picture.
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -31,11 +32,40 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
-error(nargchk(6,8,nargin,'struct'))
+narginchk(6,inf)
+
+assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
 
 %%% unpack the needed variables
-if nargin<7
-    titel = '';
+% key-val parameters
+titel = '';
+pic = [];
+if nargin>=7
+    nKeyValInp = nargin-6;
+    assert(mod(nKeyValInp,2)==0,'key-value arguments must come in pairs')
+    expectVal = false;                          % start expecting an option name, not a value
+    p = 1;
+    while p <= length(varargin)
+        if ~expectVal   % the current value should be a setting
+            assert(ischar(varargin{p}),'option name must be a string')
+            expectVal = true;
+        else    % we just read a setting name, now look for a value for that setting
+            switch varargin{p-1}
+                case 'title'
+                    titel = texlabel(varargin{p},'literal');
+                case 'pic'
+                    pic = varargin{p};
+                case 'highlight'
+                    if ~any(isnan(varargin{p}))
+                        highlightTime = varargin{p};
+                    end
+                otherwise
+                    error('do not understand input %s',varargin{p-1})
+            end
+            expectVal = false;
+        end
+        p=p+1;
+    end
 end
 
 rect = rect.(datatype);
