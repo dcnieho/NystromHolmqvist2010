@@ -1,5 +1,47 @@
 function data = cutSaccades(data, ETparams,cutPostrace,extraCut,skipFirstWindow)
 
+% settings for the saccade cutting (uses bitmasks)
+% NB: depending on settings, the data traces velFilt and posFilt that are
+% output to the data files might be the same as their unfiltered cousins..
+% i.e., if you don't ask for any manipulation of these here.
+%
+% Position trace (these three possibilities are mutually exclusive):
+% - third bit set: 4:
+%   use Ignace's method to reconstruct the pursuit that is hidden behind
+%   the saccade, 2nd order interpolation of position.
+% - fourth bit set: 8:
+%   Reconstruct eye positions from desaccaded velocity signal (requires
+%   first bit set, see below)
+% - fifth bit set: 16:
+%   smooth out saccades in position domain by linear interpolation.
+%
+% Velocity trace (these two possibilities are mutually exclusive):
+% - first bit set: 1:
+%   Replace saccades by linearly interpolating velocity from saccade onset
+%   to offset.
+% - second bit set: 2:
+%   Compute velocity trace from the reconstructed smooth pursuit signal in
+%   position domain (requires third bit set, see above).
+%
+% depending on your settings, some further inputs are needed:
+% if bitand(cutPostrace,uint8(4))
+%     % parameters for Ignace's method of removing pursuit from position
+%     % trace
+%     ETparams.Ignace.run     = 15;           % number of samples to use before and after saccade to fit polynomial to
+%     ETparams.Ignace.offset  = 0;            % number of samples away from saccade start and end where RUN number of samples are taken.
+% end
+% if bitand(cutPostrace,uint8(8))
+%     % make plant for reconstructing position from velocity
+%     Ts          = 1/ETparams.samplingFreq;  % system sampling interval
+%     ETparams.sysdt  = c2d(sys,Ts,'tustin');
+% end
+assert(~bitand(cutPostrace,uint8(2)) || bitand(cutPostrace,uint8(4)),'When reconstructing velocity from desaccaded eye position, desaccading must be run on the eye position trace')
+assert(sum(bitget(cutPostrace,[1 2]))<2,'Of first and second bit in cutPostrace, only one can be set')
+assert(sum(bitget(cutPostrace,[3 4 5]))<2,'Of third, fourth and fifth bit in cutPostrace, only one can be set')
+if bitand(cutPostrace,uint8(8))
+    assert(~~bitand(cutPostrace,uint8(1)),'When reconstructing position from desaccaded eye velocity, desaccading must be run on the eye velocity trace')
+end
+
 [data.deg.AziFilt,...
  data.deg.EleFilt,...
  data.deg.velFilt,...
