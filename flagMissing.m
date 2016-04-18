@@ -1,11 +1,15 @@
 function data = flagMissing(data)
 
-[data.deg.missing] = flagMissingImplementation(data.deg.vel,true);
+if isfield(data.deg,'vel')
+    [data.deg.missing] = flagMissingImplementation(data.deg.vel,true);
+else
+    [data.deg.missing] = flagMissingImplementation(data.deg.Azi,true);
+end
 
 if isfield(data.pix,'vel')
     [data.pix.missing] = flagMissingImplementation(data.pix.vel,false);
 else
-    [data.pix.missing] = flagMissingImplementation(data.pix.X,false);
+    [data.pix.missing] = flagMissingImplementation(data.pix.X  ,false);
 end
 
 
