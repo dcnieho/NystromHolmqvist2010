@@ -6,15 +6,15 @@ function data = detectFixations(data,ETparams)
 %--------------------------------------------------------------------------
 
 %%% find data that is not saccade, glissade or blink
-qNotFix = bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel));
+qNonFixFlag = bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel));
 if isfield(data,'glissade')
-    qNotFix = qNotFix | bounds2bool(data.glissade.on,data.glissade.off, length(data.deg.vel));
+    qNonFixFlag = qNonFixFlag | bounds2bool(data.glissade.on,data.glissade.off, length(data.deg.vel));
 end
 if isfield(data,'blink')
-    qNotFix = qNotFix | bounds2bool(data.blink.on   ,data.blink.off   , length(data.deg.vel));
+    qNonFixFlag = qNonFixFlag | bounds2bool(data.blink   .on,data.blink   .off, length(data.deg.vel));
 end
-[fixon,fixoff] = bool2bounds(~qNotFix);
-    
+[fixon,fixoff]  = bool2bounds(~qNonFixFlag);
+
 % correct so that fixation ends overlap with saccade starts (and etc)
 % instead of 1 sample offset
 fixon   = max(fixon -1, 1);
@@ -35,8 +35,9 @@ for kk = length(fixon):-1:1
     
     % Exclude section if any of the samples has a velocity > peak saccade
     % threshold, it cannot be a fixation (section somehow got deleted by
-    % the saccade algorithm)
-    if any(data.deg.vel(fixon(kk):fixoff(kk)) > data.saccade.peakVelocityThreshold)
+    % the saccade algorithm). Ignore if this happens at very end of data,
+    % those velocity estimates are not so reliable
+    if any(data.deg.vel(max(3,fixon(kk)):min(fixoff(kk),length(data.deg.vel)-2)) > data.saccade.peakVelocityThreshold)
         fixon (kk) = [];
         fixoff(kk) = [];
         continue;
