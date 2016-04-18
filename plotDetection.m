@@ -81,6 +81,8 @@ else
     xlbl = ['Horizontal (' unit ')'];
     ylbl = ['Vertical (' unit ')'];
 end
+plbl = 'pupil size';
+pvlbl= 'abs({\delta} pupil size)';
 
 if strcmp(datatype,'deg')
     vxlbl = 'Azi';
@@ -269,6 +271,77 @@ plotWithMark(time,ydata,{'k-'},...                                      % data (
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
 
+%%% plot pupil size trace with blink markers
+if isfield(data,'pupil') && ~isempty(data.pupil.size)
+    % pupil size:
+    % determine axis size
+    psr = max(data.pupil.size)-min(data.pupil.size);
+    axisSize = [];
+    if psr~=0
+        axisSize = [mmt(1) mmt(2) min(data.pupil.size)-.03*psr max(data.pupil.size)+.03*psr];
+    end
+    ap = axes('position',pplotPos);
+    hold on;
+    plotWithMark(time,data.pupil.size,{'k-'},...                        % data (y,x), style
+                 'time (ms) - blinks',plbl,'',...                       % x-axis label, y-axis label, axis title
+                 missFlag{:}, ...                                       % color part of trace that is missing
+                 blinkMarks{:} ...                                      % blink markers (if any)
+                );
+    if ~isempty(axisSize)
+        axis(axisSize)
+    end
+    % change of pupil size:
+    pvdat = abs(data.pupil.dsize);
+    % determine axis size
+    axisSize = [];
+    if max(max(pvdat))~=0
+        axisSize = [mmt(1) mmt(2) 0 max(pvdat)*1.03];
+    end
+    apv= axes('position',pplotPos);
+    hold on;
+    % line at 0
+    plot([time(1) time(end)],[0 0],'b');
+    hold on;
+    plotWithMark(time,pvdat,{'k-'},...                                  % data (y,x), style
+                 'time (ms) - blinks',pvlbl,'',...                      % x-axis label, y-axis label, axis title
+                 missFlag{:}, ...                                       % color part of trace that is missing
+                 blinkMarks{:} ...                                      % blink markers (if any)
+                );
+    if ~isempty(axisSize)
+        axis(axisSize);
+    end
+    if isfield(data,'blink') && isfield(data.blink,'peakDSizeThreshold')
+        % plot pupil size change thresholds for blink detection
+        hold on;
+        plot(mmt, [1 1]*data.blink.peakDSizeThreshold,'r--')
+        plot(mmt, [1 1]*data.blink.onsetDSizeThreshold,'r:')
+        for p=1:length(data.blink.off)
+            plot(time([data.blink.off(p) min(glissadeSearchSamples+data.blink.off(p),end)]), [1 1]*data.blink.offsetDSizeThreshold(p),'r-'); % the "end" is returns the length of time. Cool end works everywhere inside an index expression!
+        end
+        hold off;
+    end
+    % at start size, not dsize, is visible
+    set([apv; allchild(apv)],'visible','off');
+    % need to set visible axis to current and topmost axis for zooming to
+    % operate on rigth axis. (If we don't do this, x zoom still works as
+    % all axes are linked on x, by looking at y range reveals last drawn in
+    % a given position is always target of zoom, even if it isn't
+    % visible...)
+    axes(ap);
+    % toggle button
+    uicontrol(...
+    'Style','togglebutton',...
+    'String','d',...
+    'FontName','symbol',...
+    'Units','Normalized',...
+    'Position',[sum(pplotPos([1 3]))+.01 sum(pplotPos([2 4]))-.04 .02 .03],...
+    'Callback',@Pupil_Callback);
+else
+    ap  = [];
+    apv = [];
+end
+
+
 %%% plot velocity trace with saccade and glissade markers
 av2 = axes('position',vplotPos);
 plotVel(time,vel{1},vlbl{1},'vel',datatype,...
@@ -395,6 +468,18 @@ zoom on;
 
 
 
+
+    function Pupil_Callback(~,~,~)
+        if strcmp(get(ap,'visible'),'on')
+            set([ap;   allchild(ap)],'visible','off');
+            set([apv; allchild(apv)],'visible','on');
+            axes(apv);  % set visible axis to current and topmost axis
+        else
+            set([apv; allchild(apv)],'visible','off');
+            set([ap;   allchild(ap)],'visible','on');
+            axes(ap);   % set visible axis to current and topmost axis
+        end
+    end
 
     function Velocity_Callback(obj,~,~)
         % find which pressed, and therefore which to show and hide
