@@ -155,20 +155,20 @@ else
 end
 if isfield(data,'glissade')
     qhighvelglissade = data.glissade.type==2;                                           % determine glissade type: 1 is low velocity, 2 is high velocity
-    glismarks = {data.glissade.off(qhighvelglissade) ,{'c*'},...                        % high velocity glissade off markers
+    glisMarks = {data.glissade.off(qhighvelglissade) ,{'c*'},...                        % high velocity glissade off markers
                  data.glissade.off(~qhighvelglissade),{'g*'}};                          % low  velocity glissade off markers
 else
-    glismarks = {};
+    glisMarks = {};
 end
 if isfield(data,'fixation')
     qHaveFixations = true;
-    xfixpos = data.fixation.(['meanX_' datatype]);
-    yfixpos = data.fixation.(['meanY_' datatype]);
-    fixmarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
+    xfixpos   = data.fixation.(['meanX_' datatype]);
+    yfixpos   = data.fixation.(['meanY_' datatype]);
+    fixMarks  = {data.fixation.on, {'bo','MarkerFaceColor','blue','MarkerSize',4},...   % fixation on  markers
                  data.fixation.off,{'ro','MarkerFaceColor','red' ,'MarkerSize',4}};     % fixation off markers
 else
     qHaveFixations = false;
-    fixmarks = {};
+    fixMarks  = {};
 end
 % thresholds
 if isfield(data.saccade,'peakXCorrThreshold')
@@ -241,7 +241,7 @@ plotWithMark(time,xdata,{'k-'},...                                      % data (
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
-             fixmarks{:} ...                                            % fixation markers (if any)
+             fixMarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(1) rect(3)]);
 axis ij
@@ -253,7 +253,7 @@ plotWithMark(time,ydata,{'k-'},...                                      % data (
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
-             fixmarks{:} ...                                            % fixation markers (if any)
+             fixMarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
 
@@ -332,15 +332,15 @@ end
 %%% plot velocity trace with saccade and glissade markers
 av2 = axes('position',vplotPos);
 plotVel(time,vel{1},vlbl{1},'vel',datatype,...
-    missFlag,sacon,sacoff,glismarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avx = axes('position',vplotPos);
 plotVel(time,vel{2},vlbl{2},'velX',datatype,...
-    missFlag,sacon,sacoff,glismarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avy = axes('position',vplotPos);
 plotVel(time,vel{3},vlbl{3},'velY',datatype,...
-    missFlag,sacon,sacoff,glismarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 vaxs = [av2 avx avy];
 % show desired vel at start
@@ -381,7 +381,7 @@ if qSaccadeTemplate
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
-                 glismarks{:}, ...                                          % glissade markers (if any)
+                 glisMarks{:}, ...                                          % glissade markers (if any)
                  blinkMarks{:} ...                                          % blink markers (if any)
                 );
     hold on;
@@ -397,11 +397,11 @@ if qSaccadeTemplate
     axis(axisSize);
 elseif qHaveAcceleration
     av2 = axes('position',acplotPos);
-    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
+    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
     avx = axes('position',acplotPos);
-    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
+    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
     avy = axes('position',acplotPos);
-    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
+    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
     aaxs = [av2 avx avy];
     % show desired vel at start
     toHide = [1:3]; toHide(toHide==vidx) = [];
