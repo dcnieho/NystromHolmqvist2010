@@ -195,37 +195,20 @@ glissadeSearchSamples   = ceil(glissadeSearchWindow./1000 * sampleRate);
 mmt  = [min(time) max(time)];
 
 %%% determine axes positions
-if qSaccadeTemplate
+if qSaccadeTemplate || qHaveAcceleration
     if isfield(data,'pupil') && ~isempty(data.pupil.size)
         xplotPos = [0.05 0.88 0.90 0.08];
         yplotPos = [0.05 0.76 0.90 0.08];
         pplotPos = [0.05 0.64 0.90 0.08];
         vplotPos = [0.05 0.50 0.90 0.10];
-        cplotPos = [0.05 0.36 0.90 0.10];
+        acplotPos = [0.05 0.36 0.90 0.10];
         fixplotPos = [0.05 0.04 0.43 0.28];
         rawplotPos = [0.52 0.04 0.43 0.28];
     else
         xplotPos = [0.05 0.88 0.90 0.08];
         yplotPos = [0.05 0.76 0.90 0.08];
         vplotPos = [0.05 0.60 0.90 0.12];
-        cplotPos = [0.05 0.44 0.90 0.12];
-        fixplotPos = [0.05 0.06 0.43 0.34];
-        rawplotPos = [0.52 0.06 0.43 0.34];
-    end
-elseif qHaveAcceleration
-    if isfield(data,'pupil') && ~isempty(data.pupil.size)
-        xplotPos = [0.05 0.88 0.90 0.08];
-        yplotPos = [0.05 0.76 0.90 0.08];
-        pplotPos = [0.05 0.64 0.90 0.08];
-        vplotPos = [0.05 0.50 0.90 0.10];
-        aplotPos = [0.05 0.36 0.90 0.10];
-        fixplotPos = [0.05 0.04 0.43 0.28];
-        rawplotPos = [0.52 0.04 0.43 0.28];
-    else
-        xplotPos = [0.05 0.88 0.90 0.08];
-        yplotPos = [0.05 0.76 0.90 0.08];
-        vplotPos = [0.05 0.60 0.90 0.12];
-        aplotPos = [0.05 0.44 0.90 0.12];
+        acplotPos = [0.05 0.44 0.90 0.12];
         fixplotPos = [0.05 0.06 0.43 0.34];
         rawplotPos = [0.52 0.06 0.43 0.34];
     end
@@ -385,7 +368,7 @@ ac   = [];  % empty if no cross correlation output plot
 if qSaccadeTemplate
     % determine axis size
     axisSize = [mmt(1) mmt(2) 0 min(2.5,max(data.deg.velXCorr))];    % xcorr values above 2.5 seem to only occur due to noise
-    ac = axes('position',cplotPos);
+    ac = axes('position',acplotPos);
     hold on;
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
@@ -409,11 +392,11 @@ if qSaccadeTemplate
     hold off;
     axis(axisSize);
 elseif qHaveAcceleration
-    av2 = axes('position',aplotPos);
+    av2 = axes('position',acplotPos);
     plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
-    avx = axes('position',aplotPos);
+    avx = axes('position',acplotPos);
     plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
-    avy = axes('position',aplotPos);
+    avy = axes('position',acplotPos);
     plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glismarks,blinkMarks,mmt);
     aaxs = [av2 avx avy];
     % show desired vel at start
