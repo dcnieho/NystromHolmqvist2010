@@ -109,12 +109,6 @@ if ETparams.data.qNumericallyDifferentiate
             tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
             tempApix   = tempApix([1 1:end end],:);    % deal with end effects
         end
-        
-        % diff pupil size
-        if isfield(data,'pupil') && ~isempty(data.pupil.size)
-            data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
-            data.pupil.dsize = data.pupil.dsize([1 1:end end],:);    % deal with end effects
-        end
     elseif ETparams.data.qNumericallyDifferentiate==2
         % simple diff
         tempV   = diff([data.deg.Azi data.deg.Ele],1,1);
@@ -132,12 +126,6 @@ if ETparams.data.qNumericallyDifferentiate
             % make same length as position trace by repeating last sample
             tempVpix   = tempVpix([1:end end    ],:) * ETparams.samplingFreq;
             tempApix   = tempApix([1:end end end],:) * ETparams.samplingFreq^2;
-        end
-        
-        % diff pupil size
-        if isfield(data,'pupil') && ~isempty(data.pupil.size)
-            data.pupil.dsize = diff(data.pupil.size,1,1) * ETparams.samplingFreq;
-            data.pupil.dsize = data.pupil.dsize([1:end end],:);    % deal with end effects
         end
     end
 else
@@ -162,8 +150,20 @@ else
         tempApix =  tempApix * ETparams.samplingFreq^2;     % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
     end
     
-    % diff pupil size
-    if isfield(data,'pupil') && ~isempty(data.pupil.size)
+end
+    
+% diff pupil size. always use savitzky golay as some smoothing is needed to
+% use this change of pupil size in a meaningful way for blink detection
+if isfield(data,'pupil') && ~isempty(data.pupil.size)
+    if ETparams.data.qNumericallyDifferentiate==1 && 0
+        data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
+        data.pupil.dsize = [data.pupil.dsize(1,:); data.pupil.dsize; data.pupil.dsize(end,:)];    % deal with end effects
+    elseif ETparams.data.qNumericallyDifferentiate==2 && 0
+        data.pupil.dsize = diff(data.pupil.size,1,1) * ETparams.samplingFreq;
+        data.pupil.dsize = data.pupil.dsize([1:end end],:);    % deal with end effects
+    else
+        window  = ceil(ETparams.data.filterWindow/1000*ETparams.samplingFreq);
+        ntaps   = 2*ceil(window)-1;
         data.pupil.dsize = -sgFilt(data.pupil.size,1,ntaps) * ETparams.samplingFreq;
     end
 end
