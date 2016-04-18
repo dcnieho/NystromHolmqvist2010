@@ -72,7 +72,7 @@ while kk <= length(sacon)
     
     % If the peak consists of <minPeakSamples consequtive samples, it it
     % probably noise, delete it
-    if sacoff(kk)-sacon(kk) < ETparams.saccade.minPeakSamples
+    if sacoff(kk)-sacon(kk)+1 < ETparams.saccade.minPeakSamples
         sacon (kk) = [];
         sacoff(kk) = [];
         saconprecise(kk) = [];
