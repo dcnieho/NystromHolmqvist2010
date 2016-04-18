@@ -154,6 +154,11 @@ end
 
 sacon   = data.saccade.on;
 sacoff  = data.saccade.off;
+if isfield(data.saccade,'onPrecise')
+    saconPrecise = data.saccade.onPrecise;
+else
+    saconPrecise = [];
+end
 if isfield(data,'blink')
     blinkMarks = {data.blink.on, {'mo','MarkerFaceColor','magenta','MarkerSize',4}, ... % blink on  markers
                   data.blink.off,{'mo','MarkerFaceColor','magenta','MarkerSize',4}};    % blink off markers
@@ -345,15 +350,15 @@ end
 %%% plot velocity trace with saccade and glissade markers
 av2 = axes('position',vplotPos);
 plotVel(time,vel{1},vlbl{1},'vel',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
+    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avx = axes('position',vplotPos);
 plotVel(time,vel{2},vlbl{2},'velX',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
+    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avy = axes('position',vplotPos);
 plotVel(time,vel{3},vlbl{3},'velY',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
+    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 vaxs = [av2 avx avy];
 % show desired vel at start
@@ -411,11 +416,11 @@ if qSaccadeTemplate
     axis(axisSize);
 elseif qHaveAcceleration
     av2 = axes('position',acplotPos);
-    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
+    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
     avx = axes('position',acplotPos);
-    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
+    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
     avy = axes('position',acplotPos);
-    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
+    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
     aaxs = [av2 avx avy];
     % show desired vel at start
     toHide = [1:3]; toHide(toHide==vidx) = [];
@@ -517,7 +522,7 @@ zoom on;
 end
 
 function plotVel(time,vel,vlbl,veltype,datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime,...
+    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTime,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold)
 % determine axis size
 axisSize = calcAxisExtents(vel,mmt);
@@ -534,6 +539,10 @@ plotWithMark(time,vel,{'k-'},...                                        % data (
              glisMarks{:}, ...                                          % glissade markers (if any)
              blinkMarks{:} ...                                          % blink markers (if any)
     );
+if ~isempty(saconPrecise)
+    hold on;
+    plot(interp1(1:length(time),time,saconPrecise),zeros(size(saconPrecise)),'bx');
+end
 % add detection thresholds
 if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
     % dont plot if:
@@ -560,7 +569,7 @@ end
 end
 
 function plotAcc(time,acc,albl,veltype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime)
+    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTime)
 % determine axis size
 axisSize = calcAxisExtents(acc,mmt);
 % plot highlights
@@ -576,6 +585,10 @@ plotWithMark(time,acc,{'k-'},...                                        % data (
              glisMarks{:}, ...                                          % glissade markers (if any)
              blinkMarks{:} ...                                          % blink markers (if any)
     );
+if ~isempty(saconPrecise)
+    hold on;
+    plot(interp1(1:length(time),time,saconPrecise),zeros(size(saconPrecise)),'bx');
+end
 if ~isempty(axisSize)
     axis(axisSize)
 end

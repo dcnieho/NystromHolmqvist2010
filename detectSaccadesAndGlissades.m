@@ -35,6 +35,7 @@ else
     qAboveThresh    = data.deg.vel      > data.saccade.peakVelocityThreshold;
 end
 [sacon,sacoff]  = bool2bounds(qAboveThresh);
+saconprecise    = zeros(size(sacon));
 % no quick exit here if no candidate saccades. The bulk of this function
 % will be skipped anyway, but we do need the end bit of it to properly set
 % the output
@@ -74,6 +75,7 @@ while kk <= length(sacon)
     if sacoff(kk)-sacon(kk) < ETparams.saccade.minPeakSamples
         sacon (kk) = [];
         sacoff(kk) = [];
+        saconprecise(kk) = [];
         continue;
     end
     
@@ -81,18 +83,75 @@ while kk <= length(sacon)
     % DETECT SACCADE - refine saccade beginnings and ends
     %----------------------------------------------------------------------       
     
-    % Detect saccade start. Walk back from detected saccade start to find
-    % where the velocity is below the saccadeVelocityThreshold (mean+3*std)
-    % and where the acceleration is negative (which indicates a local
-    % minimum in the velocity function).
-    i = sacon(kk);
-    while i > 1 && ...                                          % make sure we don't run out of the data
-          (isnan(vel(i)) || ...                                 % and that we ignore nan data
-           vel(i) > data.saccade.(field_onset) || ...           % keep searching until below saccadeOnsetVelocityTreshold
-           diff(vel(i-[0:1])) < 0)                              % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
-        i = i-1;
+    % Detect saccade start. Two methods. If user selected method 2, we
+    % might fall back to using method 1 if 2 fails...
+    onsetRefineMethod2Failed = false;
+    if ETparams.saccade.onsetRefineMethod==2
+        % take samples from peak till one before intersection with
+        % threshold and fit line to them. Intersection of line with 0
+        % velocity is onset. this is meant for low speed data where we
+        % don't have a high-res picture of the saccade
+        % what is flagged is the first sample above threshold, so take
+        % sacon-1 to get first below
+        is = max(1,sacon(kk)-1);
+        while is > 1 && ...                                          % make sure we don't run out of the data
+               ~isnan(vel(is)) && ...                                % and that we don't have missing data
+               vel(is) > data.saccade.(field_onset)                  % keep searching until below saccadeOnsetVelocityTreshold
+            is = is-1;
+        end
+        % get peak of this saccade. Walk to local maximum, which is
+        % safer in case we have something bimodal: we'd want to stay on
+        % the first slope
+        ie = is;
+        while ie < length(vel) && ...                               % make sure we don't run out of the data
+                ~isnan(vel(ie)) && ...                              % and that we don't have missing data
+                diff(vel(ie+[0:1])) > 0                             % and acceleration is positive, then we're still going up slope
+            ie = ie+1;
+        end
+        if ie<=is
+            % velocity peak must occur later than first sample under
+            % threshold for this method
+            onsetRefineMethod2Failed = true;
+            saconprecise(kk) = nan;
+            fprintf('falling back to saccade onset refinement method 1\n');
+        else
+            % Center selected data indices and get slope of velocity in
+            % that interval by least squares fitting a line to it (note the
+            % backslash operator)
+            slope           = ([is:ie].'-mean([is ie]))\vel(is:ie);
+            % see where best-fit line intersects vel==0
+            saconprecise(kk)= mean([is ie])-mean(vel(is:ie))/slope;
+            if is-saconprecise(kk)>10/1000 * ETparams.samplingFreq
+                % if saconset gotten by line fit is more than 10 ms earlier
+                % than time at which data first goes below thrshold,
+                % something must have gone wrong in determining precise
+                % saccade onset (e.g., we're not dealing with a real
+                % saccade here, velocities until first peak are way too low
+                % and thus lsope is too small)
+                onsetRefineMethod2Failed = true;
+                saconprecise(kk) = nan;
+                fprintf('falling back to saccade onset refinement method 1\n');
+            else
+                % set normal saconset to closest sample (make sure we don't
+                % run out of the data if data starts with a saccade)
+                sacon(kk)       = max(1,round(saconprecise(kk)));
+            end
+        end
     end
-    sacon(kk) = i;                                              % velocity minimum is last sample before "acceleration" sign change
+    if ETparams.saccade.onsetRefineMethod==1 || onsetRefineMethod2Failed
+        % Walk back from detected saccade start to find
+        % where the velocity is below the saccadeVelocityThreshold (mean+3*std)
+        % and where the acceleration is negative (which indicates a local
+        % minimum in the velocity function).
+        i = sacon(kk);
+        while i > 1 && ...                                          % make sure we don't run out of the data
+              (isnan(vel(i)) || ...                                 % and that we ignore nan data
+               vel(i) > data.saccade.(field_onset) || ...           % keep searching until below saccadeOnsetVelocityTreshold
+               diff(vel(i-[0:1])) < 0)                              % and acceleration is negative (we need to take this derivative locally as our acceleration signal is absolute)
+            i = i-1;
+        end
+        sacon(kk) = i;                                              % velocity minimum is last sample before "acceleration" sign change
+    end
     
     % Calculate local noise during 'fixation' before the saccade start (the
     % adaptive part), excluding data that is during known saccade time or
@@ -144,6 +203,7 @@ while kk <= length(sacon)
     if ~ETparams.saccade.allowNaN && any(isnan(vel(sacon(kk):sacoff(kk))))
         sacon (kk) = [];
         sacoff(kk) = [];
+        saconprecise(kk) = [];
         continue;
     end
         
@@ -152,6 +212,7 @@ while kk <= length(sacon)
     if sacoff(kk)-sacon(kk)+1 < minSacSamples
         sacon (kk) = [];
         sacoff(kk) = [];
+        saconprecise(kk) = [];
         continue;
     end
     
@@ -257,6 +318,7 @@ while kk <= length(sacon)
                       sacoff(kk+1) <= glissadeoff(end)
                     sacon (kk+1) = [];
                     sacoff(kk+1) = [];
+                    saconprecise(kk+1) = [];
                     continue;
                 end
                 
@@ -287,6 +349,9 @@ end
 % build input for this algorithm
 saccade.on              = sacon;
 saccade.off             = sacoff;
+if ETparams.saccade.onsetRefineMethod==2
+    saccade.onPrecise       = saconprecise;
+end
 saccade.(field_offset)  = saccadeOffsetTreshold;
 glissade.on             = glissadeon;
 glissade.off            = glissadeoff;

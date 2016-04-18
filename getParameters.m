@@ -73,6 +73,7 @@ ETparams.blink.qReplaceVelWithNan       = false;        % if true, blinks in all
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template (true), not from the velocity trace (false). Leave this to false to avoid distortion of saccade beginning and end due to low-pass filtering of template. Must be false if saccade template isn't used
+ETparams.saccade.onsetRefineMethod      = 2;            % 1: Nystrom & Holmqvist method of walking to local minimum below onset threshold. 2: designed for low speed data: take samples from peak till one below detection threshold, fit line, and take intersection of line with 0 as threshold
 ETparams.saccade.localNoiseWindowLength = 50;           % in milliseconds, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
 ETparams.saccade.minPeakSamples         = 1;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
 ETparams.saccade.minDur                 = 10;           % in milliseconds
