@@ -57,7 +57,7 @@ ETparams.samplingFreq                   = 120;
 % code, e.g., all saccades are checked for their level of blinkness
 ETparams.blink.detectMode               = 1;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
 ETparams.blink.dSizeThreshold           = 25000;        % Initial threshold for blink detection from pupil size change data
-ETparams.blink.nStd                     = 5;            % threshold is set at mean pupil size change + nStd*std of pupil size change by optimization algorithm
+ETparams.blink.dSizeSD                  = 9;            % Peak pupil size change threshold for detecting candidate blinks is put at mean+dSizeSD*SD
 ETparams.blink.localNoiseWindowLength   = 50;           % in milliseconds, window before a blink in which to calculate noise and mean pupil size change, used to calculate blink offset thresholds
 ETparams.blink.minPeakSamples           = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential blink. Very short peaks are likely to be noise.
 ETparams.blink.qExcludeOneSampleBlinks  = true;         % Based on pupil size (instead of change of size): don't consider single sample eye closed as a blink (might be multiple single asmaple occurences)
@@ -71,7 +71,9 @@ ETparams.blink.qReplaceWithInterp       = false;        % replace position, velo
 ETparams.blink.qReplaceVelWithNan       = false;        % if true, blinks in all the velocity traces are replaced with NaN
 
 ETparams.saccade.peakVelocityThreshold  = 100;          % Initial value of the peak detection threshold, °/s
+ETparams.saccade.peakVelocitySD         = 6;            % Peak velocity threshold for detecting candidate saccades is put at mean+peakVelocitySD*SD (default from paper is 6)
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
+ETparams.saccade.peakXCorrSD            = 6;            % Peak velocity threshold for detecting candidate saccades from xcorr output is put at mean+peakXCorrSD*SD
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template (true), not from the velocity trace (false). Leave this to false to avoid distortion of saccade beginning and end due to low-pass filtering of template. Must be false if saccade template isn't used
 ETparams.saccade.onsetRefineMethod      = 2;            % 1: Nystrom & Holmqvist method of walking to local minimum below onset threshold. 2: designed for low speed data: take samples from peak till one below detection threshold, fit line, and take intersection of line with 0 as threshold
 ETparams.saccade.localNoiseWindowLength = 50;           % in milliseconds, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
