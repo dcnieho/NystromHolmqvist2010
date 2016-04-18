@@ -1,15 +1,17 @@
 function plotWithMark(xdata,ydata,addInps,xlbl,ylbl,titel,varargin)
 
-% makes and x-y plot with specified axis lalbels and title in the current
-% axes. Optionally plots markers, specified by the varargin plot
+% makes and x-y plot with specified axis labels and title in the current
+% axes. addInps specifies additional input to the plot command that draws the x-y data.
+% Optionally plots markers, specified by the varargin part
 %
-% Markers are identified by pairs of input. You can specify an unlimited
-% number of those pairs. The first is indices into the xdata and ydata, the
-% second is a cell containing 0-x additional inputs to the plot() command
+% These markers are identified by pairs of input. You can specify an
+% unlimited number of those pairs. The first is indices into the xdata and
+% ydata, the second is a cell containing 0-x additional inputs to the
+% plot() command, e.g. setting the look of the markers
 %
-% plotWithMark(...,marker,{});
-% plotWithMark(...,marker,{'ro'});
-% plotWithMark(...,marker,{'bo','MarkerFaceColor','blue','MarkerSize',4};
+% plotWithMark(...,markerIdxs,{});
+% plotWithMark(...,markerIdxs,{'ro'});
+% plotWithMark(...,markerIdxs,{'bo','MarkerFaceColor','blue','MarkerSize',4};
 %
 % are thus all valid calls.
 
