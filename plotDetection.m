@@ -19,6 +19,7 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 %   encode the offset between the top left of the screen and of the
 %   picture.
 % - 'highlight': sample idxes for intervals to highlight
+% - 'showSacInScan': put saccade on and offsets markers in 2D view
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -42,6 +43,7 @@ assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
 titel = '';
 pic = [];
 highlightTime = [];
+qIndicateSacInScanpath = false;
 if nargin>=7
     nKeyValInp = nargin-6;
     assert(mod(nKeyValInp,2)==0,'key-value arguments must come in pairs')
@@ -61,6 +63,8 @@ if nargin>=7
                     if ~any(isnan(varargin{p}))
                         highlightTime = varargin{p};
                     end
+                case 'showSacInScan'
+                    qIndicateSacInScanpath = varargin{p};
                 otherwise
                     error('do not understand input %s',varargin{p-1})
             end
@@ -462,6 +466,10 @@ if ~isempty(highlightTime)
     for p=1:size(highlightTime,1)
         extraInp = [extraInp {[round(highlightTime(p,1)):round(highlightTime(p,2))],{'r-'}}];
     end
+end
+if qIndicateSacInScanpath
+    extraInp = [extraInp {sacon, {'bo','MarkerFaceColor','b','MarkerSize',4},...    % saccade on  markers
+                          sacoff,{'ro','MarkerFaceColor','r','MarkerSize',4}}];
 end
 plotWithMark(xdata,ydata,{'k-'},...                                                 %  data (y,x), style
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
