@@ -357,7 +357,7 @@ glissade.on             = glissadeon;
 glissade.off            = glissadeoff;
 glissade.type           = glissadetype;
 
-[saccade,glissade] = mergeIntervals(saccade,glissade,0);
+[saccade,glissade] = mergeIntervals(saccade,glissade,-1);   % -1 so there is a minimal actual overlap of 1 sample, not just touching offsets/onsets
 
 
 %--------------------------------------------------------------------------
