@@ -18,6 +18,7 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 % - 'pic': struct with two fields, imdata with the image and offset to
 %   encode the offset between the top left of the screen and of the
 %   picture.
+% - 'highlight': sample idxes for intervals to highlight
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -40,6 +41,7 @@ assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
 % key-val parameters
 titel = '';
 pic = [];
+highlightTime = [];
 if nargin>=7
     nKeyValInp = nargin-6;
     assert(mod(nKeyValInp,2)==0,'key-value arguments must come in pairs')
@@ -111,6 +113,11 @@ if isfield(data,'time')
     time = data.time;
 else
     time = ([1:length(xdata)]-1)/sampleRate * 1000;
+end
+% map highlight sample indices to timestamps
+highlightTimet = [];
+if ~isempty(highlightTime)
+    highlightTimet = interp1(1:length(time),time,highlightTime);
 end
 
 % velocity
@@ -237,6 +244,8 @@ end
 
 %%% plot X trace with fixation markers
 ax = axes('position',xplotPos);
+hold on;
+plotTimeHighlights(highlightTimet,rect([1 3]));
 plotWithMark(time,xdata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -249,6 +258,8 @@ axis ij
 
 %%% plot Y trace with fixation markers
 ay = axes('position',yplotPos);
+hold on;
+plotTimeHighlights(highlightTimet,rect([2 4]));
 plotWithMark(time,ydata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -269,6 +280,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     end
     ap = axes('position',pplotPos);
     hold on;
+    plotTimeHighlights(highlightTimet,axisSize(3:4));
     plotWithMark(time,data.pupil.size,{'k-'},...                        % data (y,x), style
                  'time (ms) - blinks',plbl,'',...                       % x-axis label, y-axis label, axis title
                  missFlag{:}, ...                                       % color part of trace that is missing
@@ -286,6 +298,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     end
     apv= axes('position',pplotPos);
     hold on;
+    plotTimeHighlights(highlightTimet,axisSize(3:4));
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -332,15 +345,15 @@ end
 %%% plot velocity trace with saccade and glissade markers
 av2 = axes('position',vplotPos);
 plotVel(time,vel{1},vlbl{1},'vel',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avx = axes('position',vplotPos);
 plotVel(time,vel{2},vlbl{2},'velX',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 avy = axes('position',vplotPos);
 plotVel(time,vel{3},vlbl{3},'velY',datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 vaxs = [av2 avx avy];
 % show desired vel at start
@@ -374,6 +387,7 @@ if qSaccadeTemplate
     axisSize = [mmt(1) mmt(2) 0 min(2.5,max(data.deg.velXCorr))];    % xcorr values above 2.5 seem to only occur due to noise
     ac = axes('position',acplotPos);
     hold on;
+    plotTimeHighlights(highlightTimet,axisSize(3:4));
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
@@ -397,11 +411,11 @@ if qSaccadeTemplate
     axis(axisSize);
 elseif qHaveAcceleration
     av2 = axes('position',acplotPos);
-    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
+    plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
     avx = axes('position',acplotPos);
-    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
+    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
     avy = axes('position',acplotPos);
-    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt);
+    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTimet);
     aaxs = [av2 avx avy];
     % show desired vel at start
     toHide = [1:3]; toHide(toHide==vidx) = [];
@@ -438,10 +452,17 @@ hold on
 if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
 end
+extraInp = {};
+if ~isempty(highlightTime)
+    for p=1:size(highlightTime,1)
+        extraInp = [extraInp {[round(highlightTime(p,1)):round(highlightTime(p,2))],{'r-'}}];
+    end
+end
 plotWithMark(xdata,ydata,{'k-'},...                                                 %  data (y,x), style
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % use blue marker for first datapoint
-             length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4} ...    % use red  marker for last  datapoint
+             length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4},...    % use red  marker for last  datapoint
+             extraInp{:}                                                     ...
             );
 axis(rect([1 3 2 4]));
 
@@ -496,7 +517,7 @@ zoom on;
 end
 
 function plotVel(time,vel,vlbl,veltype,datatype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,...
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold)
 % determine axis size
 axisSize = [];
@@ -508,7 +529,9 @@ if any(~isnan(vel))
         axisSize = [mmt(1) mmt(2) min(vel)-.03*psr max(vel)+.03*psr];
     end
 end
+% plot highlights
 hold on;
+plotTimeHighlights(highlightTime,axisSize(3:4));
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 plotWithMark(time,vel,{'k-'},...                                        % data (y,x), style
@@ -545,7 +568,7 @@ end
 end
 
 function plotAcc(time,acc,albl,veltype,...
-    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt)
+    missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime)
 % determine axis size
 axisSize = [];
 if any(~isnan(acc))
@@ -556,7 +579,9 @@ if any(~isnan(acc))
         axisSize = [mmt(1) mmt(2) min(acc)-.03*psr max(acc)+.03*psr];
     end
 end
+% plot highlights
 hold on;
+plotTimeHighlights(highlightTime,axisSize(3:4));
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
 plotWithMark(time,acc,{'k-'},...                                        % data (y,x), style
@@ -572,5 +597,13 @@ if ~isempty(axisSize)
 end
 if ~strcmp(veltype,'vel')
     axis ij
+end
+end
+
+function plotTimeHighlights(highlightTime,verExtents)
+if ~isempty(highlightTime)
+    for p=1:size(highlightTime,1)
+        patch(highlightTime(p,[1 2 2 1]),verExtents([1 1 2 2]),[.8 .8 .8],'EdgeColor',[.8 .8 .8]);
+    end
 end
 end
