@@ -520,15 +520,7 @@ function plotVel(time,vel,vlbl,veltype,datatype,...
     missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold)
 % determine axis size
-axisSize = [];
-if any(~isnan(vel))
-    if min(0,min(vel))==0
-        axisSize = [mmt(1) mmt(2) 0 max(vel)*1.03];
-    else
-        psr = max(vel)-min(vel);
-        axisSize = [mmt(1) mmt(2) min(vel)-.03*psr max(vel)+.03*psr];
-    end
-end
+axisSize = calcAxisExtents(vel,mmt);
 % plot highlights
 hold on;
 plotTimeHighlights(highlightTime,axisSize(3:4));
@@ -570,15 +562,7 @@ end
 function plotAcc(time,acc,albl,veltype,...
     missFlag,sacon,sacoff,glisMarks,blinkMarks,mmt,highlightTime)
 % determine axis size
-axisSize = [];
-if any(~isnan(acc))
-    if min(0,min(acc))==0
-        axisSize = [mmt(1) mmt(2) 0 max(acc)*1.03];
-    else
-        psr = max(acc)-min(acc);
-        axisSize = [mmt(1) mmt(2) min(acc)-.03*psr max(acc)+.03*psr];
-    end
-end
+axisSize = calcAxisExtents(acc,mmt);
 % plot highlights
 hold on;
 plotTimeHighlights(highlightTime,axisSize(3:4));
@@ -604,6 +588,18 @@ function plotTimeHighlights(highlightTime,verExtents)
 if ~isempty(highlightTime)
     for p=1:size(highlightTime,1)
         patch(highlightTime(p,[1 2 2 1]),verExtents([1 1 2 2]),[.8 .8 .8],'EdgeColor',[.8 .8 .8]);
+    end
+end
+end
+
+function axisSize = calcAxisExtents(var,mmt)
+axisSize = [];
+if any(~isnan(var))
+    if min(0,min(var))==0
+        axisSize = [mmt(1) mmt(2) 0 max(var)*1.03];
+    else
+        psr = max(var)-min(var);
+        axisSize = [mmt(1) mmt(2) min(var)-.03*psr max(var)+.03*psr];
     end
 end
 end
