@@ -20,6 +20,11 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 %   picture.
 % - 'highlight': sample idxes for intervals to highlight
 % - 'showSacInScan': put saccade on and offsets markers in 2D view
+% - 'refCoords': single reference point to draw
+% - 'tRefCoords': coordinates for reference points to draw that are
+%                 localized in time (e.g., indicating when a target was
+%                 presented
+% - 'scanRefCoords': reference points to be drawn in 2D
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -44,6 +49,9 @@ titel = '';
 pic = [];
 highlightTime = [];
 qIndicateSacInScanpath = false;
+refCoords = [];
+scanRefCoords = [];
+tRefCoords = [];
 if nargin>=7
     nKeyValInp = nargin-6;
     assert(mod(nKeyValInp,2)==0,'key-value arguments must come in pairs')
@@ -65,6 +73,15 @@ if nargin>=7
                     end
                 case 'showSacInScan'
                     qIndicateSacInScanpath = varargin{p};
+                case 'refCoords'
+                    refCoords = varargin{p};
+                    assert(numel(refCoords)==2,'refCoords input should have two elements')
+                case 'scanRefCoords'
+                    scanRefCoords = varargin{p};
+                    assert(size(scanRefCoords,2)==2,'scanRefCoords input should be an Nx2 matrix')
+                case 'tRefCoords'
+                    tRefCoords = varargin{p};
+                    assert(size(tRefCoords,2)==4,'tRefCoords input should be an Nx4 matrix')
                 otherwise
                     error('do not understand input %s',varargin{p-1})
             end
@@ -255,6 +272,14 @@ end
 ax = axes('position',xplotPos);
 hold on;
 plotTimeHighlights(highlightTimet,rect([1 3]));
+if ~isempty(refCoords)
+    plot([time(1) time(end)],refCoords(1)*[1 1],'b');
+end
+if ~isempty(tRefCoords)
+    for p=1:size(tRefCoords,1)
+        plot(tRefCoords(p,1:2),tRefCoords(p,[3 3]),'r')
+    end
+end
 plotWithMark(time,xdata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -269,6 +294,14 @@ axis ij
 ay = axes('position',yplotPos);
 hold on;
 plotTimeHighlights(highlightTimet,rect([2 4]));
+if ~isempty(refCoords)
+    plot([time(1) time(end)],refCoords(2)*[1 1],'b');
+end
+if ~isempty(tRefCoords)
+    for p=1:size(tRefCoords,1)
+        plot(tRefCoords(p,1:2),tRefCoords(p,[4 4]),'r')
+    end
+end
 plotWithMark(time,ydata,{'k-'},...                                      % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
@@ -445,6 +478,14 @@ if qHaveFixations
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
         imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
     end
+    if ~isempty(scanRefCoords)
+        plot(scanRefCoords(:,1),scanRefCoords(:,2),'b.');
+    end
+    if ~isempty(refCoords)
+        aspectr = (rect(3)-rect(1))/(rect(4)-rect(2));
+        plot(refCoords(1)+(rect(3)-rect(1))*.05/aspectr*[-1 1],refCoords(2)                      *[ 1 1],'b');
+        plot(refCoords(1)                              *[ 1 1],refCoords(2)+(rect(4)-rect(2))*.05*[-1 1],'b');
+    end
     plotWithMark(xfixpos,yfixpos,{'k-'},...                                             % data (y,x), style
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  [1:length(xfixpos)],{'go','MarkerFaceColor','g','MarkerSize',4},...    % mark each fixation (that is marker on each datapoint we feed it
@@ -460,6 +501,14 @@ asr = axes('position',rawplotPos);
 hold on
 if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
     imagesc([0 size(pic.imdata,2)]+pic.offset(2),[0 size(pic.imdata,1)]+pic.offset(1),pic.imdata);
+end
+if ~isempty(scanRefCoords)
+    plot(scanRefCoords(:,1),scanRefCoords(:,2),'b.');
+end
+if ~isempty(refCoords)
+    aspectr = (rect(3)-rect(1))/(rect(4)-rect(2));
+    plot(refCoords(1)+(rect(3)-rect(1))*.05/aspectr*[-1 1],refCoords(2)                      *[ 1 1],'b');
+    plot(refCoords(1)                              *[ 1 1],refCoords(2)+(rect(4)-rect(2))*.05*[-1 1],'b');
 end
 extraInp = {};
 if ~isempty(highlightTime)
