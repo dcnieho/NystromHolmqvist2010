@@ -19,7 +19,7 @@ ETparams.data.qFlipX                    = false;
 % derivatives analytically). Set the below qNumericallyDifferentiate to
 % true to do a simple numerical difference by convoluting with [1 0 -1] (a
 % slightly smoothed and correctly centered version of matlab's diff).
-ETparams.data.qNumericallyDifferentiate = true;         % if 1, do above convolution methods (moveing average of three samples), if 2, do simple diff()
+ETparams.data.qNumericallyDifferentiate = 1;            % if 1, do above convolution methods (moveing average of three samples), if 2, do simple diff()
 ETparams.data.filterWindow              = 10;           % ms, if using Savitzky-Golay, filter window length. Make sure its narrower than smallest features you want to detect
 ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 % If true, eyeposition trace in pixels is also stored and derivatives
