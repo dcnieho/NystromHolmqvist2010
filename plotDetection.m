@@ -107,7 +107,11 @@ elseif strcmp(datatype,'deg')
 end
 
 % time
-time    = ([1:length(xdata)]-1)/sampleRate * 1000;
+if isfield(data,'time')
+    time = data.time;
+else
+    time = ([1:length(xdata)]-1)/sampleRate * 1000;
+end
 
 % velocity
 if strcmp(datatype,'pix')
