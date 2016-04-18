@@ -27,6 +27,10 @@ data.fixation.meanVelocity      = zeros(size(data.fixation.on));
 data.fixation.peakVelocity      = zeros(size(data.fixation.on));
 data.fixation.meanAcceleration  = zeros(size(data.fixation.on));
 data.fixation.peakAcceleration  = zeros(size(data.fixation.on));
+data.fixation.RMSS2S            = zeros(size(data.fixation.on));
+data.fixation.STDx              = zeros(size(data.fixation.on));
+data.fixation.STDy              = zeros(size(data.fixation.on));
+data.fixation.BCEA              = zeros(size(data.fixation.on));
 for p=1:length(data.fixation.on)
     idxs = data.fixation.on(p) : data.fixation.off(p);
     
@@ -42,4 +46,30 @@ for p=1:length(data.fixation.on)
     data.fixation.peakVelocity(p)       = max    (data.deg.vel(idxs));
     data.fixation.meanAcceleration(p)   = nanmean(data.deg.acc(idxs));
     data.fixation.peakAcceleration(p)   = max    (data.deg.acc(idxs));
+    
+    % fixation instability
+    % calculate RMS S2S
+    % since its done with diff, don't just exclude missing and treat
+    % resulting as one continuous vector. replace missing with nan first,
+    % use left-over values
+    xdif = subsasgn(data.deg.Azi(idxs),substruct('()',{isnan(data.deg.vel(idxs))}),nan);
+    ydif = subsasgn(data.deg.Ele(idxs),substruct('()',{isnan(data.deg.vel(idxs))}),nan);
+    xdif = diff(xdif).^2; xdif(isnan(xdif)) = [];
+    ydif = diff(ydif).^2; ydif(isnan(ydif)) = [];
+    data.fixation.RMSS2S(p) = sqrt(mean(xdif + ydif)); % Sample 2 sample displacement RMS
+    
+    % calculate STD
+    xposf= data.deg.Azi(idxs);
+    yposf= data.deg.Ele(idxs);
+    data.fixation.STDx(p) = std(xposf(~qMiss));
+    data.fixation.STDy(p) = std(yposf(~qMiss));
+    
+    % calculate BCEA (Crossland and Rubin 2002 Optometry and Vision Science)
+    qMiss= isnan(data.deg.vel(idxs));
+    xx   = corrcoef(xposf(~qMiss),yposf(~qMiss));
+    rho  = xx(1,2);
+    P    = 0.68; % cumulative probability of area under the multivariate normal
+    k    = log(1/(1-P));
+    
+    data.fixation.BCEA(p) = 2*k*pi*data.fixation.STDx(p)*data.fixation.STDy(p)*sqrt(1-rho.^2);
 end
