@@ -186,19 +186,6 @@ while kk <= length(sacon)
     end
     sacoff(kk) = i;
     
-    % now, delete all the next saccades that are enclosed by this potential
-    % saccade, i.e., delete any saccade whose unrefined end is before
-    % the end of this saccade as they would converge to the same saccade
-    % interval. We do this now before the final checks below because if the
-    % current saccade is deleted by the below checks, any later saccade
-    % that will converge to the same interval would be deleted as well.
-    while kk+1<=length(sacoff) &&...                            % make sure we don't run out of the data
-          sacoff(kk+1) <= sacoff(kk)
-        sacon (kk+1) = [];
-        sacoff(kk+1) = [];
-        continue;
-    end
-              
     % If the saccade contains NaN samples, delete it if not allowed
     if ~ETparams.saccade.allowNaN && any(isnan(vel(sacon(kk):sacoff(kk))))
         sacon (kk) = [];
@@ -213,6 +200,28 @@ while kk <= length(sacon)
         sacon (kk) = [];
         sacoff(kk) = [];
         saconprecise(kk) = [];
+        continue;
+    end
+    
+    % check if this is a valid saccade: no more than 20% (inclusive)
+    % missing data
+    if ( isfield(data,'pupil') && sum(data.pupil.size(sacon(kk):sacoff(kk))==0) /(sacoff(kk)-sacon(kk)+1)>=.2) ||...
+       (~isfield(data,'pupil') && sum(isnan(      vel(sacon(kk):sacoff(kk))   ))/(sacoff(kk)-sacon(kk)+1)>=.2)
+        sacon (kk) = [];
+        sacoff(kk) = [];
+        saconprecise(kk) = [];
+        continue;
+    end
+    
+    % now, delete all the next saccades that are enclosed by this potential
+    % saccade, i.e., delete any saccade whose unrefined end is before
+    % the end of this saccade as these ends would converge to the same
+    % saccade end, don't want to flag one saccade twice.
+    while kk+1<=length(sacoff) &&...                            % make sure we don't run out of the data
+          sacoff(kk+1) <= sacoff(kk)
+        sacon (kk+1) = [];
+        sacoff(kk+1) = [];
+        saconprecise(kk+1) = [];
         continue;
     end
     
