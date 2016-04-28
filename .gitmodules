@@ -1,0 +1,3 @@
+[submodule "utilsExternal"]
+	path = utilsExternal
+	url = ../matlab-lib-utils
