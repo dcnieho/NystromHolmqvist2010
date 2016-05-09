@@ -1,17 +1,17 @@
 function ETparams = getParameters
 
 % user settings
-ETparams.screen.resolution              = [1680 1050];
-ETparams.screen.size                    = [0.473 0.296];
-ETparams.screen.viewingDist             = 0.60;
-ETparams.screen.dataCenter              = [840 525];    % center of screen has these coordinates in data
-ETparams.screen.subjectStraightAhead    = [840 525];    % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
+ETparams.screen.resolution              = [1024 768];
+ETparams.screen.size                    = [0.40 0.27];
+ETparams.screen.viewingDist             = .7;
+ETparams.screen.dataCenter              = [ 512 384];   % center of screen has these coordinates in data
+ETparams.screen.subjectStraightAhead    = [ 512 384];   % Specify the screen coordinate that is straight ahead of the subject. Just specify the middle of the screen unless its important to you to get this very accurate!
 
 % flip the Y coordinate of the data? All the routines assume the origin of
 % the screen (0,0) is at the top left corner. You'll have to flip if the
 % your data's origin is the lower left corner. Do a flip X if your origin
 % is on the right side of the screen (sic).
-ETparams.data.qFlipY                    = true;
+ETparams.data.qFlipY                    = false;
 ETparams.data.qFlipX                    = false;
 % By default, eye velocity and acceleration are computed with a
 % Savitzky-Golay differentiating filter (it basically fits a second order
@@ -19,14 +19,14 @@ ETparams.data.qFlipX                    = false;
 % derivatives analytically). Set the below qNumericallyDifferentiate to
 % true to do a simple numerical difference by convoluting with [1 0 -1] (a
 % slightly smoothed and correctly centered version of matlab's diff).
-ETparams.data.qNumericallyDifferentiate = 1;            % if 1, do above convolution methods (moveing average of three samples), if 2, do simple diff()
+ETparams.data.qNumericallyDifferentiate = 0;            % if 1, do above convolution methods (moveing average of three samples), if 2, do simple diff()
 ETparams.data.filterWindow              = 10;           % ms, if using Savitzky-Golay, filter window length. Make sure its narrower than smallest features you want to detect
-ETparams.data.qAlsoStoreComponentDerivs = true;         % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
+ETparams.data.qAlsoStoreComponentDerivs = false;        % if true, velocity in X/azimuth and Y/elevation direction separately are also stored.
 % If true, eyeposition trace in pixels is also stored and derivatives
 % (smoothed, if using Savitzky-Golay) are calculated. Might be needed in
 % some usage cases. The eventDetection however always runs on eye
 % pos/vel/acc in degrees.
-ETparams.data.qAlsoStoreandDiffPixels   = true;
+ETparams.data.qAlsoStoreandDiffPixels   = false;
 
 % Option to use median filter for detrending velocity data (e.g. removing
 % pursuit baseline speed). This is only useful if saccade templates are
@@ -48,14 +48,14 @@ ETparams.data.medianWindowLength        = 40;           % ms
 % See also ETparams.saccade.xCorrPeakThreshold
 ETparams.data.qApplySaccadeTemplate     = false;
 
-ETparams.data.minDur                    = 1000/60;      % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
-ETparams.data.missCoords                = [0 0];        % if empty, not used, else if tracking indicates missing by sending specific coordinates, put them here
+ETparams.data.minDur                    = 200;          % in milliseconds, minimum stretch of consequtive data points. If a shorter stretch is found in between missing data, it is flagged as missing as well.
+ETparams.data.missCoords                = [];           % if empty, not used, else if tracking indicates missing by sending specific coordinates, put them here
 
-ETparams.samplingFreq                   = 120;
+ETparams.samplingFreq                   = 1000;
 
 % blink detection. Note that there are other ways to detect blinks in the
 % code, e.g., all saccades are checked for their level of blinkness
-ETparams.blink.detectMode               = 1;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
+ETparams.blink.detectMode               = 3;            % if >0, do blink detection. 1: only use thresholding of pupil size change. 2: only use vel/acc thresholding. 3: do both to detect potential blinks
 ETparams.blink.dSizeThreshold           = 25000;        % Initial threshold for blink detection from pupil size change data
 ETparams.blink.dSizeSD                  = 9;            % Peak pupil size change threshold for detecting candidate blinks is put at mean+dSizeSD*SD
 ETparams.blink.localNoiseWindowLength   = 50;           % in milliseconds, window before a blink in which to calculate noise and mean pupil size change, used to calculate blink offset thresholds
@@ -75,11 +75,11 @@ ETparams.saccade.peakVelocitySD         = 6;            % Peak velocity threshol
 ETparams.saccade.peakXCorrThreshold     = .2;           % Initial threshold for saccade detection from data filtered by saccade template
 ETparams.saccade.peakXCorrSD            = 6;            % Peak velocity threshold for detecting candidate saccades from xcorr output is put at mean+peakXCorrSD*SD
 ETparams.saccade.qSaccadeTemplateRefine = false;        % saccade beginnings and ends are refined from the xcorr response of the saccade template (true), not from the velocity trace (false). Leave this to false to avoid distortion of saccade beginning and end due to low-pass filtering of template. Must be false if saccade template isn't used
-ETparams.saccade.onsetRefineMethod      = 2;            % 1: Nystrom & Holmqvist method of walking to local minimum below onset threshold. 2: designed for low speed data: take samples from peak till one below detection threshold, fit line, and take intersection of line with 0 as threshold
+ETparams.saccade.onsetRefineMethod      = 1;            % 1: Nystrom & Holmqvist method of walking to local minimum below onset threshold. 2: designed for low speed data: take samples from peak till one below detection threshold, fit line, and take intersection of line with 0 as threshold
 ETparams.saccade.localNoiseWindowLength = 50;           % in milliseconds, window before a saccade in which to calculate noise and mean eye speed, used to calculate saccade offset thresholds
-ETparams.saccade.minPeakSamples         = 1;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
+ETparams.saccade.minPeakSamples         = 2;            % minimum number of samples data need to be above peak threshold for a peak to be considered a potential saccade. Very short peaks are likely to be noise.
 ETparams.saccade.minDur                 = 10;           % in milliseconds
-ETparams.saccade.mergeWindow            = -1;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
+ETparams.saccade.mergeWindow            = 30;           % merge saccades that are less than this apart (this is counted from saccade or glissade end (if any) to next saccade start). Set to 0 if you don't want any merging.
 ETparams.saccade.seWindowSamp           = 4;            % number of samples before onset and after offset to use for calculating saccade start and end points (onset and offset themselves are always used, this is the number of extra samples)
 ETparams.saccade.allowNaN               = true;         % if true, allow NaNs in saccade intervals. If false, blink detection dies as its basic assumption is that blinks were already detected as saccades due to their large vertical velocity
 
@@ -95,8 +95,8 @@ ETparams.glissade.allowNaN              = false;        % if true, allow NaNs in
 % according to the below settings. It could thus be that some parts of the
 % trace end up unclassified as they don't qualify as saccade, glissade or
 % "fixation".
-ETparams.fixation.qDetect               = false;        % if true, do fixation detection
-ETparams.fixation.minDur                = 70;           % in milliseconds
+ETparams.fixation.qDetect               = true;         % if true, do fixation detection
+ETparams.fixation.minDur                = 50;           % in milliseconds
 % How to deal with NaNs during possible fixation periods:
 % 1: do not allow NaN during fixations, whole fixation thrown out
 % 2: ignore NaNs and calculate mean fixation position based on available
@@ -106,7 +106,7 @@ ETparams.fixation.minDur                = 70;           % in milliseconds
 %    least fixation.minDur long (e.g. one 250 ms fixation with some data
 %    missing in the middle might be split up into a 100 ms and a 120 ms
 %    fixation)
-ETparams.fixation.treatNaN              = 1;
+ETparams.fixation.treatNaN              = 2;
 ETparams.fixation.NaNMaxJump            = 1;            % maximum amplitude (degree) of eye fixation position change allowed during missing data (if ETparams.fixation.treatNaN==2)
 
 
