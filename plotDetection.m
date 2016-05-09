@@ -143,17 +143,33 @@ end
 
 % velocity
 if strcmp(datatype,'pix')
-    vel     = {data.pix.vel,data.pix.velX,data.pix.velY};
+    if isfield(data.pix,'velX')
+        vel     = {data.pix.vel,data.pix.velX,data.pix.velY};
+    else
+        vel     = {data.pix.vel};
+    end
 elseif strcmp(datatype,'deg')
-    vel     = {data.deg.vel,data.deg.velAzi,data.deg.velEle};
+    if isfield(data.pix,'velAzi')
+        vel     = {data.deg.vel,data.deg.velAzi,data.deg.velEle};
+    else
+        vel     = {data.deg.vel};
+    end
 end
 % acceleration
 if isfield(data.(datatype),'acc')
     qHaveAcceleration = true;
     if strcmp(datatype,'pix')
-        acc     = {data.pix.acc,data.pix.accX,data.pix.accY};
+        if isfield(data.pix,'accX')
+            acc     = {data.pix.acc,data.pix.accX,data.pix.accY};
+        else
+            acc     = {data.pix.acc};
+        end
     elseif strcmp(datatype,'deg')
-        acc     = {data.deg.acc,data.deg.accAzi,data.deg.accEle};
+        if isfield(data.pix,'accAzi')
+            acc     = {data.deg.acc,data.deg.accAzi,data.deg.accEle};
+        else
+            acc     = {data.deg.acc};
+        end
     end
 else
     qHaveAcceleration = false;
@@ -389,36 +405,40 @@ av2 = axes('position',vplotPos);
 plotVel(time,vel{1},vlbl{1},'vel',datatype,...
     missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
-avx = axes('position',vplotPos);
-plotVel(time,vel{2},vlbl{2},'velX',datatype,...
-    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
-    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
-avy = axes('position',vplotPos);
-plotVel(time,vel{3},vlbl{3},'velY',datatype,...
-    missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
-    qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
-vaxs = [av2 avx avy];
-% show desired vel at start
-toHide = [1:3]; toHide(toHide==vidx) = [];
-for p=toHide
-    set([vaxs(p); allchild(vaxs(p))],'visible','off');
+if ~isscalar(vel)
+    avx = axes('position',vplotPos);
+    plotVel(time,vel{2},vlbl{2},'velX',datatype,...
+        missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
+        qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
+    avy = axes('position',vplotPos);
+    plotVel(time,vel{3},vlbl{3},'velY',datatype,...
+        missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
+        qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
+    vaxs = [av2 avx avy];
+    % show desired vel at start
+    toHide = [1:3]; toHide(toHide==vidx) = [];
+    for p=toHide
+        set([vaxs(p); allchild(vaxs(p))],'visible','off');
+    end
+    axes(vaxs(vidx));   % set visible axis to current and topmost axis
+    % toggle button
+    strs = {'v2','vx','vy'};
+    strs2= strs(toHide);
+    vt1 = uicontrol(...
+        'Style','pushbutton',...
+        'String',strs2{1},...
+        'Units','Normalized',...
+        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.04 .02 .03],...
+        'Callback',@Velocity_Callback);
+    vt2 = uicontrol(...
+        'Style','pushbutton',...
+        'String',strs2{2},...
+        'Units','Normalized',...
+        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.08 .02 .03],...
+        'Callback',@Velocity_Callback);
+    else
+        vaxs = av2;
 end
-axes(vaxs(vidx));   % set visible axis to current and topmost axis
-% toggle button
-strs = {'v2','vx','vy'};
-strs2= strs(toHide);
-vt1 = uicontrol(...
-    'Style','pushbutton',...
-    'String',strs2{1},...
-    'Units','Normalized',...
-    'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.04 .02 .03],...
-    'Callback',@Velocity_Callback);
-vt2 = uicontrol(...
-    'Style','pushbutton',...
-    'String',strs2{2},...
-    'Units','Normalized',...
-    'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.08 .02 .03],...
-    'Callback',@Velocity_Callback);
 
 %%% either plot cross correlation output with saccade and glissade markers,
 %%% or use the space to plot acceleration, or fuck it
@@ -454,17 +474,21 @@ if qSaccadeTemplate
 elseif qHaveAcceleration
     av2 = axes('position',acplotPos);
     plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
-    avx = axes('position',acplotPos);
-    plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
-    avy = axes('position',acplotPos);
-    plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
-    aaxs = [av2 avx avy];
-    % show desired vel at start
-    toHide = [1:3]; toHide(toHide==vidx) = [];
-    for p=toHide
-        set([aaxs(p); allchild(aaxs(p))],'visible','off');
+    if ~isscalar(acc)
+        avx = axes('position',acplotPos);
+        plotAcc(time,acc{2},albl{2},'velX',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
+        avy = axes('position',acplotPos);
+        plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
+        aaxs = [av2 avx avy];
+        % show desired vel at start
+        toHide = [1:3]; toHide(toHide==vidx) = [];
+        for p=toHide
+            set([aaxs(p); allchild(aaxs(p))],'visible','off');
+        end
+        axes(aaxs(vidx));   % set visible axis to current and topmost axis
+    else
+        aaxs = av2;
     end
-    axes(aaxs(vidx));   % set visible axis to current and topmost axis
 end
 
 % link x-axis (time) of the three/four timeseries for easy viewing
