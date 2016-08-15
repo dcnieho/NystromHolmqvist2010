@@ -325,6 +325,7 @@ plotWithMark(time,ydata,{'k-'},...                                      % data (
              fixMarks{:} ...                                            % fixation markers (if any)
             );
 axis([mmt(1) mmt(2) rect(2) rect(4)]);
+axis ij
 
 
 %%% plot pupil size trace with blink markers
@@ -517,6 +518,7 @@ if qHaveFixations
                  length(xfixpos),    {'mo','MarkerFaceColor','m','MarkerSize',4} ...    % make last  fixation marker red
                 );
     axis(rect([1 3 2 4]));
+    axis ij
 else
     asf = [];
 end
@@ -551,6 +553,7 @@ plotWithMark(xdata,ydata,{'k-'},...                                             
              extraInp{:}                                                     ...
             );
 axis(rect([1 3 2 4]));
+axis ij
 
 % link view of the two scanpath plots for easy viewing
 linkaxes([asr asf],'xy');
