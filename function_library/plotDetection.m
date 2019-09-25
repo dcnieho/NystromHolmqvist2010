@@ -115,7 +115,7 @@ else
     vylbl = 'Y';
 end
 vlbl = {['Velocity 2D'      ' (' unit '/s)'],['Velocity '     vxlbl ' (' unit '/s)'], ['Velocity '     vylbl ' (' unit '/s)']};
-albl = {['Acceleration 2D'  ' (' unit '/s)'],['Acceleration ' vxlbl ' (' unit '/s)'], ['Acceleration ' vylbl ' (' unit '/s)']};
+albl = {['Acceleration 2D'  ' (' unit '/s^2)'],['Acceleration ' vxlbl ' (' unit '/s^2)'], ['Acceleration ' vylbl ' (' unit '/s^2)']};
 vidx = find(ismember({'vel','velX','velY'},veltype));
 clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
