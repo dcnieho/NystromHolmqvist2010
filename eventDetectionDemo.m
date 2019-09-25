@@ -1,18 +1,17 @@
 clear all, close all; clc
 %%-------------------------------------------------------------------------
 %%% This code is an implementation of 
-%%% Nyström, M. & Holmqvist, K. (in press), "An adaptive algorithm for
+%%% Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for
 %%% fixation, saccade, and glissade detection in eye-tracking data".
 %%% Behavior Research Methods
 %%-------------------------------------------------------------------------
-addpath(genpath(fullfile(cd,'utils')))
-addpath(genpath(fullfile(cd,'utilsExternal')))
+addpath(genpath(fullfile(cd,'function_library')))
 %%-------------------------------------------------------------------------
 %%% Init parameters
 %%-------------------------------------------------------------------------
 
 % load parameters
-ETparams = getParameters;
+ETparams = defaultParameters;
 
 % process params
 ETparams = prepareParameters(ETparams);
