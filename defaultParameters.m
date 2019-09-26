@@ -108,21 +108,3 @@ ETparams.fixation.minDur                = 50;           % in milliseconds
 %    fixation)
 ETparams.fixation.treatNaN              = 2;
 ETparams.fixation.NaNMaxJump            = 1;            % maximum amplitude (degree) of eye fixation position change allowed during missing data (if ETparams.fixation.treatNaN==2)
-
-
-
-%%%%%%%%%%%% Ignore / leave to false for now:
-% Do a precise calculation of angular eye velocity and acceleration? If
-% not, we apply Pythagoras' theorem to compute eye velocity/acceleration
-% from the azimuthal and elevational coordinate velocities. When we have no
-% knowledge of torsional eye movements and therefore have to assume that
-% they are 0, both methods are equivalent. The precise calculations then
-% still give you the axis of rotation as well, but as we assume torsion is
-% 0, this axis is systematically biased for all but the smallest movements
-% away from the primary reference position. So there is no use in using the
-% precise calculations when you don't have eye torsion information. So when
-% you are interested in exact eye velocities, you'd do well to acquire
-% measures of torsion as well. Nonetheless, this straightforward
-% calculation of 2D eye velocity is sufficient for accurate detection of
-% saccades if that is all that you are interested in.
-ETparams.data.qPreciseCalcDeriv         = false;
