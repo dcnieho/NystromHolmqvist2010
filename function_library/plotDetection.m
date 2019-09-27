@@ -149,7 +149,7 @@ if strcmp(datatype,'pix')
         vel     = {data.pix.vel};
     end
 elseif strcmp(datatype,'deg')
-    if isfield(data.pix,'velAzi')
+    if isfield(data.deg,'velAzi')
         vel     = {data.deg.vel,data.deg.velAzi,data.deg.velEle};
     else
         vel     = {data.deg.vel};
@@ -165,7 +165,7 @@ if isfield(data.(datatype),'acc')
             acc     = {data.pix.acc};
         end
     elseif strcmp(datatype,'deg')
-        if isfield(data.pix,'accAzi')
+        if isfield(data.deg,'accAzi')
             acc     = {data.deg.acc,data.deg.accAzi,data.deg.accEle};
         else
             acc     = {data.deg.acc};
