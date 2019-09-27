@@ -113,7 +113,7 @@ while kk <= length(sacon)
             % threshold for this method
             onsetRefineMethod2Failed = true;
             saconprecise(kk) = nan;
-            fprintf('falling back to saccade onset refinement method 1\n');
+            fprintf('saccade candidate %d: falling back to saccade onset refinement method 1\n',kk);
         else
             % Center selected data indices and get slope of velocity in
             % that interval by least squares fitting a line to it (note the
