@@ -234,6 +234,9 @@ if isfield(data.saccade,'offsetXCorrThreshold')
     qSaccadeTemplateRefinement      = true;
     saccadeOnsetXCorrThreshold      = data.saccade.onsetXCorrThreshold;
     saccadeOffsetXCorrThreshold     = data.saccade.offsetXCorrThreshold;
+    saccadePeakVelocityThreshold    = [];
+    saccadeOnsetVelocityThreshold   = [];
+    saccadeOffsetVelocityThreshold  = [];
 else
     % refinement run from velocity trace
     qSaccadeTemplateRefinement      = false;
