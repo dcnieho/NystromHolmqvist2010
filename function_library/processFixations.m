@@ -36,17 +36,17 @@ for p=1:length(data.fixation.on)
     qMiss= isnan(data.deg.vel(idxs));
     
     % average eye position
-    data.fixation.meanX_deg(p)          = nanmean(data.deg.Azi(idxs));
-    data.fixation.meanY_deg(p)          = nanmean(data.deg.Ele(idxs));
+    data.fixation.meanX_deg(p)          = mean(data.deg.Azi(idxs),'omitnan');
+    data.fixation.meanY_deg(p)          = mean(data.deg.Ele(idxs),'omitnan');
     % and convert it to pixels
     [data.fixation.meanX_pix(p),data.fixation.meanY_pix(p)] = ...
         fick2pix(data.fixation.meanX_deg(p), data.fixation.meanY_deg(p),ETparams);
     
     % mean and peak velocity and acceleration
-    data.fixation.meanVelocity(p)       = nanmean(data.deg.vel(idxs));
-    data.fixation.peakVelocity(p)       = max    (data.deg.vel(idxs));
-    data.fixation.meanAcceleration(p)   = nanmean(data.deg.acc(idxs));
-    data.fixation.peakAcceleration(p)   = max    (data.deg.acc(idxs));
+    data.fixation.meanVelocity(p)       = mean(data.deg.vel(idxs)   ,'omitnan');
+    data.fixation.peakVelocity(p)       = max (data.deg.vel(idxs),[],'omitnan');
+    data.fixation.meanAcceleration(p)   = mean(data.deg.acc(idxs)   ,'omitnan');
+    data.fixation.peakAcceleration(p)   = max (data.deg.acc(idxs),[],'omitnan');
     
     % fixation instability
     % calculate RMS S2S

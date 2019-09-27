@@ -50,11 +50,11 @@ end
 while true
     if displacementThresh(1)==1
         % check horizontal
-        sidx = [-eyePosSamps:0]+saccade.on (sacIdx); sidx(sidx<1) = [];
-        startPointAzi = nanmean(azi(sidx));
-        eidx = [0:eyePosSamps] +saccade.off(sacIdx); eidx(eidx>length(azi)) = [];
-        endPointAzi = nanmean(azi(eidx));
-        amp = abs(endPointAzi-startPointAzi);
+        sidx            = [-eyePosSamps:0]+saccade.on (sacIdx); sidx(sidx<1) = [];
+        startPointAzi   = mean(azi(sidx),'omitnan');
+        eidx            = [0:eyePosSamps] +saccade.off(sacIdx); eidx(eidx>length(azi)) = [];
+        endPointAzi     = mean(azi(eidx),'omitnan');
+        amp             = abs(endPointAzi-startPointAzi);
     elseif displacementThresh(1)==2
         % check vertical
         error('not implemented');
@@ -75,8 +75,8 @@ end
     
 % check 2: eye position before saccade close enough to center of screen
 sidx = [-eyePosSamps:0]+saccade.on (sacIdx); sidx(sidx<1) = [];
-startPointAzi = nanmean(azi(sidx));
-startPointEle = nanmean(ele(sidx));
+startPointAzi = mean(azi(sidx),'omitnan');
+startPointEle = mean(ele(sidx),'omitnan');
 if calcAmplitudeFick(0,0, startPointAzi,startPointEle)>eyePosThresh
     [varargout{1:nargout}] = deal(nan);
     return;
@@ -124,13 +124,13 @@ if qTarget
     % output size of error reduction and onset t
     if sacIdx<length(saccade.on)
         % get saccade onset and offset position
-        sacIdx  = sacIdx+1;
-        sidx = [-eyePosSamps:0]+saccade.on (sacIdx); sidx(sidx<1) = [];
-        startPointAzi = nanmean(azi(sidx));
-        startPointEle = nanmean(ele(sidx));
-        eidx = [0:eyePosSamps] +saccade.off(sacIdx); eidx(eidx>length(azi)) = [];
-        endPointAzi = nanmean(azi(eidx));
-        endPointEle = nanmean(ele(eidx));
+        sacIdx          = sacIdx+1;
+        sidx            = [-eyePosSamps:0]+saccade.on (sacIdx); sidx(sidx<1) = [];
+        startPointAzi   = mean(azi(sidx),'omitnan');
+        startPointEle   = mean(ele(sidx),'omitnan');
+        eidx            = [0:eyePosSamps] +saccade.off(sacIdx); eidx(eidx>length(azi)) = [];
+        endPointAzi     = mean(azi(eidx),'omitnan');
+        endPointEle     = mean(ele(eidx),'omitnan');
         
         % get target position
         target = target(dat.file.trial+1,4:5);

@@ -61,11 +61,11 @@ data.(fieldname).duration = (data.(fieldname).off-data.(fieldname).on+1)/ETparam
 % start and end points
 nSamp= ETparams.saccade.seWindowSamp;
 sidx = bsxfun(@plus,[-nSamp:0    ].',data.(fieldname).on ); sidx(sidx<1) = 1;
-data.(fieldname).startPointAzi = nanmean(data.deg.Azi(sidx),1);
-data.(fieldname).startPointEle = nanmean(data.deg.Ele(sidx),1);
+data.(fieldname).startPointAzi = mean(data.deg.Azi(sidx),1,'omitnan');
+data.(fieldname).startPointEle = mean(data.deg.Ele(sidx),1,'omitnan');
 eidx = bsxfun(@plus,[     0:nSamp].',data.(fieldname).off); eidx(eidx>length(data.deg.Azi)) = length(data.deg.Azi);
-data.(fieldname).endPointAzi   = nanmean(data.deg.Azi(eidx),1);
-data.(fieldname).endPointEle   = nanmean(data.deg.Ele(eidx),1);
+data.(fieldname).endPointAzi   = mean(data.deg.Azi(eidx),1,'omitnan');
+data.(fieldname).endPointEle   = mean(data.deg.Ele(eidx),1,'omitnan');
 
 % use start and end points to calculate amplitude & direction
 [data.(fieldname).amplitude, data.(fieldname).direction] = ...

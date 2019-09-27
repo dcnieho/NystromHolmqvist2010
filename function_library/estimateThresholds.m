@@ -100,11 +100,11 @@ while previousPeakDetectionThreshold - peakThreshold > exitCriterion
         idx         = bounds2ind(threshon,threshoff);
         
         % get mean and std of this data
-        meanData    = nanmean(data(idx));
-        stdData     = nanstd (data(idx));
+        meanData    = mean(data(idx),'omitnan');
+        stdData     = std (data(idx),'omitnan');
     else
-        meanData    = nanmean(data(qBelowThresh));
-        stdData     = nanstd (data(qBelowThresh));
+        meanData    = mean(data(qBelowThresh),'omitnan');
+        stdData     = std (data(qBelowThresh),'omitnan');
     end
     
     % calculate new threshold

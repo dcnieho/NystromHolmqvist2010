@@ -76,9 +76,8 @@ for kk = length(fixon):-1:1
                 
             case {2,3}
                 % 2: allow NaN, simply ignore when computing average
-                % fixation position (uses nanmean). However, make sure eye
-                % position doesn't jump significantly during the missing
-                % data.
+                % fixation position. However, make sure eye position
+                % doesn't jump significantly during the missing data.
                 % 3: split fixation into multiple pieces, each without
                 % NaNs. Keep pieces if they meet the minimum duration
                 % criterion (we don't have to worry about the peak velocity
