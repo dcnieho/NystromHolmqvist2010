@@ -5,6 +5,20 @@ function data = detectFixations(data,ETparams)
 % glissade and also fit some other criteria
 %--------------------------------------------------------------------------
 
+%%% select parameters and data to run saccade onset and offset refinement
+% on
+if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
+    % run full detection algorithm from the cross correlation trace
+    field_peak  = 'peakXCorrThreshold';
+    vel         = data.deg.velXCorr;
+else
+    % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
+    % are detected based on xcorr responses, refinement is done from the
+    % velocity trace (recommended).
+    field_peak  = 'peakVelocityThreshold';
+    vel         = data.deg.vel;
+end
+
 %%% find data that is not saccade, glissade or blink
 qNonFixFlag = bounds2bool(data.saccade .on,data.saccade .off, length(data.deg.vel));
 if isfield(data,'glissade')
@@ -37,7 +51,7 @@ for kk = length(fixon):-1:1
     % threshold, it cannot be a fixation (section somehow got deleted by
     % the saccade algorithm). Ignore if this happens at very end of data,
     % those velocity estimates are not so reliable
-    if any(data.deg.vel(max(3,fixon(kk)):min(fixoff(kk),length(data.deg.vel)-2)) > data.saccade.peakVelocityThreshold)
+    if any(vel(max(3,fixon(kk)):min(fixoff(kk),length(vel)-2)) > data.saccade.(field_peak))
         fixon (kk) = [];
         fixoff(kk) = [];
         continue;
