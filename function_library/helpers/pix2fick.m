@@ -12,7 +12,7 @@ else
     viewDist        = varargin{3}/100;                  % viewing distance
 end
 
-% Then convert to Fick angles (MATLAB's cart2sph models a Fick gimbal)
+% Then convert to Fick angles. MATLAB's cart2sph models a Fick gimbal,
 % although their reference Z axis is our Y axis, their X axis is our Z axis
 % and their Y axis is our X axis:
 % cart2sph: X Y Z

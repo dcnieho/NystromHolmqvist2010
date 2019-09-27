@@ -94,7 +94,7 @@ data.pix.X      = data.pix.X - ETparams.screen.subjectStraightAhead(1);
 data.pix.Y      = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 % finally, convert gaze position in pixels to Fick angles in degree
-[data.deg.Azi, data.deg.Ele] = pix2fick(data.pix.X,data.pix.Y,ETparams);
+[data.deg.Azi, data.deg.Ele, data.deg.dist] = pix2fick(data.pix.X,data.pix.Y,ETparams);
 
 %%%% params
 if isempty(data.pupil.size)
