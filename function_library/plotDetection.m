@@ -299,7 +299,7 @@ if ~isempty(tRefCoords)
         plot(tRefCoords(p,1:2),tRefCoords(p,[3 3]),'r')
     end
 end
-plotWithMark(time,xdata,{'k-'},...                                      % data (y,x), style
+plotWithMark(time,xdata,{'k-'},[],...                                   % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
@@ -321,7 +321,7 @@ if ~isempty(tRefCoords)
         plot(tRefCoords(p,1:2),tRefCoords(p,[4 4]),'r')
     end
 end
-plotWithMark(time,ydata,{'k-'},...                                      % data (y,x), style
+plotWithMark(time,ydata,{'k-'},[],...                                   % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
@@ -343,7 +343,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     ap = axes('position',pplotPos);
     hold on;
     plotTimeHighlights(highlightTimet,axisSize(3:4));
-    plotWithMark(time,data.pupil.size,{'k-'},...                        % data (y,x), style
+    plotWithMark(time,data.pupil.size,{'k-'},[],...                     % data (y,x), style
                  'time (ms) - blinks',plbl,'',...                       % x-axis label, y-axis label, axis title
                  missFlag{:}, ...                                       % color part of trace that is missing
                  blinkMarks{:} ...                                      % blink markers (if any)
@@ -364,7 +364,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,pvdat,{'k-'},...                                  % data (y,x), style
+    plotWithMark(time,pvdat,{'k-'},[],...                               % data (y,x), style
                  'time (ms) - blinks',pvlbl,'',...                      % x-axis label, y-axis label, axis title
                  missFlag{:}, ...                                       % color part of trace that is missing
                  blinkMarks{:} ...                                      % blink markers (if any)
@@ -458,7 +458,7 @@ if qSaccadeTemplate
     % line at 0
     plot([time(1) time(end)],[0 0],'b');
     hold on;
-    plotWithMark(time,data.deg.velXCorr,{'k-'},...                          % data (y,x), style
+    plotWithMark(time,data.deg.velXCorr,{'k-'},[],...                       % data (y,x), style
                  'time (ms) - saccades/glissades',clbl,'',...               % x-axis label, y-axis label, axis title
                  sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
                  sacoff,{'ro','MarkerFaceColor','red' ,'MarkerSize',4},...  % saccade off markers
@@ -530,11 +530,13 @@ if ~isempty(acaxs) && ~isscalar(acaxs)
     axes(acaxs(1));   % set visible axis to current and topmost axis
 end
 
-% link x-axis (time) of the three/four timeseries for easy viewing
-linkaxes([ax ay ap apv vaxs acaxs],'x');
+% link x-axis (time) of the three or more timeseries for easy viewing
+allTSeries = [ax ay ap apv vaxs acaxs];
+linkaxes(allTSeries,'x');
 
 
 %%% plot scanpath of raw data and of fixations
+fix2dhndls = [];
 if qHaveFixations
     asf = axes('position',fixplotPos);
     hold on
@@ -549,7 +551,10 @@ if qHaveFixations
         plot(refCoords(1)+(rect(3)-rect(1))*.05/aspectr*[-1 1],refCoords(2)                      *[ 1 1],'b');
         plot(refCoords(1)                              *[ 1 1],refCoords(2)+(rect(4)-rect(2))*.05*[-1 1],'b');
     end
-    plotWithMark(xfixpos,yfixpos,{'k-'},...                                             % data (y,x), style
+    usrDatf.tag = 'evt';
+    usrDatf.ton = time(data.fixation.on);
+    usrDatf.toff= time(data.fixation.off);
+    fix2dhndls = plotWithMark(xfixpos,yfixpos,{'k-'},usrDatf,...                        % data (y,x), style, base userData
                  xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
                  [1:length(xfixpos)],{'go','MarkerFaceColor','g','MarkerSize',4},...    % mark each fixation (that is marker on each datapoint we feed it
                  1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % make first fixation marker blue
@@ -581,10 +586,12 @@ if ~isempty(highlightTime)
     end
 end
 if qIndicateSacInScanpath
-    extraInp = [extraInp {sacon, {'bo','MarkerFaceColor','b','MarkerSize',4},...    % saccade on  markers
-                          sacoff,{'ro','MarkerFaceColor','r','MarkerSize',4}}];
+    extraInp = [extraInp {sacon, {'bo','MarkerFaceColor','b','MarkerSize',4,'UserDataNoGrow',true},...  % saccade on  markers
+                          sacoff,{'ro','MarkerFaceColor','r','MarkerSize',4,'UserDataNoGrow',true}}];
 end
-plotWithMark(xdata,ydata,{'k-'},...                                                 %  data (y,x), style
+usrDatr.tag = 'raw';
+usrDatr.t   = time;
+raw2dhndls = plotWithMark(xdata,ydata,{'k-'},usrDatr,...                            %  data (y,x), style, base userData
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % use blue marker for first datapoint
              length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4},...    % use red  marker for last  datapoint
@@ -600,6 +607,12 @@ linkaxes([asr asf],'xy');
 set(gcf,'Toolbar','figure');
 set(gcf,'DockControls','off');
 zoom on;
+
+% link x-t time extents to data shown in 2D by setting up callbacks for
+% actions that change the x-t, y-t axes
+actions = {allTSeries,[raw2dhndls fix2dhndls]};
+set(zoom(gcf),'ActionPostCallback',@(obj,evd) viewCallbackFcn(obj,evd,actions));
+set(pan(gcf) ,'ActionPostCallback',@(obj,evd) viewCallbackFcn(obj,evd,actions));
 
 
 
@@ -659,7 +672,7 @@ hold on;
 plotTimeHighlights(highlightTime,axisSize(3:4));
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
-plotWithMark(time,vel,{'k-'},...                                        % data (y,x), style
+plotWithMark(time,vel,{'k-'},[],...                                     % data (y,x), style
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
@@ -705,7 +718,7 @@ hold on;
 plotTimeHighlights(highlightTime,axisSize(3:4));
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
-plotWithMark(time,acc,{'k-'},...                                        % data (y,x), style
+plotWithMark(time,acc,{'k-'},[],...                                     % data (y,x), style
              'time (ms) - saccades/glissades',albl,'',...               % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
@@ -741,6 +754,50 @@ if any(~isnan(var))
     else
         psr = max(var)-min(var);
         axisSize = [mmt(1) mmt(2) min(var)-.03*psr max(var)+.03*psr];
+    end
+end
+end
+
+function viewCallbackFcn(~,evd,actions)
+% get new view
+newTLims = evd.Axes.XLim;
+% for each defined action, see if the changed axis is among the ones the
+% action listens for
+for p=1:size(actions,1)
+    if ismember(evd.Axes,actions{p,1})
+        % yes, found an actions listening for change to this axis.
+        % execute view change on defined targets
+        for q=1:length(actions{p,2})
+            if strcmp(actions{p,2}(q).Type,'hggroup')
+                hndls = actions{p,2}(q).Children;
+            else
+                hndls = actions{p,2}(q);
+            end
+            for l=1:length(hndls)
+                dat = hndls(l).UserData;
+                if isempty(dat)
+                    continue;
+                end
+                if strcmp(dat.tag,'raw')
+                    qData = dat.t>=newTLims(1) & dat.t<=newTLims(2);
+                    % grow visible by one sample so that connecting
+                    % lines for samples just outside t lims are
+                    % visible, just like they are in the xt plots
+                    [on,off] = bool2bounds(qData);
+                    if ~isfield(dat,'dontGrow') || ~dat.dontGrow
+                        on = max(1,on-1); off = min(off+1,length(dat.x));
+                    end
+                    % set plot data to new time limits
+                    set(hndls(l),'XData',dat.x(on:off).','YData',dat.y(on:off).');
+                elseif strcmp(dat.tag,'evt')
+                    % find all fixations that are partially visible
+                    qData =  (dat.ton>=newTLims(1) & dat.ton<=newTLims(2)) | (dat.toff>=newTLims(1) & dat.toff<=newTLims(2));
+                    % set plot data to new time limits
+                    hndls(l).XData = dat.x(qData).';
+                    hndls(l).YData = dat.y(qData).';
+                end
+            end
+        end
     end
 end
 end

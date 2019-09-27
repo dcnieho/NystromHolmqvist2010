@@ -1,4 +1,4 @@
-function plotWithMark(xdata,ydata,addInps,xlbl,ylbl,titel,varargin)
+function hndls = plotWithMark(xdata,ydata,addInps,usrData,xlbl,ylbl,titel,varargin)
 
 % makes and x-y plot with specified axis labels and title in the current
 % axes. addInps specifies additional input to the plot command that draws the x-y data.
@@ -15,15 +15,17 @@ function plotWithMark(xdata,ydata,addInps,xlbl,ylbl,titel,varargin)
 %
 % are thus all valid calls.
 
-narginchk(6, inf);
+narginchk(7, inf);
 % length of varargin must be even as marker inputs come in pairs
 assert(mod(length(varargin),2)==0,'Number of inputs related to markers must be even as they come in pairs, got %d inputs related to markers',nargin-5);
 if isempty(addInps)
     addInps = {'k-'};
 end
+usrData.x = xdata;
+usrData.y = ydata;
 
 % plot trace
-plot(xdata,ydata,addInps{:},'LineWidth',1);
+hndls = plot(xdata,ydata,addInps{:},'LineWidth',1,'UserData',usrData);
 if ~isempty(xlbl)
     xlabel(xlbl);
 end
@@ -39,8 +41,31 @@ if isempty(xdata)
     return;
 end
 
+if isstruct(usrData)
+    fields = fieldnames(usrData);
+    fields(strcmp(fields,'tag')) = [];
+end
+
 hold on;
 for p=1:2:length(varargin)
-    plot(xdata(varargin{p}),ydata(varargin{p}),varargin{p+1}{:});
+    usrDatap = usrData;
+    qUserDataNoGrow = strcmp(varargin{p+1},'UserDataNoGrow');
+    if any(qUserDataNoGrow)
+        idxs = find(qUserDataNoGrow);
+        qUserDataNoGrow = ~~varargin{p+1}{idxs(end)+1};
+        if qUserDataNoGrow
+            usrDatap.dontGrow = true;
+        end
+        varargin{p+1}([idxs; idxs+1]) = [];
+    end
+    if isstruct(usrData)
+        for f=1:length(fields)
+            usrDatap.(fields{f}) = usrDatap.(fields{f})(varargin{p});
+        end
+    end
+    h = plot(xdata(varargin{p}),ydata(varargin{p}),varargin{p+1}{:},'UserData',usrDatap);
+    if ~isempty(h)
+        hndls = [hndls h]; %#ok<AGROW>
+    end
 end
 hold off;
