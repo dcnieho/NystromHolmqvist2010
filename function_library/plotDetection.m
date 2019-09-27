@@ -396,7 +396,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
     'String','d',...
     'FontName','symbol',...
     'Units','Normalized',...
-    'Position',[sum(pplotPos([1 3]))+.01 sum(pplotPos([2 4]))-.04 .02 .03],...
+    'Position',[sum(pplotPos([1 3]))+.01 sum(pplotPos([2 4]))-.055 .02 .03],...
     'Callback',@Pupil_Callback);
 else
     ap  = [];
@@ -426,20 +426,21 @@ if ~isscalar(vel)
     end
     axes(vaxs(vidx));   % set visible axis to current and topmost axis
     % toggle button
-    strs = {'v2','vx','vy'};
-    strs2= strs(toHide);
+    strsv = {'v2','vx','vy'};
+    strs2= strsv(toHide);
     vt1 = uicontrol(...
         'Style','pushbutton',...
         'String',strs2{1},...
         'Units','Normalized',...
-        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.04 .02 .03],...
-        'Callback',@Velocity_Callback);
+        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.045 .02 .03],...
+        'Callback',@(obj,~,~) VelAcc_Callback(obj,'vel'));
     vt2 = uicontrol(...
         'Style','pushbutton',...
         'String',strs2{2},...
         'Units','Normalized',...
-        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.08 .02 .03],...
-        'Callback',@Velocity_Callback);
+        'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.085 .02 .03],...
+        'Callback',@(obj,~,~) VelAcc_Callback(obj,'vel'));
+    vts = [vt1 vt2];
 else
     vaxs = av2;
 end
@@ -475,7 +476,8 @@ if qSaccadeTemplate
     end
     hold off;
     axis(axisSize);
-elseif qHaveAcceleration
+end
+if qHaveAcceleration
     av2 = axes('position',acplotPos);
     plotAcc(time,acc{1},albl{1},'vel', missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
     if ~isscalar(acc)
@@ -484,19 +486,52 @@ elseif qHaveAcceleration
         avy = axes('position',acplotPos);
         plotAcc(time,acc{3},albl{3},'velY',missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet);
         aaxs = [av2 avx avy];
-        % show desired vel at start
-        toHide = [1:3]; toHide(toHide==vidx) = [];
-        for p=toHide
-            set([aaxs(p); allchild(aaxs(p))],'visible','off');
-        end
-        axes(aaxs(vidx));   % set visible axis to current and topmost axis
     else
         aaxs = av2;
     end
 end
+acaxs = [ac aaxs];
+if ~isempty(acaxs) && ~isscalar(acaxs)
+    % figure out which plots we have, show most desired one by default, add
+    % correct number of toggle buttons
+    % 1. get labels
+    strsac = {};
+    if qSaccadeTemplate
+        strsac = [strsac {'xcorr'}];
+    end
+    if qHaveAcceleration
+        strsac = [strsac {'a2'}];
+        if ~isscalar(aaxs)
+            strsac = [strsac {'ax','ay'}];
+        end
+    end
+    % figure out toggle buttons
+    nToggle = length(strsac)-1;
+    if nToggle==1
+        off = -.065;
+    elseif nToggle==2
+        off = [-.045 -.085];
+    elseif nToggle==3
+        off = [-.025 -.065 -.105];
+    end
+    for t=1:nToggle
+        acts(t) = uicontrol(...
+            'Style','pushbutton',...
+            'String',strsac{t+1},...
+            'Units','Normalized',...
+            'Position',[sum(acplotPos([1 3]))+.01 sum(acplotPos([2 4]))+off(t) .02 .03],...
+            'Callback',@(obj,~,~) VelAcc_Callback(obj,'acc'));
+    end
+    
+    % show only desired panel at start
+    for p=acaxs(2:end)
+        set([p; allchild(p)],'visible','off');
+    end
+    axes(acaxs(1));   % set visible axis to current and topmost axis
+end
 
 % link x-axis (time) of the three/four timeseries for easy viewing
-linkaxes([ax ay ap apv vaxs aaxs ac],'x');
+linkaxes([ax ay ap apv vaxs acaxs],'x');
 
 
 %%% plot scanpath of raw data and of fixations
@@ -581,31 +616,37 @@ zoom on;
         end
     end
 
-    function Velocity_Callback(obj,~,~)
+    function VelAcc_Callback(obj,what)
         % find which pressed, and therefore which to show and hide
         but = get(obj,'String');
+        switch what
+            case 'vel'
+                axs = vaxs;
+                strs= strsv;
+                ts  = vts;
+            case 'acc'
+                axs = acaxs;
+                strs= strsac;
+                ts  = acts;
+        end
+        if isempty(axs)
+            return;
+        end
+        % do show and hide
         qShow   = strcmp(but,strs);
         toHidev = find(~qShow);
         toShow  = find( qShow);
-        % do show and hide
         for q=toHidev
-            set([vaxs(q); allchild(vaxs(q))],'visible','off');
-            if ~isempty(aaxs)
-                set([aaxs(q); allchild(aaxs(q))],'visible','off');
-            end
+            set([axs(q); allchild(axs(q))],'visible','off');
         end
-        set([vaxs(toShow); allchild(vaxs(toShow))],'visible','on');
-        axes(vaxs(toShow));     % set visible axis to current and topmost axis
-        if ~isempty(aaxs)
-            set([aaxs(toShow); allchild(aaxs(toShow))],'visible','on');
-            axes(aaxs(toShow));     % set visible axis to current and topmost axis
-        end
+        set([axs(toShow); allchild(axs(toShow))],'visible','on');
+        axes(axs(toShow));     % set visible axis to current and topmost axis
         % adjust labels on buttons
-        strs2v  = strs(toHidev);
-        set(vt1,'String',strs2v{1});
-        set(vt2,'String',strs2v{2});
+        strsVis  = strs(toHidev);
+        for butI=1:length(ts)
+            set(ts(butI),'String',strsVis{butI});
+        end
     end
-
 end
 
 function plotVel(time,vel,vlbl,veltype,datatype,...
