@@ -440,8 +440,8 @@ if ~isscalar(vel)
         'Units','Normalized',...
         'Position',[sum(vplotPos([1 3]))+.01 sum(vplotPos([2 4]))-.08 .02 .03],...
         'Callback',@Velocity_Callback);
-    else
-        vaxs = av2;
+else
+    vaxs = av2;
 end
 
 %%% either plot cross correlation output with saccade and glissade markers,
