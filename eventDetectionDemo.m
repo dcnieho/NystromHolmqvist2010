@@ -3,7 +3,11 @@ clear all, close all; clc
 %%% This code is an implementation of 
 %%% Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for
 %%% fixation, saccade, and glissade detection in eye-tracking data".
-%%% Behavior Research Methods
+%%% Behavior Research Methods 42(1):188-204.
+%%% https://doi.org/10.3758/BRM.42.1.188
+%%%
+%%% Includes multiple extensions developed by DN that were not in the
+%%% article.
 %%-------------------------------------------------------------------------
 addpath(genpath(fullfile(cd,'function_library')))
 %%-------------------------------------------------------------------------
@@ -12,8 +16,9 @@ addpath(genpath(fullfile(cd,'function_library')))
 
 % load parameters
 ETparams = defaultParameters;
+% change some defaults:
+ETparams.data.qAlsoStoreComponentDerivs = true;     % if set to true, e.g. azimuthal velocity is also stored, and can thus be plotted% process params
 
-% process params
 ETparams = prepareParameters(ETparams);
 
 
