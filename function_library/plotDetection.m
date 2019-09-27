@@ -41,7 +41,7 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 
 narginchk(6,inf)
 
-assert(isfield(data.(datatype),'vel'),'data for %s not available',datatype);
+assert(isfield(data.(datatype),'vel'),'data for %s not available, enable ETparams.data.qAlsoStoreandDiffPixels',datatype);
 
 %%% unpack the needed variables
 % key-val parameters
