@@ -6,6 +6,7 @@ function data = cutSaccades(data, ETparams,cutPosTraceMode,cutVelTraceMode,extra
 % i.e., if you don't ask for any manipulation of these here.
 %
 % cutPosTraceMode: settings for the position trace:
+% - 0: Don't do anything
 % - 1: Use Ignace's method to reconstruct the pursuit that is hidden behind
 %      the saccade, 2nd order interpolation of position.
 % - 2: Reconstruct eye positions from desaccaded velocity signal (requires
@@ -13,6 +14,7 @@ function data = cutSaccades(data, ETparams,cutPosTraceMode,cutVelTraceMode,extra
 % - 3: smooth out saccades in position domain by linear interpolation.
 %
 % cutVelTraceMode: settings for the position trace:
+% - 0: Don't do anything
 % - 1: Replace saccades by linearly interpolating velocity from saccade
 %      onset to offset.
 % - 2: Compute velocity trace from the reconstructed smooth pursuit signal
@@ -37,44 +39,51 @@ if cutPosTraceMode==1 && ~isfield(ETparams,'Ignace')
     ETparams.Ignace.run     = 15;           % number of samples to use before and after saccade to fit polynomial to
     ETparams.Ignace.offset  = 0;
 end
-if cutPosTraceMode==2 && ~isfield(ETparams,'sysdt')
-    % make a default plant for reconstructing position from velocity
-    Ts              = 1/ETparams.samplingFreq;  % system sampling interval
-    sys             = getSys(1,0,true,false,false);
-    ETparams.sysdt  = c2d(sys,Ts,'tustin');
+if cutPosTraceMode==2
+    assert(~~exist('c2d','file'),'cutSaccades: cutPosTraceMode==2 requires the control system toolbox. Choose one of the other cutPosTraceMode, or 0 to disable')
+    if ~isfield(ETparams,'sysdt')
+        % make a default plant for reconstructing position from velocity
+        Ts              = 1/ETparams.samplingFreq;  % system sampling interval
+        sys             = getSys(1,0,true,false,false);
+        ETparams.sysdt  = c2d(sys,Ts,'tustin');
+    end
 end
 
-[data.deg.AziNoSac,...
- data.deg.EleNoSac,...
- data.deg.velNoSac,...
- data.deg.velAziNoSac,...
- data.deg.velEleNoSac] = cutSaccadesImplementation(data.deg.Azi,...
-                                                  data.deg.Ele,...
-                                                  data.deg.vel,...
-                                                  data.deg.velAzi,...
-                                                  data.deg.velEle,...
-                                                  true,...
-                                                  data.saccade,...
-                                                  ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow);
-
+outlbls = {'AziNoSac','EleNoSac','velNoSac','velAziNoSac','velEleNoSac'};
+out = cutSaccadesImplementation(data.deg.Azi,...
+                                data.deg.Ele,...
+                                data.deg.vel,...
+                                data.deg.velAzi,...
+                                data.deg.velEle,...
+                                true,...
+                                data.saccade,...
+                                ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow);
+for p=1:length(outlbls)
+    if ~isempty(out{p})
+        data.deg.(outlbls{p}) = out{p};
+    end
+end
+                                              
 if isfield(data.pix,'vel')
-    [data.pix.XNoSac,...
-     data.pix.YNoSac,...
-     data.pix.velNoSac,...
-     data.pix.velXNoSac,...
-     data.pix.velYNoSac] = cutSaccadesImplementation(data.pix.X,...
-                                                    data.pix.Y,...
-                                                    data.pix.vel,...
-                                                    data.pix.velX,...
-                                                    data.pix.velY,...
-                                                    false,...
-                                                    data.saccade,...
-                                                    ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow);
+    outlbls = {'XNoSac','YNoSac','velNoSac','velXNoSac','velYNoSac'};
+    out = cutSaccadesImplementation(data.pix.X,...
+                                    data.pix.Y,...
+                                    data.pix.vel,...
+                                    data.pix.velX,...
+                                    data.pix.velY,...
+                                    false,...
+                                    data.saccade,...
+                                    ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow);
+    for p=1:length(outlbls)
+        if ~isempty(out{p})
+            data.pix.(outlbls{p}) = out{p};
+        end
+    end
 end
 
 
 
-function [X,Y,vel,velX,velY] = cutSaccadesImplementation(X,Y,vel,velX,velY, qDeg,sac,ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow)
+function out = cutSaccadesImplementation(X,Y,vel,velX,velY, qDeg,sac,ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,skipFirstWindow)
 
 % prepare parameters
 % Number of samples at beginning of trial where we leave saccades
@@ -104,26 +113,37 @@ sac.len= sac.off-sac.on+1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % deal with velocity
-for p=1:length(sac.on) * (cutVelTraceMode==1)
-    % per saccade, linearly interpolate eye velocity between saccade begin
-    % point and end point
-    if cutPosTraceMode==2 && sac.on(p) <= skipWindowSamples
-        % special case: when reconstructing eye position, skip saccades
-        % during the first second, they are probably to catch the blob as
-        % it appears at the beginning of the trial. Otherwise we'll have a
-        % constant offset in the data to deal with. We'll skip this part of
-        % the data anyway for analysis, so no hurt incurred
-        
-        continue;
-    end
-    
-    % replace with interpolated velocity
-    [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,Y,qDeg,sac.on(p),sac.off(p));
+switch cutVelTraceMode
+    case 0
+        % don't do anything
+        [vel,velX,velY] = deal([]);
+    case 1
+        for p=1:length(sac.on)
+            % per saccade, linearly interpolate eye velocity between
+            % saccade begin point and end point
+            if cutPosTraceMode==2 && sac.on(p) <= skipWindowSamples
+                % special case: when reconstructing eye position, skip
+                % saccades during the first second, they are probably to
+                % catch the blob as it appears at the beginning of the
+                % trial. Otherwise we'll have a constant offset in the data
+                % to deal with. We'll skip this part of the data anyway for
+                % analysis, so no hurt incurred
+                continue;
+            end
+            
+            % replace with interpolated velocity
+            [vel,velX,velY] = replaceIntervalVelocity(vel,velX,velY,Y,qDeg,sac.on(p),sac.off(p));
+        end
+    case 2
+        % taken care of in case cutPosTraceMode==1 below
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % deal with position
 switch cutPosTraceMode
+    case 0
+        % don't do anything
+        [X,Y] = deal([]);
     case 2
         % integrate velocities using plant
         if isnan(velX(1))
@@ -213,3 +233,5 @@ if ismember(cutPosTraceMode,[1 2])
     t = regstats(Y,s,'linear',{'beta'});
     Y = Y-s*t.beta(2);
 end
+
+out = {X,Y,vel,velX,velY};
