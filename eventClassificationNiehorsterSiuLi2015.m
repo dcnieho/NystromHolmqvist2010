@@ -17,7 +17,7 @@ addpath(genpath(fullfile(cd,'post-process')))       % post-process folder needed
 
 % settings for this file
 plotWhat        = 'deg';                            % 'deg' or 'pix': determines in what unit to plot data
-whichVel        = 'vel';                            % 'vel', 'velX' or 'velY': determines which velocity trace to plot when interface opens (there are buttons to view the others)
+whichVel        = 'velX';                           % 'vel', 'velX' or 'velY': determines which velocity trace to plot when interface opens (there are buttons to view the others)
 doPlot          = true;
 
 % load parameters for event classifier
@@ -45,12 +45,7 @@ qInterpMissingPos   = true;                 % interpolate using straight lines t
 % settings for the saccade cutting (see cutSaccades.m for documentation)
 cutPosTraceMode     = 2;
 cutVelTraceMode     = 1;
-if cutPosTraceMode==2
-    % make plant for reconstructing position from velocity
-    Ts              = 1/ETparams.samplingFreq;  % system sampling interval
-    sys             = getSys(1,0,true,false,false);
-    ETparams.sysdt  = c2d(sys,Ts,'tustin');
-end
+cutSaccadeSkipWindow= 1;    % don't cut during first x seconds
 
 % process params
 ETparams = prepareParameters(ETparams);
@@ -82,14 +77,13 @@ for p = 1:nfiles
         data = rmfield(data,'glissade');    % remove glissade information, we merged them anyway
     end
     
-    % replace missing data by linearly interpolating velocity between start
-    % and end of each missing interval (so, creating a ramp between start
-    % and end velocity). Position is run through Ignace's smart
-    % interpolator
+    % replace missing data by linearly interpolating position and velocity
+    % between start and end of each missing interval (so, creating a ramp
+    % between start and end position/velocity).
     data = replaceMissing(data,qInterpMissingPos);
     
     % desaccade velocity and/or position
-    data = cutSaccades(data,ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,1);
+    data = cutSaccades(data,ETparams,cutPosTraceMode,cutVelTraceMode,extraCut,cutSaccadeSkipWindow);
     % construct saccade only traces
     data = cutPursuit(data,ETparams,1);
     
