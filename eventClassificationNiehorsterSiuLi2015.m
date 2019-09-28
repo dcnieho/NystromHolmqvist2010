@@ -1,13 +1,27 @@
 clear all, close all; clc
 %%-------------------------------------------------------------------------
-%%% This code is an implementation of 
-%%% Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for
-%%% fixation, saccade, and glissade detection in eye-tracking data".
-%%% Behavior Research Methods 42(1):188-204.
-%%% https://doi.org/10.3758/BRM.42.1.188
+%%% This code is an implementation of Nyström, M. & Holmqvist, K. (2010).
+%%% It includes multiple extensions developed by DN that are listed in the
+%%% readme.md file. When using this code, please cite Niehorster, Siu & Li
+%%% (2015). If using ETparams.saccade.onsetRefineMethod=2, please
+%%% additionally cite Oliva, Niehorster, Jarodzka & Holmqvist (2017).
 %%%
-%%% Includes multiple extensions developed by DN that were not in the
-%%% article.
+%%% Example citation:
+%%% Saccades were classified using the Niehorster, Siu & Li (2015)
+%%% implementation of the Nyström & Holmqvist (2010) algorithm, with
+%%% default settings. In addition, saccade onsets were determined using the
+%%% method of Oliva, Niehorster, Jarodzka & Holmqvist (2017).
+%%%
+%%% References:
+%%% Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for
+%%%    fixation, saccade, and glissade detection in eye-tracking data".
+%%%    Behavior Research Methods 42(1): 188-204. doi: 10.3758/BRM.42.1.188
+%%% Niehorster, D.C., Siu, W.W.F., & Li, L. (2015). Manual tracking
+%%%    enhances smooth pursuit eye movements. Journal of Vision 15(15), 11.
+%%%    doi: 10.1167/15.15.11
+%%% Oliva, M., Niehorster, D.C., Jarodzka, H., & Holmqvist, K. (2017).
+%%%    Social Presence Influences Saccadic and Manual Responses.
+%%%    I-Perception 8(1). doi: 10.1177/2041669517692814
 %%-------------------------------------------------------------------------
 addpath(genpath(fullfile(cd,'function_library')))
 addpath(genpath(fullfile(cd,'post-process')))       % post-process folder needed for Niehorster, Siu & Li (2015) code
