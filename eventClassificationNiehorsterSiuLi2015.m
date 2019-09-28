@@ -18,8 +18,7 @@ addpath(genpath(fullfile(cd,'post-process')))       % post-process folder needed
 % settings for this file
 plotWhat        = 'deg';                            % 'deg' or 'pix': determines in what unit to plot data
 whichVel        = 'vel';                            % 'vel', 'velX' or 'velY': determines which velocity trace to plot when interface opens (there are buttons to view the others)
-doPlot          = false;
-doPlotFiltered  = true;
+doPlot          = true;
 
 % load parameters for event classifier
 ETparams = defaultParameters;
@@ -65,9 +64,7 @@ ETparams = prepareParameters(ETparams);
 % Process eye-movement data, per trial
 %--------------------------------------------------------------------------
 [files,nfiles] = FileFromFolder(fullfile(cd,'example data','NiehorsterSiuLi2015'),'','txt');
-if doPlot || doPlotFiltered
-    fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
-end
+fhndl = -1;
 for p = 1:nfiles
     %%% 1. event classification and standard plot
     % read in data
@@ -76,18 +73,6 @@ for p = 1:nfiles
     
     % perform event classification
     data    = runNH2010Classification(rawData(:,2),rawData(:,3),rawData(:,4),ETparams,rawData(:,1));
-    
-    if doPlot
-        % plot the trial (eye X, eye Y, velocity traces and scanpath,
-        % as well as classified saccades and fixations)
-        clf(fhndl);
-        plotClassification(data,plotWhat,whichVel,ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect,'title',files(p).fname,'zeroStartT',true);
-        set(fhndl,'Visible','on');  % assert visibility to bring window to front again after keypress
-        pause
-        if ~ishghandle(fhndl)
-            break;
-        end
-    end
     
     %%% 2. for Niehorster, Siu & Li (2015), we had to remove saccades from
     %%% the data traces, do that here and plot again.
@@ -108,10 +93,14 @@ for p = 1:nfiles
     % construct saccade only traces
     data = cutPursuit(data,ETparams,1);
     
-    if doPlotFiltered
+    if doPlot
         % plot the trial (eye X, eye Y, velocity traces and scanpath,
         % as well as classified saccades and fixations)
-        clf(fhndl);
+        if ~ishghandle(fhndl)
+            fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+        else
+            clf(fhndl);
+        end
         plotClassification(data,plotWhat,whichVel,ETparams.samplingFreq,ETparams.glissade.searchWindow,ETparams.screen.rect,'title',files(p).fname,'zeroStartT',true);
         set(fhndl,'Visible','on');  % assert visibility to bring window to front again after keypress
         pause
