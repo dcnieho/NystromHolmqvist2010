@@ -19,7 +19,7 @@ When using this code, please cite Niehorster, Siu & Li (2015). If using ETparams
 NB: it is probably good to discuss these methods in a few lines each. Note that if you change settings from their default, please note these changes in your article.
 
 References:
-> Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204
+> Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204. doi: 10.3758/BRM.42.1.188
 >
 > Niehorster, D.C., Siu, W.W.F., & Li, L. (2015). Manual tracking enhances smooth pursuit eye movements. Journal of Vision 15(15), 11. doi: 10.1167/15.15.11
 >
