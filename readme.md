@@ -15,6 +15,7 @@ First, the internals of the algorithm have been rewritten extensively with an ey
 # Citation
 When using this code, please cite Niehorster, Siu & Li (2015). If using ETparams.saccade.onsetRefineMethod=2, please additionally cite Oliva, Niehorster, Jarodzka & Holmqvist (2017). Example citation:
 > Saccades were classified using the Niehorster, Siu & Li (2015) implementation of the Nyström & Holmqvist (2010) algorithm, with default settings. In addition, saccade onsets were determined using the method of Oliva, Niehorster, Jarodzka & Holmqvist (2017).
+
 NB: it is probably good to discuss these methods in a few lines each. Note that if you change settings from their default, please note these changes in your article.
 
 References:
