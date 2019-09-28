@@ -117,3 +117,10 @@ for p = 1:nfiles
         end
     end
 end
+
+% clean up
+if ishghandle(fhndl)
+    close(fhndl);
+end
+rmpath(genpath(fullfile(cd,'function_library')))
+rmpath(genpath(fullfile(cd,'post-process')))
