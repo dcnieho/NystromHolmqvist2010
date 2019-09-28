@@ -81,11 +81,11 @@ data.pix.X      = data.pix.X + ETparams.screen.resolution(1)/2 - ETparams.screen
 data.pix.Y      = data.pix.Y + ETparams.screen.resolution(2)/2 - ETparams.screen.dataCenter(2);
 
 % flip X if specified
-if ETparams.data.qFlipX
+if ETparams.data.flipX
     data.pix.X  = -data.pix.X + ETparams.screen.resolution(1);
 end
 % flip Y if specified
-if ETparams.data.qFlipY
+if ETparams.data.flipY
     data.pix.Y  = -data.pix.Y + ETparams.screen.resolution(2);
 end
 
@@ -98,7 +98,7 @@ data.pix.Y      = data.pix.Y - ETparams.screen.subjectStraightAhead(2);
 
 %%%% params
 if isempty(data.pupil.size)
-    % make sure detecting blinks by pupil size is not requested if we don't
-    % have pupil size data
-    ETparams.blink.detectMode = ETparams.blink.detectMode - bitand(ETparams.blink.detectMode,uint8(1));
+    % make sure classification of blinks by pupil size is not requested if
+    % we don't have pupil size data
+    ETparams.blink.classifyMode = ETparams.blink.classifyMode - bitand(ETparams.blink.classifyMode,uint8(1));
 end

@@ -10,7 +10,7 @@ end
 coef1 = mypolyfit(start1,order,fin1,data,qDebug);       % het fitten van traject 1
 coef3 = mypolyfit(start2,order,fin2,data,qDebug);       % het fitten van traject 3
 
-if order == 3,                          % derde orde interpolatie
+if order == 3                           % derde orde interpolatie
     a0 = coef1(4);
     a1 = coef1(3);
     a2 = coef1(2);
@@ -20,7 +20,7 @@ if order == 3,                          % derde orde interpolatie
     c3 = coef3(1);
 end
 
-if order == 2,                          % tweede orde interpolatie
+if order == 2                           % tweede orde interpolatie
     a0 = coef1(3);
     a1 = coef1(2);
     a2 = coef1(1);
@@ -30,7 +30,7 @@ if order == 2,                          % tweede orde interpolatie
     c3 = 0.0;
 end
 
-if order == 1,                          % eerste orde interpolatie
+if order == 1                           % eerste orde interpolatie
     a0 = coef1(2);
     a1 = coef1(1);
     a2 = 0.0;
@@ -103,9 +103,9 @@ if nargin<5
 end
 
 if qDebug
-    disp(sprintf('order = %d',order));
-    disp(sprintf('start = %d',start));
-    disp(sprintf('einde = %d',eind));
+    fprintf('order = %d\n',order);
+    fprintf('start = %d\n',start);
+    fprintf('einde = %d\n',eind);
 end
 
 t1  = [start:eind];
@@ -130,7 +130,7 @@ else
     error('not implemented for this order')
 end
 
-if nargout<2
+if nargout>2
     % evaluate polynomial
     y2  = polyval(c,t1);
 end

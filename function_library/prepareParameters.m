@@ -13,7 +13,7 @@ screenExtends   = ETparams.screen.rect.pix ./ [pixPerMeter pixPerMeter];
 ETparams.screen.rect.deg = atan2(screenExtends,ETparams.screen.viewingDist)*180/pi;
 
 % calculate low-pass filter for median filter detrending step, if needed
-if ETparams.data.qDetrendWithMedianFilter
+if ETparams.data.detrendWithMedianFilter
     % -3 dB rolloff at 20Hz, using 7 coefficient convolution
     % (at 240Hz)
     %
@@ -53,7 +53,7 @@ if ETparams.data.qDetrendWithMedianFilter
 end
 
 % calculate saccade template FIR
-if ETparams.data.qApplySaccadeTemplate
+if ETparams.data.applySaccadeTemplate
     if 0
         % resample Lee Stone saccade template
         lstone_velocity_saccade_template_7 = [.03 .106 .221 .285 .221 .106 .03];

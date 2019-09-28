@@ -35,7 +35,7 @@ end
 % lastly, notify if more than 20% nan
 if sum(qNaN)/length(data.deg.vel) > 0.20
     fprintf('Warning: This trial contains %.2f%% missing samples\n',sum(qNaN)/length(data.deg.vel)*100);
-    data.qNoiseTrial = true;
+    data.isNoiseTrial = true;
 else
-    data.qNoiseTrial = false;
+    data.isNoiseTrial = false;
 end

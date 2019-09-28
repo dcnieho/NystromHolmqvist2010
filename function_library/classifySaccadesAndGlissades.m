@@ -1,6 +1,6 @@
-function data = detectSaccadesAndGlissades(data,ETparams)
-% Detects start and end by criteria on either the eye velocity or the xcorr
-% response between the velocity trace and a saccade template
+function data = classifySaccadesAndGlissades(data,ETparams)
+% Classifies start and end by criteria on either the eye velocity or the
+% xcorr response between the velocity trace and a saccade template
 
 %%% prepare algorithm parameters
 minSacSamples           = ceil(ETparams.saccade.minDur/1000                 * ETparams.samplingFreq);
@@ -10,15 +10,15 @@ localNoiseWindowSamples = ceil(ETparams.saccade.localNoiseWindowLength/1000 * ET
 
 %%% select parameters and data to run saccade onset and offset refinement
 % on
-if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
-    % run full detection algorithm from the cross correlation trace
+if ETparams.data.applySaccadeTemplate && ETparams.saccade.useTemplateForRefine
+    % run full classification algorithm from the cross correlation trace
     field_peak  = 'peakXCorrThreshold';
     field_onset = 'onsetXCorrThreshold';
     field_offset= 'offsetXCorrThreshold';
     vel         = data.deg.velXCorr;
 else
-    % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
-    % are detected based on xcorr responses, refinement is done from the
+    % if ETparams.data.applySaccadeTemplate==true, then below just peaks
+    % are classified based on xcorr responses, refinement is done from the
     % velocity trace (recommended).
     field_peak  = 'peakVelocityThreshold';
     field_onset = 'onsetVelocityThreshold';
@@ -28,7 +28,7 @@ end
 
 
 %%% find where velocity data is above threshold
-if ETparams.data.qApplySaccadeTemplate
+if ETparams.data.applySaccadeTemplate
     % find peaks from xcorr responses
     qAboveThresh    = data.deg.velXCorr > data.saccade.peakXCorrThreshold;
 else
@@ -41,8 +41,8 @@ saconprecise    = zeros(size(sacon));
 % the output
 
 %%% prepare algorithm variables
-% make vector that will contain true where saccades are detected
-% this is used in some parts of the algorithm (e.g. offset velocity
+% Make vector that will contain true where saccades are classified.
+% This is used in some parts of the algorithm (e.g. offset velocity
 % threshold calculation) when it needs to analyze data that is not during
 % saccades or glissades.
 qSacGlisOrNan   = isnan(vel);
@@ -80,10 +80,10 @@ while kk <= length(sacon)
     end
     
     %----------------------------------------------------------------------
-    % DETECT SACCADE - refine saccade beginnings and ends
+    % CLASSIFY SACCADE - refine saccade beginnings and ends
     %----------------------------------------------------------------------       
     
-    % Detect saccade start. Two methods. If user selected method 2, we
+    % Determine saccade start. Two methods. If user selected method 2, we
     % might fall back to using method 1 if 2 fails...
     onsetRefineMethod2Failed = false;
     if ETparams.saccade.onsetRefineMethod==2
@@ -139,7 +139,7 @@ while kk <= length(sacon)
         end
     end
     if ETparams.saccade.onsetRefineMethod==1 || onsetRefineMethod2Failed
-        % Walk back from detected saccade start to find
+        % Walk back from classified saccade start to find
         % where the velocity is below the saccadeVelocityThreshold (mean+3*std)
         % and where the acceleration is negative (which indicates a local
         % minimum in the velocity function).
@@ -173,8 +173,8 @@ while kk <= length(sacon)
         saccadeOffsetTreshold(kk) = data.saccade.(field_onset);
     end
     
-    % Detect saccade end. Walk forward from detected saccade end to find
-    % where the velocity is below the saccadeOffsetTreshold and
+    % Determine saccade end. Walk forward from classified saccade end to
+    % find where the velocity is below the saccadeOffsetTreshold and
     % where the acceleration is positive (which indicates a local minimum
     % in the velocity function)
     i = sacoff(kk);
@@ -233,11 +233,12 @@ while kk <= length(sacon)
     
     
     %----------------------------------------------------------------------  
-    % DETECT GLISSADE
+    % CLASSIFY GLISSADE
     %----------------------------------------------------------------------
     
-    if ETparams.glissade.qDetect
-        % store glissades found in this interval, marked for post processing
+    if ETparams.glissade.doClassify
+        % store glissades found in this interval, marked for post
+        % processing
         foundGlissadeOff = [];
 
         % Search only for glissade peaks in a window after the saccade end
@@ -245,11 +246,12 @@ while kk <= length(sacon)
         % this window is also used below to assign the glissade type
         glissadeWindow = sacoff(kk) : min(sacoff(kk) + glissadeWindowSamples, length(vel)-1);
 
-        % Detect glissade (low velocity criteria -- the adapted saccade offset
-        % criterion)
+        % Classify glissade (low velocity criteria -- the adapted saccade
+        % offset criterion)
         qGlissadePeak = vel(glissadeWindow) >= saccadeOffsetTreshold(kk);
 
-        % Detect only 'complete' peaks (those with a beginning and an end)
+        % Classify only 'complete' peaks (those with a beginning and an
+        % end)
         [~,potend] = bool2bounds(qGlissadePeak);
         % delete idx if it corresponds to end of window -> glissade doesn't
         % end before end of window
@@ -260,23 +262,25 @@ while kk <= length(sacon)
             foundGlissadeOff  = sacoff(kk)+potend(end);                     % implicit: glissade start is saccade end
         end    
 
-        % Detect glissade (high velocity criteria). These would have
-        % already been picked up by saccade detection, see if there are any
-        % A high velocity glissade is detected only if glissade velocity
+        % Classify glissade (high velocity criteria). These would have
+        % already been picked up by saccade classification, see if there
+        % are any
+        % A high velocity glissade is classified only if glissade velocity
         % goes below the saccadePeakVelocityThreshold within the search
         % window
         if kk+1<=length(sacoff)                                             % make sure we don't run out of data
-            qHighGlisOff = sacoff(kk+1:end) <= glissadeWindow(end);         % see if any saccade offsets happen within our glissade detection window
+            qHighGlisOff = sacoff(kk+1:end) <= glissadeWindow(end);         % see if any saccade offsets happen within our glissade classification window
             if any(qHighGlisOff)
                 idx = find(qHighGlisOff,1,'last');
 
                 % additional checks to see if this could be a potential
                 % glissade:
-                % - The amplitude of this potential glissade has to be lower
-                %   than that of the saccade we're currently processing
-                % - Also, if we've already detected a low velocity glissade,
-                %   only replace with this high velocity glissade if detected
-                %   end is later
+                % - The amplitude of this potential glissade has to be
+                %   lower than that of the saccade we're currently
+                %   processing
+                % - Also, if we've already classified a low velocity
+                %   glissade, only replace with this high velocity glissade
+                %   if classified end is later
                 if max(...  % amplitude
                         calcAmplitudeFick(data.deg.Azi(sacoff(kk)),data.deg.Ele(sacoff(kk)) , data.deg.Azi(sacoff(kk+idx)),data.deg.Ele(sacoff(kk+idx)))...
                       ) ...
@@ -291,11 +295,11 @@ while kk <= length(sacon)
             end
         end
 
-        % If potential glissade detected
+        % If potential glissade found
         if ~isempty(foundGlissadeOff)
-            % Detect end. Walk forward from detected saccade start to find
-            % where the acceleration is positive (which indicates a local
-            % minimum in the velocity function)
+            % Determine end. Walk forward from classified glissade start to
+            % find where the acceleration is positive (which indicates a
+            % local minimum in the velocity function)
             while foundGlissadeOff < length(vel) && ...                             % make sure we don't run out of the data
                   (isnan(vel(i)) || ...                                             % and that we ignore nan data
                    vel(foundGlissadeOff) > saccadeOffsetTreshold(kk) || ...         % keep searching until below saccadeOffsetTreshold
@@ -316,9 +320,9 @@ while kk <= length(sacon)
                 % if glissade is shorter) and store
                 glissadeVelWindow = sacoff(kk) : min(sacoff(kk) + glissadeWindowSamples, foundGlissadeOff); % this cant go outside of data as foundGlissadeOff is always valid at this point
                 if max(vel(glissadeVelWindow)) > data.saccade.(field_peak)
-                    glissadetype = [glissadetype 2];    % high velocity glissade detected ('Strong glissade detection criteria')
+                    glissadetype = [glissadetype 2];    % high velocity glissade found ('Strong glissade detection criteria')
                 else
-                    glissadetype = [glissadetype 1];    % low  velocity glissade detected ('Weak   glissade detection criteria')
+                    glissadetype = [glissadetype 1];    % low  velocity glissade found ('Weak   glissade detection criteria')
                 end
                 % now, remove all next items in saccade vector that end before
                 % end of this glissade. This also deletes the next saccade if
@@ -372,13 +376,13 @@ glissade.type           = glissadetype;
 %--------------------------------------------------------------------------
 % OUTPUT
 %--------------------------------------------------------------------------
-%%% Notify if no saccades are detected
+%%% Notify if no saccades are classified
 if isempty(saccade.on)
     fprintf('no saccades\n');
 end
 
 % need to concat structs...
 data.saccade    = cell2struct([struct2cell(data.saccade); struct2cell(saccade)],[fieldnames(data.saccade); fieldnames(saccade)]);
-if ETparams.glissade.qDetect
+if ETparams.glissade.doClassify
     data.glissade   = glissade;
 end

@@ -1,9 +1,9 @@
-function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,varargin)
+function plotClassification(data,datatype,veltype,sampleRate,glissadeSearchWindow,rect,varargin)
 
 % standard plot routine for monocular data
 % See also plotWithMark, plot2D and axes
 % call syntax:
-% plotDetection(data, datatype, sampleRate, glissadeSearchWindow, res, title)
+% plotClassification(data, datatype, sampleRate, glissadeSearchWindow, res, title)
 % - data: see below for the fields it needs to contain, they're all
 %         unpacked in the same place so its easy to see
 % - datatype: 'pix' or 'deg'
@@ -25,6 +25,7 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 %                 localized in time (e.g., indicating when a target was
 %                 presented
 % - 'scanRefCoords': reference points to be drawn in 2D
+% - 'zeroStartT': if true, will set first sample to t==0
 %
 % LEGEND of the plots:
 % First two plots show the eye's azimuth and elevation in degree (Fick
@@ -35,13 +36,13 @@ function plotDetection(data,datatype,veltype,sampleRate,glissadeSearchWindow,rec
 % end of high velocity glissades and green stars the end of low velocity
 % glissades (start of glissades is end of preceding saccade)
 % Finally, the last two plots show the subject's scanpath, either
-% indicating the detected fixations or the raw eye position data. The eye
+% indicating the classified fixations or the raw eye position data. The eye
 % position at the start of the trial (or the first fixation) is marked by a
 % blue marker and the end of the trial (or last fixation) by a red marker.
 
 narginchk(6,inf)
 
-assert(isfield(data.(datatype),'vel'),'data for %s not available, enable ETparams.data.qAlsoStoreandDiffPixels',datatype);
+assert(isfield(data.(datatype),'vel'),'data for %s not available, enable ETparams.data.alsoStoreandDiffPixels',datatype);
 
 %%% unpack the needed variables
 % key-val parameters
@@ -52,6 +53,7 @@ qIndicateSacInScanpath = false;
 refCoords = [];
 scanRefCoords = [];
 tRefCoords = [];
+qZeroStartT= false;
 if nargin>=7
     nKeyValInp = nargin-6;
     assert(mod(nKeyValInp,2)==0,'key-value arguments must come in pairs')
@@ -82,6 +84,8 @@ if nargin>=7
                 case 'tRefCoords'
                     tRefCoords = varargin{p};
                     assert(size(tRefCoords,2)==4,'tRefCoords input should be an Nx4 matrix')
+                case 'zeroStartT'
+                    qZeroStartT = ~~varargin{p};
                 otherwise
                     error('do not understand input %s',varargin{p-1})
             end
@@ -121,19 +125,49 @@ clbl = 'Xcorr  response';   % double space on purpose, reads easier for me
 
 % time series
 % position
+qHaveNoSacDataP     = false;
+qHaveSacOnlyDataP   = false;
 if strcmp(datatype,'pix')
     xdata   = data.pix.X;
     ydata   = data.pix.Y;
+    % see if have data with saccades cut out
+    if isfield(data.pix,'XNoSac')
+        xdataNoSac          = data.pix.XNoSac;
+        ydataNoSac          = data.pix.YNoSac;
+        qHaveNoSacDataP     = true;
+    end
+    % see if have data with only saccades
+    if isfield(data.pix,'XSac')
+        xdataOnlySac        = data.pix.XSac;
+        ydataOnlySac        = data.pix.YSac;
+        qHaveSacOnlyDataP   = true;
+    end
 elseif strcmp(datatype,'deg')
     xdata   = data.deg.Azi;
     ydata   = data.deg.Ele;
+    % see if have data with saccades cut out
+    if isfield(data.deg,'AziNoSac')
+        xdataNoSac          = data.deg.AziNoSac;
+        ydataNoSac          = data.deg.EleNoSac;
+        qHaveNoSacDataP     = true;
+    end
+    % see if have data with only saccades
+    if isfield(data.deg,'AziSac')
+        xdataOnlySac        = data.deg.AziSac;
+        ydataOnlySac        = data.deg.EleSac;
+        qHaveSacOnlyDataP   = true;
+    end
 end
+
 
 % time
 if isfield(data,'time')
     time = data.time;
 else
     time = ([1:length(xdata)]-1)/sampleRate * 1000;
+end
+if qZeroStartT
+    time = time-time(1);
 end
 % map highlight sample indices to timestamps
 highlightTimet = [];
@@ -143,36 +177,44 @@ end
 
 % velocity
 if strcmp(datatype,'pix')
-    if isfield(data.pix,'velX')
-        vel     = {data.pix.vel,data.pix.velX,data.pix.velY};
-    else
-        vel     = {data.pix.vel};
-    end
+    mainf  = 'pix';
+    fields = {'vel','velX','velY'};
 elseif strcmp(datatype,'deg')
-    if isfield(data.deg,'velAzi')
-        vel     = {data.deg.vel,data.deg.velAzi,data.deg.velEle};
-    else
-        vel     = {data.deg.vel};
+    mainf  = 'deg';
+    fields = {'vel','velAzi','velEle'};
+end
+qHaveNoSacDataV     = false;
+qHaveSacOnlyDataV   = false;
+[velNoSac,velOnlySac] = deal(cell(1,3));
+for f=length(fields):-1:1
+    if isfield(data.(mainf),fields{f})
+        vel{f} = data.(mainf).(fields{f});
+    end
+    if isfield(data.(mainf),[fields{f} 'NoSac'])
+        velNoSac{f} = data.(mainf).([fields{f} 'NoSac']);
+        qHaveNoSacDataV = true;
+    end
+    if isfield(data.(mainf),[fields{f} 'Sac'])
+        velOnlySac{f} = data.(mainf).([fields{f} 'Sac']);
+        qHaveSacOnlyDataV = true;
     end
 end
+
+
 % acceleration
-if isfield(data.(datatype),'acc')
-    qHaveAcceleration = true;
-    if strcmp(datatype,'pix')
-        if isfield(data.pix,'accX')
-            acc     = {data.pix.acc,data.pix.accX,data.pix.accY};
-        else
-            acc     = {data.pix.acc};
-        end
-    elseif strcmp(datatype,'deg')
-        if isfield(data.deg,'accAzi')
-            acc     = {data.deg.acc,data.deg.accAzi,data.deg.accEle};
-        else
-            acc     = {data.deg.acc};
-        end
+if strcmp(datatype,'pix')
+    mainf  = 'pix';
+    fields = {'acc','accX','accY'};
+elseif strcmp(datatype,'deg')
+    mainf  = 'deg';
+    fields = {'acc','accAzi','accEle'};
+end
+qHaveAcceleration = false;
+for f=length(fields):-1:1
+    if isfield(data.(mainf),fields{f})
+        acc{f} = data.(mainf).(fields{f});
+        qHaveAcceleration = true;
     end
-else
-    qHaveAcceleration = false;
 end
 
 % markers
@@ -225,7 +267,7 @@ if isfield(data.saccade,'peakXCorrThreshold')
     qSaccadeTemplate = true;
     saccadePeakXCorrThreshold       = data.saccade.peakXCorrThreshold;
 else
-    % detected saccades based on velocity trace
+    % saccades have been classified from the velocity trace
     qSaccadeTemplate = false;
 end
 
@@ -299,7 +341,18 @@ if ~isempty(tRefCoords)
         plot(tRefCoords(p,1:2),tRefCoords(p,[3 3]),'r')
     end
 end
-plotWithMark(time,xdata,{'k-'},[],...                                   % data (y,x), style
+if qHaveNoSacDataP
+    plot(time,xdata,'k');
+    pdat = xdataNoSac;
+    style = {'g-'};
+else
+    pdat = xdata;
+    style = {'k-'};
+end
+if qHaveSacOnlyDataP
+    plot(time,xdataOnlySac,'c');
+end
+plotWithMark(time,pdat,style,[],...                                     % data (y,x), style
              'time (ms) - fixations',xlbl,titel,...                     % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
@@ -321,7 +374,18 @@ if ~isempty(tRefCoords)
         plot(tRefCoords(p,1:2),tRefCoords(p,[4 4]),'r')
     end
 end
-plotWithMark(time,ydata,{'k-'},[],...                                   % data (y,x), style
+if qHaveNoSacDataP
+    plot(time,ydata,'k');
+    pdat = ydataNoSac;
+    style = {'g-'};
+else
+    pdat = ydata;
+    style = {'k-'};
+end
+if qHaveSacOnlyDataP
+    plot(time,ydataOnlySac,'c');
+end
+plotWithMark(time,pdat,style,[],...                                     % data (y,x), style
              'time (ms) - fixations',ylbl,'',...                        % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              blinkMarks{:}, ...                                         % blink markers (if any)
@@ -373,7 +437,7 @@ if isfield(data,'pupil') && ~isempty(data.pupil.size)
         axis(axisSize);
     end
     if isfield(data,'blink') && isfield(data.blink,'peakDSizeThreshold')
-        % plot pupil size change thresholds for blink detection
+        % plot pupil size change thresholds for blink classification
         hold on;
         plot(mmt, [1 1]*data.blink.peakDSizeThreshold,'r--')
         plot(mmt, [1 1]*data.blink.onsetDSizeThreshold,'r:')
@@ -406,16 +470,16 @@ end
 
 %%% plot velocity trace with saccade and glissade markers
 av2 = axes('position',vplotPos);
-plotVel(time,vel{1},vlbl{1},'vel',datatype,...
+plotVel(time,vel{1},velNoSac{1},velOnlySac{1},vlbl{1},'vel',datatype,...
     missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
 if ~isscalar(vel)
     avx = axes('position',vplotPos);
-    plotVel(time,vel{2},vlbl{2},'velX',datatype,...
+    plotVel(time,vel{2},velNoSac{2},velOnlySac{2},vlbl{2},'velX',datatype,...
         missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
         qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
     avy = axes('position',vplotPos);
-    plotVel(time,vel{3},vlbl{3},'velY',datatype,...
+    plotVel(time,vel{3},velNoSac{3},velOnlySac{3},vlbl{3},'velY',datatype,...
         missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTimet,...
         qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold);
     vaxs = [av2 avx avy];
@@ -466,7 +530,7 @@ if qSaccadeTemplate
                  blinkMarks{:} ...                                          % blink markers (if any)
                 );
     hold on;
-    % add detection thresholds
+    % add classification thresholds
     plot(mmt,[1 1]*saccadePeakXCorrThreshold,'r--')
     if qSaccadeTemplateRefinement
         plot(mmt,[1 1]*saccadeOnsetXCorrThreshold,'r:')
@@ -537,7 +601,7 @@ linkaxes(allTSeries,'x');
 
 %%% plot scanpath of raw data and of fixations
 fix2dhndls = [];
-if qHaveFixations
+if qHaveFixations || qHaveNoSacDataP || qHaveSacOnlyDataP
     asf = axes('position',fixplotPos);
     hold on
     if nargin>=8 && strcmp(datatype,'pix') && ~isempty(pic)
@@ -551,15 +615,45 @@ if qHaveFixations
         plot(refCoords(1)+(rect(3)-rect(1))*.05/aspectr*[-1 1],refCoords(2)                      *[ 1 1],'b');
         plot(refCoords(1)                              *[ 1 1],refCoords(2)+(rect(4)-rect(2))*.05*[-1 1],'b');
     end
-    usrDatf.tag = 'evt';
-    usrDatf.ton = time(data.fixation.on);
-    usrDatf.toff= time(data.fixation.off);
-    fix2dhndls = plotWithMark(xfixpos,yfixpos,{'k-'},usrDatf,...                        % data (y,x), style, base userData
-                 xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
-                 [1:length(xfixpos)],{'go','MarkerFaceColor','g','MarkerSize',4},...    % mark each fixation (that is marker on each datapoint we feed it
-                 1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % make first fixation marker blue
-                 length(xfixpos),    {'mo','MarkerFaceColor','m','MarkerSize',4} ...    % make last  fixation marker red
-                );
+    if qHaveFixations
+        usrDatf.tag = 'evt';
+        usrDatf.ton = time(data.fixation.on);
+        usrDatf.toff= time(data.fixation.off);
+        fix2dhndls = plotWithMark(xfixpos,yfixpos,{'k-'},usrDatf,...                        % data (y,x), style, base userData
+                     xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
+                     [1:length(xfixpos)],{'go','MarkerFaceColor','g','MarkerSize',4},...    % mark each fixation (that is marker on each datapoint we feed it
+                     1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % make first fixation marker blue
+                     length(xfixpos),    {'mo','MarkerFaceColor','m','MarkerSize',4} ...    % make last  fixation marker red
+                    );
+    else
+        extraInp = {};
+        if ~isempty(highlightTime)
+            for p=1:size(highlightTime,1)
+                extraInp = [extraInp {[round(highlightTime(p,1)):round(highlightTime(p,2))],{'r-'}}];
+            end
+        end
+        usrDatr.tag = 'raw';
+        usrDatr.t   = time;
+        if qHaveNoSacDataP && qHaveSacOnlyDataP
+            plot(xdataOnlySac,ydataOnlySac,'c-','UserData',usrDatr);
+            hold on;
+        end
+        if qHaveNoSacDataP
+            % when we have both onlySac and noSac and when we only have
+            % noSac, we draw this one with plotWithMark
+            pdat = {xdataNoSac,ydataNoSac};
+            style = {'g-'};
+        elseif qHaveSacOnlyDataP
+            pdat = {xdataOnlySac,ydataOnlySac};
+            style = {'c-'};
+        end
+        fix2dhndls = plotWithMark(pdat{1},pdat{2},style,usrDatr,...                          % data (y,x), style, base userData
+                     xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
+                     1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % use blue marker for first datapoint
+                     length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4},...    % use red  marker for last  datapoint
+                     extraInp{:}                                                     ...
+                    );
+    end
     axis(rect([1 3 2 4]));
     axis ij
 else
@@ -591,7 +685,7 @@ if qIndicateSacInScanpath
 end
 usrDatr.tag = 'raw';
 usrDatr.t   = time;
-raw2dhndls = plotWithMark(xdata,ydata,{'k-'},usrDatr,...                            %  data (y,x), style, base userData
+raw2dhndls = plotWithMark(xdata,ydata,{'k-'},usrDatr,...                            % data (y,x), style, base userData
              xlbl,ylbl,'',...                                                       % x-axis label, y-axis label, axis title
              1,                  {'co','MarkerFaceColor','c','MarkerSize',4},...    % use blue marker for first datapoint
              length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4},...    % use red  marker for last  datapoint
@@ -662,7 +756,7 @@ set(pan(gcf) ,'ActionPostCallback',@(obj,evd) viewCallbackFcn(obj,evd,actions));
     end
 end
 
-function plotVel(time,vel,vlbl,veltype,datatype,...
+function plotVel(time,vel,velNoSac,velOnlySac,vlbl,veltype,datatype,...
     missFlag,sacon,sacoff,saconPrecise,glisMarks,blinkMarks,mmt,highlightTime,...
     qSaccadeTemplateRefinement,saccadePeakVelocityThreshold,saccadeOnsetVelocityThreshold,glissadeSearchSamples,saccadeOffsetVelocityThreshold)
 % determine axis size
@@ -672,7 +766,19 @@ hold on;
 plotTimeHighlights(highlightTime,axisSize(3:4));
 % line at 0
 plot([time(1) time(end)],[0 0],'b');
-plotWithMark(time,vel,{'k-'},[],...                                     % data (y,x), style
+% data trace(s)
+if ~isempty(velNoSac)
+    plot(time,vel,'k');
+    pdat = velNoSac;
+    style = {'g-'};
+else
+    pdat = vel;
+    style = {'k-'};
+end
+if ~isempty(velOnlySac)
+    plot(time,velOnlySac,'c');
+end
+plotWithMark(time,pdat,style,[],...                                     % data (y,x), style
              'time (ms) - saccades/glissades',vlbl,'',...               % x-axis label, y-axis label, axis title
              missFlag{:}, ...                                           % color part of trace that is missing
              sacon, {'bo','MarkerFaceColor','blue','MarkerSize',4},...  % saccade on  markers
@@ -684,7 +790,7 @@ if ~isempty(saconPrecise)
     hold on;
     plot(interp1(1:length(time),time,saconPrecise),zeros(size(saconPrecise)),'bx');
 end
-% add detection thresholds
+% add classification thresholds
 if strcmp(datatype,'deg') && ~qSaccadeTemplateRefinement && strcmp(veltype,'vel')
     % dont plot if:
     % 1. if plotting pixels, as thresholds are in °/s

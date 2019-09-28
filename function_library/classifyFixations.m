@@ -1,19 +1,19 @@
-function data = detectFixations(data,ETparams)
+function data = classifyFixations(data,ETparams)
 %--------------------------------------------------------------------------
-% Fixation detection
-% Fixation are detected implicitly, as sections that are not saccade or
+% Fixation classification
+% Fixation are classified implicitly, as sections that are not saccade or
 % glissade and also fit some other criteria
 %--------------------------------------------------------------------------
 
 %%% select parameters and data to run saccade onset and offset refinement
 % on
-if ETparams.data.qApplySaccadeTemplate && ETparams.saccade.qSaccadeTemplateRefine
-    % run full detection algorithm from the cross correlation trace
+if ETparams.data.applySaccadeTemplate && ETparams.saccade.useTemplateForRefine
+    % run full classification algorithm from the cross correlation trace
     field_peak  = 'peakXCorrThreshold';
     vel         = data.deg.velXCorr;
 else
-    % if ETparams.data.qApplySaccadeTemplate==true, then below just peaks
-    % are detected based on xcorr responses, refinement is done from the
+    % if ETparams.data.applySaccadeTemplate==true, then below just peaks
+    % are classified based on xcorr responses, refinement is done from the
     % velocity trace (recommended).
     field_peak  = 'peakVelocityThreshold';
     vel         = data.deg.vel;

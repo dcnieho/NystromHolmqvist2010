@@ -19,8 +19,8 @@ function data = filterDataAndCalcDerivative(data,ETparams)
 
 % calculate component velocities and accelerations
 %--------------------------------------------------------------------------
-if ETparams.data.qNumericallyDifferentiate
-    if ETparams.data.qNumericallyDifferentiate==1
+if ETparams.data.numericallyDifferentiate
+    if ETparams.data.numericallyDifferentiate==1
         % instead of diff we use conv2(data,[1 0 -1].','valid')/2 because it is centered correctly
         % NB diff() is equivalent to conv2(data,[1 -1].','valid')
         tempV   = conv2([data.deg.Azi data.deg.Ele data.deg.dist],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
@@ -51,14 +51,14 @@ if ETparams.data.qNumericallyDifferentiate
         end
         
         % also calculate derivatives for eye position in pixels
-        if ETparams.data.qAlsoStoreandDiffPixels
+        if ETparams.data.alsoStoreandDiffPixels
             tempVpix   = conv2([data.pix.X data.pix.Y],[1 0 -1].','valid')/2 * ETparams.samplingFreq;
             tempVpix   = tempVpix([1 1:end end],:);    % deal with end effects
             
             tempApix   = conv2(tempVpix,[1 0 -1].','valid')/2 * ETparams.samplingFreq^2;
             tempApix   = tempApix([1 1:end end],:);    % deal with end effects
         end
-    elseif ETparams.data.qNumericallyDifferentiate==2
+    elseif ETparams.data.numericallyDifferentiate==2
         % simple diff
         tempV   = diff([data.deg.Azi data.deg.Ele data.deg.dist],1,1);
         tempA   = diff([data.deg.Azi data.deg.Ele data.deg.dist],2,1);
@@ -68,7 +68,7 @@ if ETparams.data.qNumericallyDifferentiate
         tempA   = tempA([1:end end end],:) * ETparams.samplingFreq^2;
         
         % also calculate derivatives for eye position in pixels
-        if ETparams.data.qAlsoStoreandDiffPixels
+        if ETparams.data.alsoStoreandDiffPixels
             tempVpix   = diff([data.pix.X data.pix.Y],1,1);
             tempApix   = diff([data.pix.X data.pix.Y],2,1);
             
@@ -93,7 +93,7 @@ else
     tempA =  tempA * ETparams.samplingFreq^2;               % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
     
     % also calculate derivatives for eye position in pixels
-    if ETparams.data.qAlsoStoreandDiffPixels
+    if ETparams.data.alsoStoreandDiffPixels
         [tempVpix,tempApix] = sgFilt([data.pix.X data.pix.Y],[1 2],ntaps);
         tempVpix = -tempVpix * ETparams.samplingFreq;       % not sure why, but the Savitzky-Golay filter gives me the wrong sign for the component velocities
         tempApix =  tempApix * ETparams.samplingFreq^2;     % note that no need to multiply by factorial(2) as filter coefficients used already include this scaling
@@ -102,12 +102,13 @@ else
 end
     
 % diff pupil size. always use Savitzky-Golay as some smoothing is needed to
-% use this change of pupil size in a meaningful way for blink detection
+% use this change of pupil size in a meaningful way for blink
+% classification
 if isfield(data,'pupil') && ~isempty(data.pupil.size)
-    if ETparams.data.qNumericallyDifferentiate==1 && 0
+    if ETparams.data.numericallyDifferentiate==1 && 0
         data.pupil.dsize = conv2(data.pupil.size,[1 0 -1].','valid')/2 * ETparams.samplingFreq;
         data.pupil.dsize = [data.pupil.dsize(1,:); data.pupil.dsize; data.pupil.dsize(end,:)];    % deal with end effects
-    elseif ETparams.data.qNumericallyDifferentiate==2 && 0
+    elseif ETparams.data.numericallyDifferentiate==2 && 0
         data.pupil.dsize = diff(data.pupil.size,1,1) * ETparams.samplingFreq;
         data.pupil.dsize = data.pupil.dsize([1:end end],:);    % deal with end effects
     else
@@ -136,7 +137,7 @@ thetaPart       = tempA(:,1).*cos(data.deg.Ele)-tempV(:,2).*tempV(:,1).*sin(data
 phiPart         = tempA(:,2)+tempV(:,1).^2.*cos(data.deg.Ele).*sin(data.deg.Ele)+(tempV(:,3).*tempV(:,2).*2.0)./data.deg.dist;
 data.deg.acc    = hypot(thetaPart,phiPart);
 
-if ETparams.data.qAlsoStoreComponentDerivs
+if ETparams.data.alsoStoreComponentDerivs
     % also store velocities and acceleration in X and Y direction
     data.deg.velAzi = tempV(:,1);
     data.deg.velEle = tempV(:,2);
@@ -146,13 +147,13 @@ if ETparams.data.qAlsoStoreComponentDerivs
     data.deg.accDist= tempA(:,3);
 end
 
-if ETparams.data.qAlsoStoreandDiffPixels
+if ETparams.data.alsoStoreandDiffPixels
     % calculate derivative magnitudes
     data.pix.vel    = hypot(tempVpix(:,1), tempVpix(:,2));
     data.pix.acc    = hypot(tempApix(:,1), tempApix(:,2));
     
     % also store velocities and acceleration in X and Y direction
-    if ETparams.data.qAlsoStoreComponentDerivs
+    if ETparams.data.alsoStoreComponentDerivs
         data.pix.velX   = tempVpix(:,1);
         data.pix.velY   = tempVpix(:,2);
         data.pix.accX   = tempApix(:,1);

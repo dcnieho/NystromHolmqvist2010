@@ -1,10 +1,10 @@
-function data = detectAndRemoveBlinks(data,ETparams)
-% Detects blinks and other un-physiological eye movements. They are
-% replaced with nan or linear interpolation. Also detects some wobbly data
-% as evidenced by noise in the pupil size data (almost always associated
-% with noise in eye position, and especially velocity, data
+function data = classifyAndRemoveBlinks(data,ETparams)
+% Classifies blinks and other un-physiological eye movements. They are
+% replaced with nan or linear interpolation. Also classifies some wobbly
+% data as evidenced by noise in the pupil size data (almost always
+% associated with noise in eye position, and especially velocity, data)
 % 
-% Possible blinks are detect in one of two ways.
+% Possible blinks are classified in one of two ways.
 % 1. Based on peaks in change of pupil size velocity trace.
 % 2. Velocity or acceleration trace shows speeds above what is
 %    physiologically possible.
@@ -31,7 +31,7 @@ assert(~any(xor(isnan(data.deg.Azi),isnan(data.pix.X))),'NaNs not same in data.d
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % first get potential blinks, by samples above threshold and/or by
-% detecting unphysiological eye movements
+% classifying unphysiological eye movements
 
 qBlink = false(size(data.deg.vel));
 qNaN   = isnan(data.deg.vel);
@@ -41,21 +41,21 @@ if isfield(data.pupil,'size')
     qBlink = qBlink | data.pupil.size==0;
 end
 
-% detect episodes above threshold in pupil size change trace
-if bitget(uint8(ETparams.blink.detectMode),uint8(1))
+% find episodes above threshold in pupil size change trace
+if bitget(uint8(ETparams.blink.classifyMode),uint8(1))
     qBlink = qBlink | ...
              abs(data.pupil.dsize) > data.blink.peakDSizeThreshold;
 end
 
-% Detect possible blinks, episodes where the eyes move too fast too be
-% physiologically possible
-if bitget(uint8(ETparams.blink.detectMode),uint8(2))
+% find episodes where the eyes move too fast too be physiologically
+% possible
+if bitget(uint8(ETparams.blink.classifyMode),uint8(2))
     qBlink = qBlink | ...
              data.deg.vel > ETparams.blink.velocityThreshold |...
              data.deg.acc > ETparams.blink.accThreshold;
 end
 
-% find bounds of blinks (or tracker noise) as detected above, merge very
+% find bounds of blinks (or tracker noise) as classified above, merge very
 % close ones for easier processing, they'll merge anyway
 [blink.on,blink.off]    = bool2bounds(qBlink);
 blink                   = mergeIntervals(blink,[],blinkMergeWindowSamples,qNaN);
@@ -67,7 +67,7 @@ if isfield(data.pupil,'dsize')
     % pupil size change trace.
     dPSize  = abs(data.pupil.dsize);
 
-    % make vector that will contain true where blinks are detected
+    % make vector that will contain true where blinks are found
     % this is used in some parts of the algorithm (e.g. offset velocity
     % threshold calculation) when it needs to analyze data that is not during
     % blinks or missing data.
@@ -95,10 +95,10 @@ if isfield(data.pupil,'dsize')
             continue;
         end
 
-        % Detect blink start. Walk back from detected blink start to find
-        % where the signal is below the onsetDSizeThreshold (mean+3*std)
-        % and where the signal change is negative (which indicates a local
-        % minimum in the signal).
+        % Determine blink start. Walk back from classified blink start to
+        % find where the signal is below the onsetDSizeThreshold
+        % (mean+3*std) and where the signal change is negative (which
+        % indicates a local minimum in the signal).
         i = blink.on(kk);
         while i > 1 && ...                                          % make sure we don't run out of the data
               (isnan(dPSize(i)) || ...                              % and that we ignore nan data
@@ -129,10 +129,10 @@ if isfield(data.pupil,'dsize')
             data.blink.offsetDSizeThreshold(kk) = data.blink.onsetDSizeThreshold;
         end
 
-        % Detect blink end. Walk forward from detected blink end to find
-        % where the signal is below the data.blink.offsetDSizeThreshold and
-        % where the signal change is positive (which indicates a local minimum
-        % in the signal)
+        % Determine blink end. Walk forward from classified blink end to
+        % find where the signal is below the
+        % data.blink.offsetDSizeThreshold and where the signal change is
+        % positive (which indicates a local minimum in the signal)
         i = blink.off(kk);
         while i < length(dPSize) && ...                                 % make sure we don't run out of the data
               (isnan(dPSize(i)) || ...                                  % and that we ignore nan data
@@ -168,9 +168,9 @@ if isfield(data.pupil,'dsize')
 
         % exclude blink in which the eye is only closed (pupil size 0) for
         % one sample (possibly multiple times). likely noise (can lead to
-        % multiple samples detected above based on size velocity
+        % multiple samples classified above based on size velocity
         % thresholding...)
-        if ETparams.blink.qExcludeOneSampleBlinks
+        if ETparams.blink.excludeOneSampleBlinks
             % get strechtes of data where pupil size is 0 (if any)
             [bon,boff] = bool2bounds(data.pupil.size(blink.on(kk):blink.off(kk))==0);
             if ~isempty(bon) && all(boff-bon+1==1)
@@ -193,17 +193,17 @@ if isfield(data.pupil,'dsize')
 end
 
 % Then, attempt to further refine blinks by noting that many of these
-% unphysiological eye movements have already been detected as saccades
-% (they usually have very large velocity!). So use detected saccade on- and
-% offsets as blink on- and offsets if the first saccade onset is earlier or
-% the last offset later (crap in velocity trace is sometimes a bit more
-% spread out)
-if ETparams.blink.qGrowToOverlapSaccade
+% unphysiological eye movements have already been classified as saccades
+% (they usually have very large velocity). So use classified saccade on-
+% and offsets as blink on- and offsets if the first saccade onset is
+% earlier or the last offset later (crap in velocity trace is sometimes a
+% bit more spread out)
+if ETparams.blink.growToOverlapSaccade
     sacon  = data.saccade.on;
     sacoff = data.saccade.off;
 end
-if ETparams.blink.qGrowToOverlapGlissade
-    if ETparams.blink.qGrowToOverlapSaccade
+if ETparams.blink.growToOverlapGlissade
+    if ETparams.blink.growToOverlapSaccade
         % correct sacoff to glissade end time, if any. we want the blink to
         % extend all the way to glissade offset
         if isfield(data,'glissade')
@@ -215,7 +215,7 @@ if ETparams.blink.qGrowToOverlapGlissade
         sacoff = data.glissade.off;
     end
 end
-if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
+if ETparams.blink.growToOverlapSaccade || ETparams.blink.growToOverlapGlissade
     for p = length(blink.on):-1:1
         % any saccade on/off during blink interval, or is blink interval enclosed by saccade on off?
         qSac = (sacon>=blink.on(p) & sacon<=blink.off(p)) | (sacoff>=blink.on(p) & sacoff<=blink.off(p)) | (blink.on(p)>sacon & blink.on(p)<sacoff);
@@ -227,7 +227,7 @@ end
 
 % multiple unphysiological segments might be enclosed by same saccade, or
 % otherwise get refined to same onsets/offsets, in which case the same
-% blink is detected multiple times. Remove duplicated
+% blink is classified multiple times. Remove duplicated
 [~,idx]     = unique(blink.on);
 blink.on    = blink.on (idx);
 blink.off   = blink.off(idx);
@@ -264,13 +264,13 @@ data.blink.off  = blink.off(idx);
 % any saccade on/off during blink interval, or is blink interval enclosed
 % by saccade on/off? Off is glissade off if the saccade is followed by a
 % glissade, see above. This is what we want.
-if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
+if ETparams.blink.growToOverlapSaccade || ETparams.blink.growToOverlapGlissade
     qIsBlink = false(size(sacon));
     for p=1:length(blink.on)
         qIsBlink = qIsBlink | sacon==blink.on(p) | sacoff==blink.off(p);
     end
 
-    if ETparams.blink.qGrowToOverlapSaccade
+    if ETparams.blink.growToOverlapSaccade
         % first remove their corresponding glissades, if any (we always
         % want to remove glissades even if we didn't grow into them,
         % because there can't be glissades without corresponding saccades
@@ -281,14 +281,14 @@ if ETparams.blink.qGrowToOverlapSaccade || ETparams.blink.qGrowToOverlapGlissade
         
         % then deal with the saccades
         data.saccade    = replaceElementsInStruct(data.saccade,qIsBlink,[],{'!peakVelocityThreshold','!onsetVelocityThreshold'});
-    elseif ETparams.blink.qGrowToOverlapGlissade
+    elseif ETparams.blink.growToOverlapGlissade
         % remove glissades
         data.glissade   = replaceElementsInStruct(data.glissade,qIsBlink,[]);
     end
 end
 
 % replace by linear interpolation or with nan if wanted
-if ETparams.blink.qReplaceWithInterp
+if ETparams.blink.replaceWithInterp
     % adjust indices, blink.on(p) and blink.off(p) point to first and last
     % samples of a blink
     blon  = blink.on-1;  blon (blon <1                   ) = 1;
@@ -328,7 +328,7 @@ if ETparams.blink.qReplaceWithInterp
     end
     
     
-elseif ETparams.blink.qReplaceVelWithNan
+elseif ETparams.blink.replaceVelWithNan
     % create boolean matrix given blink bounds
     qBlink = bounds2bool(data.blink.on+1,data.blink.off-1,length(data.deg.vel));    % remove one sample inwards as thats good for plotting and otherwise doesn't matter
     
@@ -339,7 +339,7 @@ elseif ETparams.blink.qReplaceVelWithNan
     
     % if we have derivatives of eye position in pixels, throw the NaNs
     % in there as well
-    if ETparams.data.qAlsoStoreandDiffPixels
+    if ETparams.data.alsoStoreandDiffPixels
         data.pix= replaceElementsInStruct(data.pix,qBlink,nan,velFieldsPix);
     end
 end
@@ -352,9 +352,9 @@ if any(qBlink)
 end
 if sum(qMissingOrBlink)/length(data.deg.vel) > 0.20
     fprintf('Warning: This trial contains %.2f%% missing+blinks samples\n',sum(qMissingOrBlink)/length(data.deg.vel)*100);
-    data.qNoiseTrial = true;
+    data.isNoiseTrial = true;
 else
-    data.qNoiseTrial = false;
+    data.isNoiseTrial = false;
 end
 
 
