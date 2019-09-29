@@ -105,7 +105,16 @@ for p = 1:nfiles
         % plot the trial (eye X, eye Y, velocity traces and scanpath,
         % as well as classified saccades and fixations)
         if ~ishghandle(fhndl)
-            fhndl = figure('Units','normalized','Position',[0 0 1 1]);  % make fullscreen figure
+            % make fullscreen figure
+            fhndl = figure('Units','pixels');
+            if isprop(fhndl,'WindowState')
+                fhndl.WindowState = 'Maximized';
+                drawnow
+            else
+                ws    = get(0,'ScreenSize');
+                hmmar = [0 0 0 40];    % left right top bottom -- works well for Windows 10
+                fhndl.OuterPosition = [ws(1) + hmmar(1), ws(2) + hmmar(4), ws(3)-hmmar(1)-hmmar(2), ws(4)-hmmar(3)-hmmar(4)];
+            end
         else
             clf(fhndl);
         end
