@@ -635,7 +635,10 @@ if qHaveFixations || qHaveNoSacDataP || qHaveSacOnlyDataP
         usrDatr.tag = 'raw';
         usrDatr.t   = time;
         if qHaveNoSacDataP && qHaveSacOnlyDataP
-            plot(xdataOnlySac,ydataOnlySac,'c-','UserData',usrDatr);
+            usrDatrs   = usrDatr;
+            usrDatrs.x = xdataOnlySac;
+            usrDatrs.y = ydataOnlySac;
+            noshndl    = plot(xdataOnlySac,ydataOnlySac,'c-','UserData',usrDatrs);
             hold on;
         end
         if qHaveNoSacDataP
@@ -653,6 +656,9 @@ if qHaveFixations || qHaveNoSacDataP || qHaveSacOnlyDataP
                      length(xdata),      {'mo','MarkerFaceColor','m','MarkerSize',4},...    % use red  marker for last  datapoint
                      extraInp{:}                                                     ...
                     );
+        if qHaveNoSacDataP && qHaveSacOnlyDataP
+            fix2dhndls = [fix2dhndls noshndl];
+        end
     end
     axis(rect([1 3 2 4]));
     axis ij
