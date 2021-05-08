@@ -1,5 +1,6 @@
-This code is based on an implementation of Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204. It processes the recorded eye movement data to extract saccades, fixations, and glissades (the latter are now recognized to be post-saccadic oscillations).
+The code in this repository is a reimplementation of NystrÃ¶m, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204. It processes the recorded eye movement data to extract saccades, fixations, and glissades (the latter are now often called post-saccadic oscillations). When using this code, in addition to Nystr, please cite Niehorster, Siu & Li (2015). [See below](#citation).
 
+# Differences from original implementation
 First, the internals of the algorithm have been rewritten extensively with an eye on increasing performance. Furthermore, quite a few additions have been made. This is a non-exhaustive list:
 
   - optionally (and by default) less strict about NaN/missing data during events.
@@ -14,12 +15,12 @@ First, the internals of the algorithm have been rewritten extensively with an ey
 
 # Citation
 When using this code, please cite Niehorster, Siu & Li (2015). If using ETparams.saccade.onsetRefineMethod=2, please additionally cite Oliva, Niehorster, Jarodzka & Holmqvist (2017). Example citation:
-> Saccades were classified using the Niehorster, Siu & Li (2015) implementation of the Nyström & Holmqvist (2010) algorithm, with default settings. In addition, saccade onsets were determined using the method of Oliva, Niehorster, Jarodzka & Holmqvist (2017).
+> Saccades were classified using the Niehorster, Siu & Li (2015) implementation of the NystrÃ¶m & Holmqvist (2010) algorithm, with default settings. In addition, saccade onsets were determined using the method of Oliva, Niehorster, Jarodzka & Holmqvist (2017).
 
-NB: it is probably good to discuss these methods in a few lines each. Note that if you change settings from their default, please note these changes in your article.
+NB: it is probably good to discuss these methods in a few lines each. It is furthermore *important* that if you change settings from their default, you note these changes in your article.
 
 References:
-> Nyström, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204. doi: 10.3758/BRM.42.1.188
+> NystrÃ¶m, M. & Holmqvist, K. (2010), "An adaptive algorithm for fixation, saccade, and glissade detection in eye-tracking data". Behavior Research Methods 42(1): 188-204. doi: 10.3758/BRM.42.1.188
 >
 > Niehorster, D.C., Siu, W.W.F., & Li, L. (2015). Manual tracking enhances smooth pursuit eye movements. Journal of Vision 15(15), 11. doi: 10.1167/15.15.11
 >
