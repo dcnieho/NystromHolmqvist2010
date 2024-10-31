@@ -1,13 +1,12 @@
 function [out,state] = CanonicalDiscreteSSModel(sys,in)
 
 if exist('lsim.m','file')==2
-    Ts = getTs(sys);
     nSamp = length(in);
     if isnan(in(end))
         in = in(~isnan(in));
     end
     nSamp2 = length(in);
-    time = [0:Ts:(nSamp2-1)*Ts];
+    time = [0:sys.Ts:(nSamp2-1)*sys.Ts];
     [out,~,state] = lsim(sys,in,time);
     if nSamp2~=nSamp
         out = [out; nan(nSamp-nSamp2,1)];
